@@ -31,7 +31,11 @@ app.use(cookieParser());
 //   optionsSuccessStatus: 200
 // }
 
-db.sequelize.sync({ alter: true });
+db.sequelize.sync({ alter: true }).then(() => {
+  console.log("Database synchronized successfully.");
+}).catch(err => {
+  console.error("Error synchronizing database:", err);
+});
 
 // db.sequelize.sync({ force: true }).then(() => {
 //   console.log("Drop and re-sync db.");
