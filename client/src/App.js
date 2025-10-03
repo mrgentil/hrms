@@ -1,5 +1,9 @@
 import React, { Component } from "react";
 import { BrowserRouter as Router, Route, Switch, Redirect } from "react-router-dom";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Header from "./Layout/Header";
 import Footer from "./Layout/Footer";
 import SidebarAdmin from "./Layout/SidebarAdmin";
@@ -40,18 +44,35 @@ import Login from "./components/Login";
 import JobList from "./components/JobList";
 import JobListManager from './components/manager/JobList'
 
+// Import des styles de thème
+import './styles/themes.css';
+
 export default class App extends Component {
   render() {
     return (
-      <>
-        <Router>
-            <Switch>
-              <Route exact path="/login" component={LoginContainer} />
-              <Route exact path="/register" component={RegisterContainer} />
-              <Route path="/" component={withAuth(DefaultContainer)} />
-            </Switch>
-        </Router>
-      </>
+      <ThemeProvider>
+        <NotificationProvider>
+          <Router>
+              <Switch>
+                <Route exact path="/login" component={LoginContainer} />
+                <Route exact path="/register" component={RegisterContainer} />
+                <Route path="/" component={withAuth(DefaultContainer)} />
+              </Switch>
+          </Router>
+          <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="colored"
+          />
+        </NotificationProvider>
+      </ThemeProvider>
     )
   }
 }

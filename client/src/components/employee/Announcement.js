@@ -3,8 +3,8 @@ import { Card, Button, Form, Alert } from "react-bootstrap";
 import { Redirect, NavLink } from 'react-router-dom'
 import axios from 'axios'
 import MaterialTable from 'material-table'
-import { ThemeProvider } from '@material-ui/core'
-import { createMuiTheme } from '@material-ui/core/styles'
+// import { ThemeProvider } from '@material-ui/core'
+// import { createMuiTheme } from '@material-ui/core/styles'
 
 export default class Announcement extends Component {
 
@@ -50,15 +50,15 @@ export default class Announcement extends Component {
   render() {
     let closeAlertModel = () => this.setState({showAlertModel: false})
 
-    const theme = createMuiTheme({
-        overrides: {
-            MuiTableCell: {
-                root: {
-                    padding: '6px 6px 6px 6px'
-                }
-            }
-        }
-    })
+    // const theme = createMuiTheme({
+    //     overrides: {
+    //         MuiTableCell: {
+    //             root: {
+    //                 padding: '6px 6px 6px 6px'
+    //             }
+    //         }
+    //     }
+    // });
 
     return (
       <div className="container-fluid pt-2">
@@ -71,7 +71,7 @@ export default class Announcement extends Component {
                 </div>
                 </Card.Header>
                 <Card.Body>
-                    <ThemeProvider theme={theme}>
+                    {/* <ThemeProvider theme={theme}> */}
                     <MaterialTable
                             columns={[
                                 {title: 'ID', field: 'id'},
@@ -92,7 +92,7 @@ export default class Announcement extends Component {
                             }}
                             title="Announcements"
                     />
-                    </ThemeProvider>
+                    {/* </ThemeProvider> */}
                 </Card.Body>
             </Card>
             </div>
@@ -106,3 +106,4 @@ export default class Announcement extends Component {
     );
   }
 }
+

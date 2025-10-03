@@ -6,8 +6,8 @@ import "react-bootstrap-table2-paginator/dist/react-bootstrap-table2-paginator.m
 import axios from "axios";
 import moment from 'moment'
 import MaterialTable from 'material-table'
-import { ThemeProvider } from '@material-ui/core'
-import { createMuiTheme } from '@material-ui/core/styles'
+// import { ThemeProvider } from '@material-ui/core'
+// import { createMuiTheme } from '@material-ui/core/styles'
 
 export default class ApplicationList extends Component {
   constructor(props) {
@@ -98,15 +98,15 @@ export default class ApplicationList extends Component {
 
   render() {
 
-    const theme = createMuiTheme({
-        overrides: {
-            MuiTableCell: {
-                root: {
-                    padding: '6px 6px 6px 6px'
-                }
-            }
-        }
-    })
+    // const theme = createMuiTheme({
+    //     overrides: {
+    //         MuiTableCell: {
+    //             root: {
+    //                 padding: '6px 6px 6px 6px'
+    //             }
+    //         }
+    //     }
+    // });
 
     return (
       <div className="container-fluid pt-5">
@@ -118,7 +118,7 @@ export default class ApplicationList extends Component {
               </div>
             </Card.Header>
             <Card.Body>
-              <ThemeProvider theme={theme}>
+              {/* <ThemeProvider theme={theme}> */}
                 <MaterialTable
                     columns={[
                         {title: 'APP ID', field: 'id'},
@@ -161,7 +161,7 @@ export default class ApplicationList extends Component {
                   }}
                     title="Applications"
                 />
-              </ThemeProvider>
+              {/* </ThemeProvider> */}
             </Card.Body>
           </Card>
         </div>
@@ -178,3 +178,4 @@ export default class ApplicationList extends Component {
     );
   }
 }
+

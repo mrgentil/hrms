@@ -1,12 +1,11 @@
 import React, { Component } from "react";
-import { Card, Badge, Button, Form, Modal } from "react-bootstrap";
-import {Redirect} from 'react-router-dom'
+import { Card, Button, Form } from "react-bootstrap";
 import MaterialTable from 'material-table'
 import DatePicker from 'react-datepicker'
 import axios from 'axios'
 import moment from 'moment'
-import { ThemeProvider } from '@material-ui/core'
-import { createMuiTheme } from '@material-ui/core/styles'
+// import { ThemeProvider } from '@material-ui/core'
+// import { createMuiTheme } from '@material-ui/core/styles'
 
 export default class ExpenseReport extends Component {
   
@@ -58,19 +57,15 @@ export default class ExpenseReport extends Component {
 
   render() {
 
-    const theme = createMuiTheme({
-        overrides: {
-            MuiTableCell: {
-                root: {
-                    padding: '6px 6px 6px 6px'
-                }
-            }
-        }
-    })
-
-    const monthNames = ["January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
-        ];
+    // const theme = createMuiTheme({
+    //     overrides: {
+    //         MuiTableCell: {
+    //             root: {
+    //                 padding: '6px 6px 6px 6px'
+    //             }
+    //         }
+    //     }
+    // });
 
     return (
       <div className="container-fluid pt-4">
@@ -115,7 +110,7 @@ export default class ExpenseReport extends Component {
                         </div>
                     </Card.Header>
                     <Card.Body>
-                    <ThemeProvider theme={theme}>
+                    {/* <ThemeProvider theme={theme}> */}
                         <MaterialTable 
                         columns={[
                             {title: 'ID', field: 'id'},
@@ -148,7 +143,7 @@ export default class ExpenseReport extends Component {
                         }}
                         title="Expense Report"
                         />
-                    </ThemeProvider>
+                    {/* </ThemeProvider> */}
                     </Card.Body>
                 </Card>
             </div>
@@ -157,3 +152,4 @@ export default class ExpenseReport extends Component {
     );
   }
 }
+

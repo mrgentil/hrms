@@ -7,8 +7,8 @@ import JobDeleteModal from './JobDeleteModal'
 import axios from 'axios'
 import moment from 'moment'
 import MaterialTable from 'material-table'
-import { ThemeProvider } from '@material-ui/core'
-import { createMuiTheme } from '@material-ui/core/styles'
+// import { ThemeProvider } from '@material-ui/core'
+// import { createMuiTheme } from '@material-ui/core/styles'
 import AlertModal from './AlertModal'
 
 export default class SalaryDetails extends Component {
@@ -132,7 +132,8 @@ export default class SalaryDetails extends Component {
                 items.push(<option key={index} value={dept.id}>{dept.departmentName}</option>)
             }
         })
-        return items
+
+    return items
     }
 
     pushUsers = () => {
@@ -142,7 +143,7 @@ export default class SalaryDetails extends Component {
             items.push(<option key={index} value={user.id}>{user.fullName}</option>)
         })
 
-        return items
+    return items
     }
 
     handleDepartmentChange = (event) => {
@@ -484,3 +485,4 @@ export default class SalaryDetails extends Component {
     );
   }
 }
+

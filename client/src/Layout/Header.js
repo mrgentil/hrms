@@ -1,38 +1,31 @@
-import React, { Component } from "react";
+import React, { useState } from "react";
 import {Redirect} from "react-router-dom"
 import NewPasswordModal from '../components/NewPasswordModal'
+import { CompactThemeToggle, UserDropdownThemeToggle } from '../components/ThemeToggle'
+import NotificationCenter from '../components/NotificationCenter'
 
-export default class Header extends Component {
+const Header = () => {
+  const [completed, setCompleted] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
-  constructor(props) {
-    super(props)
-
-    this.state = {
-      completed: false,
-      showModal: false
-    }
-  }
-
-  onLogout = (event) => {
+  const onLogout = (event) => {
     event.preventDefault()
-
     localStorage.removeItem('token');
-    localStorage.removeItem('token')
-    this.setState({completed: true})
+    localStorage.removeItem('user');
+    setCompleted(true);
   }
 
-  newPassword = (event) => {
+  const newPassword = (event) => {
     event.preventDefault()
-
-    this.setState({showModal: true})
+    setShowModal(true);
   }
 
-  render() {
-    let closeModal = () => this.setState({showModal: false})
-    return (
+  const closeModal = () => setShowModal(false);
+
+  return (
       <nav className="main-header navbar navbar-expand navbar-white navbar-light">
-        {this.state.completed ? <Redirect to="/" /> : null}
-        {this.state.showModal ? <NewPasswordModal show={true} onHide={closeModal}/> : null}
+        {completed ? <Redirect to="/" /> : null}
+        {showModal ? <NewPasswordModal show={true} onHide={closeModal}/> : null}
         {/* Left navbar links */}
         <ul className="navbar-nav">
           <li className="nav-item">
@@ -74,6 +67,10 @@ export default class Header extends Component {
         </form> */}
         {/* Right navbar links */}
         <ul className="navbar-nav ml-auto">
+          {/* Notifications */}
+          <NotificationCenter />
+          {/* Theme Toggle */}
+          <CompactThemeToggle />
           {/* Messages Dropdown Menu */}
           {/* <li className="nav-item dropdown">
             <a className="nav-link" data-toggle="dropdown" href="#">
@@ -170,12 +167,14 @@ export default class Header extends Component {
                 Options
               </span>
               <div className="dropdown-divider" />
-              <a  onClick={this.newPassword} href="#" className="dropdown-item">
+              <UserDropdownThemeToggle />
+              <div className="dropdown-divider" />
+              <a  onClick={newPassword} href="#" className="dropdown-item">
                 <i className="fas fa-key mr-2" /> Change Password
                 {/* <span className="float-right text-muted text-sm">3 mins</span> */}
               </a>
               <div className="dropdown-divider" />
-              <a onClick={this.onLogout} href="#" className="dropdown-item">
+              <a onClick={onLogout} href="#" className="dropdown-item">
                 <i className="fas fa-sign-out-alt mr-2" /> Log out
                 {/* <span className="float-right text-muted text-sm">12 hours</span> */}
               </a>
@@ -204,5 +203,6 @@ export default class Header extends Component {
         </ul>
       </nav>
     );
-  }
-}
+};
+
+export default Header;

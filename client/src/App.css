@@ -1,5 +1,7 @@
+/* Temporarily disabled FullCalendar CSS imports
 @import '~@fullcalendar/core/main.css';
 @import '~@fullcalendar/daygrid/main.css';
+*/
 
 .App {
   text-align: center;

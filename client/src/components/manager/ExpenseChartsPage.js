@@ -102,3 +102,4 @@ export default class ExpenseChartsPage extends React.Component {
     );
   }
 }
+

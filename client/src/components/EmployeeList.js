@@ -4,8 +4,9 @@ import {Redirect} from 'react-router-dom'
 import MaterialTable from 'material-table'
 import DeleteModal from './DeleteModal'
 import axios from 'axios'
-import { ThemeProvider } from '@material-ui/core'
-import { createMuiTheme } from '@material-ui/core/styles'
+// Temporarily disabled Material-UI imports
+// import { ThemeProvider } from '@material-ui/core'
+// import { createMuiTheme } from '@material-ui/core/styles'
 
 export default class EmployeeList extends Component {
   
@@ -63,7 +64,9 @@ export default class EmployeeList extends Component {
 
     let closeDeleteModel = () => this.setState({deleteModal: false})
 
-    const theme = createMuiTheme({
+    // Temporarily disabled Material-UI theme
+    /*
+    /* const theme = createMuiTheme({
         overrides: {
             MuiTableCell: {
                 root: {
@@ -72,6 +75,7 @@ export default class EmployeeList extends Component {
             }
         }
     })
+    */
 
     return (
       <div className="container-fluid pt-4">
@@ -93,7 +97,7 @@ export default class EmployeeList extends Component {
               </div>
             </Card.Header>
             <Card.Body>
-              <ThemeProvider theme={theme}>
+              {/* <ThemeProvider theme={theme}> */}
                 <MaterialTable 
                   columns={[
                     {title: 'EMP ID', field: 'id'},
@@ -154,7 +158,7 @@ export default class EmployeeList extends Component {
                   }}
                   title="Employees"
                 />
-              </ThemeProvider>
+              {/* </ThemeProvider> */}
             </Card.Body>
           </Card>
         </div>
@@ -162,3 +166,4 @@ export default class EmployeeList extends Component {
     );
   }
 }
+

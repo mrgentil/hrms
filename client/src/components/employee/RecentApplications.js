@@ -65,3 +65,4 @@ export default class RecentApplications extends React.Component {
     );
   }
 }
+

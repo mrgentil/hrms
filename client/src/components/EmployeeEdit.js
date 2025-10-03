@@ -157,6 +157,7 @@ export default class EmployeeEdit extends Component {
     this.state.departments.map((dept, index) => {
       items.push(<option key={index} value={dept.id}>{dept.departmentName}</option>)
     })
+
     return items;
   }
 

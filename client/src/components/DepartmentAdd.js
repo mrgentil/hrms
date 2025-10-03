@@ -86,3 +86,4 @@ export default class DepartmentAdd extends Component {
     );
   }
 }
+

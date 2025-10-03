@@ -7,8 +7,8 @@ import JobDeleteModal from './JobDeleteModal'
 import axios from 'axios'
 import moment from 'moment'
 import MaterialTable from 'material-table'
-import { ThemeProvider } from '@material-ui/core'
-import { createMuiTheme } from '@material-ui/core/styles'
+// import { ThemeProvider } from '@material-ui/core'
+// import { createMuiTheme } from '@material-ui/core/styles'
 import AlertModal from './AlertModal'
 
 export default class JobList extends Component {
@@ -110,6 +110,7 @@ export default class JobList extends Component {
                 items.push(<option key={index} value={dept.id} defaultValue>{dept.departmentName}</option>)
             }
         })
+
         return items
     }
 
@@ -166,15 +167,15 @@ export default class JobList extends Component {
     let closeAddModel = () => this.setState({showAddModel: false})
     let closeDeleteModel = () => this.setState({showDeleteModel: false})
 
-    const theme = createMuiTheme({
-        overrides: {
-            MuiTableCell: {
-                root: {
-                    padding: '6px 6px 6px 6px'
-                }
-            }
-        }
-    })
+    // const theme = createMuiTheme({
+    //     overrides: {
+    //         MuiTableCell: {
+    //             root: {
+    //                 padding: '6px 6px 6px 6px'
+    //             }
+    //         }
+    //     }
+    // });
 
     return (
       <div className="container-fluid pt-2">
@@ -211,7 +212,7 @@ export default class JobList extends Component {
                 </div>
                 </Card.Header>
                 <Card.Body>
-                    <ThemeProvider theme={theme}>
+                    {/* <ThemeProvider theme={theme}> */}
                     <MaterialTable
                             columns={[
                                 {title: 'JOB ID', field: 'id'},
@@ -266,7 +267,7 @@ export default class JobList extends Component {
                             }}
                             title= {this.selectedUser ? this.selectedUser.fullName : ''}
                     />
-                    </ThemeProvider>
+                    {/* </ThemeProvider> */}
                 </Card.Body>
             </Card>
             {this.state.showEditModel ? (
@@ -289,3 +290,4 @@ export default class JobList extends Component {
     );
   }
 }
+

@@ -8,8 +8,8 @@ import axios from 'axios'
 import moment from 'moment'
 import DatePicker from 'react-datepicker'
 import MaterialTable from 'material-table'
-import { ThemeProvider } from '@material-ui/core'
-import { createMuiTheme } from '@material-ui/core/styles'
+// import { ThemeProvider } from '@material-ui/core'
+// import { createMuiTheme } from '@material-ui/core/styles'
 import AlertModal from './AlertModal'
 
 export default class Payment extends Component {
@@ -106,6 +106,7 @@ export default class Payment extends Component {
                 items.push(<option key={index} value={dept.id}>{dept.departmentName}</option>)
             }
         })
+
         return items
     }
 
@@ -225,15 +226,15 @@ export default class Payment extends Component {
     
   render() {
 
-    const theme = createMuiTheme({
-        overrides: {
-            MuiTableCell: {
-                root: {
-                    padding: '6px 6px 6px 6px'
-                }
-            }
-        }
-    })
+    // const theme = createMuiTheme({
+    //     overrides: {
+    //         MuiTableCell: {
+    //             root: {
+    //                 padding: '6px 6px 6px 6px'
+    //             }
+    //         }
+    //     }
+    // });
 
     const monthNames = ["January", "February", "March", "April", "May", "June",
             "July", "August", "September", "October", "November", "December"
@@ -399,7 +400,7 @@ export default class Payment extends Component {
                         <Card.Header>Payment History</Card.Header>
                         <Card.Body>
                             <Card.Text>
-                                <ThemeProvider theme={theme}>
+                                {/* <ThemeProvider theme={theme}> */}
                                     <MaterialTable 
                                     columns={[
                                         {
@@ -437,7 +438,7 @@ export default class Payment extends Component {
                                     }}
                                     title="History"
                                     />
-                                </ThemeProvider>
+                                {/* </ThemeProvider> */}
                             </Card.Text>
                         </Card.Body>
                     </Card>
@@ -448,3 +449,4 @@ export default class Payment extends Component {
     );
   }
 }
+

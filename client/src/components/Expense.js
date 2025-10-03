@@ -8,8 +8,8 @@ import axios from 'axios'
 import moment from 'moment'
 import DatePicker from 'react-datepicker'
 import MaterialTable from 'material-table'
-import { ThemeProvider } from '@material-ui/core'
-import { createMuiTheme } from '@material-ui/core/styles'
+// import { ThemeProvider } from '@material-ui/core'
+// import { createMuiTheme } from '@material-ui/core/styles'
 import AlertModal from './AlertModal'
 
 export default class Expense extends Component {
@@ -48,7 +48,8 @@ export default class Expense extends Component {
         this.state.departments.map((dept, index) => {
             items.push(<option key={index} value={dept.id}>{dept.departmentName}</option>)
         })
-        return items
+
+    return items
     }
 
     handleChange = (event) => {
@@ -172,3 +173,4 @@ export default class Expense extends Component {
     );
   }
 }
+

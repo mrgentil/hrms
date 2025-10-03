@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('server:server');
 var http = require('http');
+var socketIo = require('socket.io');
 
 /**
  * Get port from environment and store in Express.
@@ -20,6 +21,38 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
+
+/**
+ * Setup Socket.io
+ */
+var io = socketIo(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Store io instance in app for use in routes
+app.set('io', io);
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log('🔗 User connected:', socket.id);
+
+  // Join user to their personal room for targeted notifications
+  socket.on('join', (userData) => {
+    if (userData && userData.userId) {
+      socket.join(`user_${userData.userId}`);
+      socket.join(`role_${userData.role}`);
+      console.log(`👤 User ${userData.userId} (${userData.role}) joined rooms`);
+    }
+  });
+
+  // Handle disconnect
+  socket.on('disconnect', () => {
+    console.log('❌ User disconnected:', socket.id);
+  });
+});
 
 /**
  * Listen on provided port, on all network interfaces.

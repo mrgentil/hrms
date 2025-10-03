@@ -624,3 +624,4 @@ export default class EmployeeAdd extends Component {
     );
   }
 }
+

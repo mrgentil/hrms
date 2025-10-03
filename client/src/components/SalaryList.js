@@ -4,8 +4,8 @@ import {Redirect} from 'react-router-dom'
 import MaterialTable from 'material-table'
 import DeleteModal from './DeleteModal'
 import axios from 'axios'
-import { ThemeProvider } from '@material-ui/core'
-import { createMuiTheme } from '@material-ui/core/styles'
+// import { ThemeProvider } from '@material-ui/core'
+// import { createMuiTheme } from '@material-ui/core/styles'
 
 export default class SalaryList extends Component {
   
@@ -52,15 +52,15 @@ export default class SalaryList extends Component {
 
   render() {
 
-    const theme = createMuiTheme({
-        overrides: {
-            MuiTableCell: {
-                root: {
-                    padding: '6px 6px 6px 6px'
-                }
-            }
-        }
-    })
+    // const theme = createMuiTheme({
+    //     overrides: {
+    //         MuiTableCell: {
+    //             root: {
+    //                 padding: '6px 6px 6px 6px'
+    //             }
+    //         }
+    //     }
+    // });
 
     return (
       <div className="container-fluid pt-4">
@@ -74,7 +74,7 @@ export default class SalaryList extends Component {
               </div>
             </Card.Header>
             <Card.Body>
-              <ThemeProvider theme={theme}>
+              {/* <ThemeProvider theme={theme}> */}
                 <MaterialTable 
                   columns={[
                     {title: 'EMP ID', field: 'user.id'},
@@ -112,7 +112,7 @@ export default class SalaryList extends Component {
                   }}
                   title="Employees"
                 />
-              </ThemeProvider>
+              {/* </ThemeProvider> */}
             </Card.Body>
           </Card>
         </div>
@@ -120,3 +120,4 @@ export default class SalaryList extends Component {
     );
   }
 }
+

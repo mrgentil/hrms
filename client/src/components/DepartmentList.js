@@ -1,18 +1,15 @@
 import React, { Component } from "react";
-import { Card, Button, Form, Alert } from "react-bootstrap";
 import { Redirect, NavLink } from 'react-router-dom'
+import { Card, Button, Form, Alert } from "react-bootstrap";
 import AddDepartment from './DepartmentAdd'
 import EditDepartmentModal from './EditDepartmentModal'
 import axios from 'axios'
 import MaterialTable from 'material-table'
-import { ThemeProvider } from '@material-ui/core'
-import { createMuiTheme } from '@material-ui/core/styles'
 import AlertModal from './AlertModal'
 
 export default class DepartmentList extends Component {
 
     constructor(props) {
-        super(props)
 
         this.state = {
             departments: [],
@@ -72,7 +69,9 @@ export default class DepartmentList extends Component {
     let closeEditModel = () => this.setState({showEditModel: false})
     let closeAlertModel = () => this.setState({showAlertModel: false})
 
-    const theme = createMuiTheme({
+    // Temporarily disabled Material-UI theme
+    /*
+    /* const theme = createMuiTheme({
         overrides: {
             MuiTableCell: {
                 root: {
@@ -81,6 +80,7 @@ export default class DepartmentList extends Component {
             }
         }
     })
+    */
 
     return (
       <div className="container-fluid pt-2">
@@ -98,7 +98,7 @@ export default class DepartmentList extends Component {
                 </div>
                 </Card.Header>
                 <Card.Body>
-                    <ThemeProvider theme={theme}>
+                    {/* <ThemeProvider theme={theme}> */}
                     <MaterialTable
                             columns={[
                                 {title: 'DEPT ID', field: 'id'},
@@ -136,7 +136,7 @@ export default class DepartmentList extends Component {
                             }}
                             title="Departments"
                     />
-                    </ThemeProvider>
+                    {/* </ThemeProvider> */}
                 </Card.Body>
             </Card>
             {this.state.showEditModel ? (

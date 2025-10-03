@@ -76,7 +76,8 @@ export default class JobAddModal extends Component {
       this.state.departments.map((dept, index) => {
         items.push(<option key={index} value={dept.id}>{dept.departmentName}</option>)
       })
-      return items
+
+    return items
   }
 
   pushUsers = () => {
@@ -84,7 +85,8 @@ export default class JobAddModal extends Component {
       this.state.users.map((user, index) => {
           items.push(<option key={index} value={user.id}>{user.fullName}</option>)
       })
-      return items
+
+    return items
   }
 
   onSubmit = (e) => {

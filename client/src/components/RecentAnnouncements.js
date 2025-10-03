@@ -71,3 +71,4 @@ export default class RecentAnnouncements extends React.Component {
     );
   }
 }
+

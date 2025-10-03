@@ -6,6 +6,7 @@ var logger = require("morgan");
 var withAuth = require("./withAuth");
 
 const db = require("./models");
+const NotificationService = require("./services/notificationService");
 require("dotenv").config();
 
 var api = require("./routes/api");
@@ -41,6 +42,16 @@ db.sequelize.sync({ alter: true }).then(() => {
 //   console.log("Drop and re-sync db.");
 // });
 
+// Initialize notification service when socket.io is available
+app.use((req, res, next) => {
+  if (req.app.get('io') && !req.app.get('notificationService')) {
+    const notificationService = new NotificationService(req.app.get('io'));
+    req.app.set('notificationService', notificationService);
+    console.log('🔔 Notification service initialized');
+  }
+  next();
+});
+
 app.use("/api", api);
 app.use("/login", login);
 app.use("/register", register);
@@ -64,13 +75,23 @@ app.use(function (req, res, next) {
 
 // error handler
 app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
+  if (res.headersSent) {
+    return next(err);
+  }
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render("error");
+  const status = err.status || 500;
+  const isDev = req.app.get("env") === "development";
+
+  res.status(status);
+
+  if (req.accepts("json")) {
+    return res.json({
+      message: err.message,
+      ...(isDev ? { stack: err.stack } : {})
+    });
+  }
+
+  res.type("text").send(isDev ? `${err.message}\n${err.stack}` : err.message);
 });
 
 module.exports = app;
