@@ -16,6 +16,11 @@ import {
   PlugInIcon,
   TableIcon,
   UserCircleIcon,
+  UserIcon,
+  GroupIcon,
+  TaskIcon,
+  DollarLineIcon,
+  ChatIcon,
 } from "../icons/index";
 import SidebarWidget from "./SidebarWidget";
 
@@ -30,66 +35,86 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    path: "/",
+  },
+  {
+    icon: <UserIcon />,
+    name: "Gestion Utilisateurs",
+    subItems: [
+      { name: "Liste Utilisateurs", path: "/users", pro: false },
+      { name: "Profils", path: "/users/profiles", pro: false },
+      { name: "Rôles & Permissions", path: "/users/roles", pro: false },
+      { name: "Documents", path: "/users/documents", pro: false },
+    ],
+  },
+  {
+    icon: <GroupIcon />,
+    name: "Organisation",
+    subItems: [
+      { name: "Départements", path: "/departments", pro: false },
+      { name: "Postes", path: "/positions", pro: false },
+      { name: "Contrats", path: "/contracts", pro: false },
+      { name: "Annonces", path: "/announcements", pro: false },
+    ],
   },
   {
     icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
-  },
-  {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
-
-  {
-    name: "Forms",
-    icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },
-  {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  },
-  {
-    name: "Pages",
-    icon: <PageIcon />,
+    name: "Congés & Absences",
     subItems: [
-      { name: "Blank Page", path: "/blank", pro: false },
-      { name: "404 Error", path: "/error-404", pro: false },
+      { name: "Demandes de Congés", path: "/leave/applications", pro: false },
+      { name: "Types de Congés", path: "/leave/types", pro: false },
+      { name: "Soldes de Congés", path: "/leave/balances", pro: false },
+      { name: "Calendrier", path: "/calendar", pro: false },
+    ],
+  },
+  {
+    icon: <TaskIcon />,
+    name: "Projets & Tâches",
+    subItems: [
+      { name: "Projets", path: "/projects", pro: false },
+      { name: "Tâches", path: "/tasks", pro: false },
+      { name: "Tableaux Kanban", path: "/task-boards", pro: false },
+      { name: "Membres Projets", path: "/project-members", pro: false },
     ],
   },
 ];
 
 const othersItems: NavItem[] = [
   {
-    icon: <PieChartIcon />,
-    name: "Charts",
+    icon: <DollarLineIcon />,
+    name: "Finances & Paie",
     subItems: [
-      { name: "Line Chart", path: "/line-chart", pro: false },
-      { name: "Bar Chart", path: "/bar-chart", pro: false },
+      { name: "Informations Financières", path: "/finance/info", pro: false },
+      { name: "Paiements", path: "/finance/payments", pro: false },
+      { name: "Dépenses", path: "/finance/expenses", pro: false },
+      { name: "Emplois", path: "/finance/jobs", pro: false },
     ],
   },
   {
-    icon: <BoxCubeIcon />,
-    name: "UI Elements",
+    icon: <ChatIcon />,
+    name: "Communication",
     subItems: [
-      { name: "Alerts", path: "/alerts", pro: false },
-      { name: "Avatar", path: "/avatars", pro: false },
-      { name: "Badge", path: "/badge", pro: false },
-      { name: "Buttons", path: "/buttons", pro: false },
-      { name: "Images", path: "/images", pro: false },
-      { name: "Videos", path: "/videos", pro: false },
+      { name: "Messages", path: "/messages", pro: false },
+      { name: "Conversations", path: "/conversations", pro: false },
+      { name: "Événements Personnels", path: "/personal-events", pro: false },
+    ],
+  },
+  {
+    icon: <PieChartIcon />,
+    name: "Rapports & Analytics",
+    subItems: [
+      { name: "Tableau de Bord RH", path: "/reports/hr", pro: false },
+      { name: "Statistiques Congés", path: "/reports/leave", pro: false },
+      { name: "Performance Projets", path: "/reports/projects", pro: false },
     ],
   },
   {
     icon: <PlugInIcon />,
-    name: "Authentication",
+    name: "Administration",
     subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
+      { name: "Paramètres Système", path: "/admin/settings", pro: false },
+      { name: "Authentification", path: "/signin", pro: false },
+      { name: "Logs & Audit", path: "/admin/logs", pro: false },
     ],
   },
 ];
@@ -348,7 +373,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Menu"
+                  "Gestion RH"
                 ) : (
                   <HorizontaLDots />
                 )}
@@ -365,7 +390,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
+                  "Modules Avancés"
                 ) : (
                   <HorizontaLDots />
                 )}

@@ -4,9 +4,13 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
+import { Avatar } from "../ui/Avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { formatUserRole } from "@/lib/roleLabels";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, logout } = useAuth();
 
 function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
   e.stopPropagation();
@@ -16,22 +20,28 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
   function closeDropdown() {
     setIsOpen(false);
   }
+  const roleName =
+    user?.role_info?.name ||
+    user?.current_role ||
+    (user?.role ? formatUserRole(user.role) : "Employé");
+
   return (
     <div className="relative">
       <button
         onClick={toggleDropdown} 
         className="flex items-center text-gray-700 dark:text-gray-400 dropdown-toggle"
       >
-        <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
-          <Image
-            width={44}
-            height={44}
-            src="/images/user/owner.jpg"
-            alt="User"
-          />
-        </span>
+        <Avatar
+          src={user?.profile_photo_url}
+          alt={`Avatar de ${user?.full_name}`}
+          size={44}
+          fallbackText={user?.full_name}
+          fallbackIcon={user?.role_info?.icon}
+          backgroundColor={user?.role_info?.color || '#6b7280'}
+          className="mr-3"
+        />
 
-        <span className="block mr-1 font-medium text-theme-sm">Musharof</span>
+        <span className="block mr-1 font-medium text-theme-sm">{user?.full_name || 'Utilisateur'}</span>
 
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
@@ -60,11 +70,28 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-            Musharof Chowdhury
+            {user?.full_name || 'Utilisateur'}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-            randomuser@pimjo.com
+            {user?.work_email || user?.username || 'email@example.com'}
           </span>
+          <div className="mt-2 flex items-center">
+            {user?.role_info && (
+              <div 
+                className="flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-white font-bold text-xs mr-2"
+                style={{ backgroundColor: user.role_info.color || '#6b7280' }}
+              >
+                {user.role_info.icon || '👤'}
+              </div>
+            )}
+            <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+              user?.role_info?.is_system 
+                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' 
+                : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+            }`}>
+              {roleName}
+            </span>
+          </div>
         </div>
 
         <ul className="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">
@@ -90,7 +117,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
                   fill=""
                 />
               </svg>
-              Edit profile
+              Modifier le profil
             </DropdownItem>
           </li>
           <li>
@@ -115,7 +142,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
                   fill=""
                 />
               </svg>
-              Account settings
+              Paramètres du compte
             </DropdownItem>
           </li>
           <li>
@@ -144,9 +171,12 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
             </DropdownItem>
           </li>
         </ul>
-        <Link
-          href="/signin"
-          className="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+        <button
+          onClick={() => {
+            closeDropdown();
+            logout();
+          }}
+          className="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300 w-full text-left"
         >
           <svg
             className="fill-gray-500 group-hover:fill-gray-700 dark:group-hover:fill-gray-300"
@@ -163,8 +193,8 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
               fill=""
             />
           </svg>
-          Sign out
-        </Link>
+          Se déconnecter
+        </button>
       </Dropdown>
     </div>
   );

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API</title>
+</head>
+<body>
+    <h1>Test de l'API</h1>
+    <button onclick="testLogin()">Tester Login avec bill/pass123!</button>
+    <button onclick="testUsers()">Tester /users</button>
+    <div id="result"></div>
+
+    <script>
+        let token = null;
+
+        async function testLogin() {
+            try {
+                const response = await fetch('http://localhost:3001/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'bill',
+                        password: 'pass123!'
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Login response:', data);
+                
+                if (data.access_token) {
+                    token = data.access_token;
+                    document.getElementById('result').innerHTML = `
+                        <h3>Login réussi!</h3>
+                        <p><strong>Utilisateur:</strong> ${data.user.full_name}</p>
+                        <p><strong>Rôle:</strong> ${data.user.role}</p>
+                        <p><strong>Email:</strong> ${data.user.work_email || 'N/A'}</p>
+                        <p><strong>Token:</strong> ${data.access_token.substring(0, 50)}...</p>
+                    `;
+                } else {
+                    document.getElementById('result').innerHTML = `<p style="color: red;">Erreur: ${JSON.stringify(data)}</p>`;
+                }
+            } catch (error) {
+                console.error('Erreur login:', error);
+                document.getElementById('result').innerHTML = `<p style="color: red;">Erreur: ${error.message}</p>`;
+            }
+        }
+
+        async function testUsers() {
+            if (!token) {
+                alert('Veuillez d\'abord vous connecter');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3001/users', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                console.log('Users response:', data);
+                
+                document.getElementById('result').innerHTML += `
+                    <h3>Liste des utilisateurs:</h3>
+                    <p><strong>Total:</strong> ${data.total || 0}</p>
+                    <p><strong>Utilisateurs:</strong></p>
+                    <ul>
+                        ${data.data ? data.data.map(user => `
+                            <li>${user.full_name} (${user.username}) - ${user.role}</li>
+                        `).join('') : 'Aucun utilisateur'}
+                    </ul>
+                `;
+            } catch (error) {
+                console.error('Erreur users:', error);
+                document.getElementById('result').innerHTML += `<p style="color: red;">Erreur users: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

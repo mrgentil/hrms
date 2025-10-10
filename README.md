@@ -1,173 +1,259 @@
-# TailAdmin Next.js - Free Next.js Tailwind Admin Dashboard Template
+# 🏢 Human Resource Management System (HRMS)
 
-TailAdmin is a free and open-source admin dashboard template built on **Next.js and Tailwind CSS** providing developers with everything they need to create a feature-rich and data-driven: back-end, dashboard, or admin panel solution for any sort of web project.
+Une solution HRMS moderne et complète construite avec **Next.js, Node.js, Express et MySQL**. Ce système offre une gestion complète des ressources humaines avec un système de contrôle d'accès basé sur les rôles (RBAC) avancé.
 
-![TailAdmin - Next.js Dashboard Preview](./banner.png)
+![HRMS Dashboard Preview](./banner.png)
 
-With TailAdmin Next.js, you get access to all the necessary dashboard UI components, elements, and pages required to build a high-quality and complete dashboard or admin panel. Whether you're building a dashboard or admin panel for a complex web application or a simple website. 
+## 📋 Description
 
-TailAdmin utilizes the powerful features of **Next.js 15** and common features of Next.js such as server-side rendering (SSR), static site generation (SSG), and seamless API route integration. Combined with the advancements of **React 19** and the robustness of **TypeScript**, TailAdmin is the perfect solution to help get your project up and running quickly.
+Ce système HRMS fournit une solution complète pour la gestion des ressources humaines incluant la gestion des utilisateurs, des départements, des postes, et un système de permissions granulaires. Construit avec les dernières technologies web pour une performance et une sécurité optimales.
 
-## Overview
+## 🚀 Technologies Utilisées
 
-TailAdmin provides essential UI components and layouts for building feature-rich, data-driven admin dashboards and control panels. It's built on:
+### Frontend
+- **Next.js 15** - Framework React avec SSR/SSG
+- **React 19** - Bibliothèque UI moderne
+- **TypeScript** - Typage statique pour JavaScript
+- **Tailwind CSS V4** - Framework CSS utilitaire
+- **Prisma** - ORM moderne pour TypeScript
 
-- Next.js 15.x
-- React 19
-- TypeScript
-- Tailwind CSS V4
+### Backend
+- **Node.js** - Runtime JavaScript côté serveur
+- **Express.js** - Framework web minimaliste
+- **MySQL** - Base de données relationnelle
+- **JWT** - Authentification par tokens
+- **bcrypt** - Hachage sécurisé des mots de passe
 
-### Quick Links
-- [✨ Visit Website](https://tailadmin.com)
-- [📄 Documentation](https://tailadmin.com/docs)
-- [⬇️ Download](https://tailadmin.com/download)
-- [🖌️ Figma Design File (Community Edition)](https://www.figma.com/community/file/1463141366275764364)
-- [⚡ Get PRO Version](https://tailadmin.com/pricing)
+## ✨ Fonctionnalités Principales
 
-### Demos
-- [Free Version](https://nextjs-free-demo.tailadmin.com)
-- [Pro Version](https://nextjs-demo.tailadmin.com)
+### 👥 Gestion des Utilisateurs
+- **Système RBAC complet** avec 8 rôles prédéfinis et 47 permissions granulaires
+- **Authentification sécurisée** avec JWT et bcrypt
+- **Profils utilisateurs** avec photos et informations personnelles
+- **Gestion des sessions** et protection des routes
 
-### Other Versions
-- [HTML Version](https://github.com/TailAdmin/tailadmin-free-tailwind-dashboard-template)
-- [React Version](https://github.com/TailAdmin/free-react-tailwind-admin-dashboard)
-- [Vue.js Version](https://github.com/TailAdmin/vue-tailwind-admin-dashboard)
+### 🏢 Gestion Organisationnelle
+- **Gestion des départements** avec hiérarchie organisationnelle
+- **Gestion des postes** et des responsabilités
+- **Attribution des rôles** et permissions dynamiques
+- **Organigramme** et structure d'entreprise
 
-## Installation
+### 💰 Gestion Financière
+- **Suivi des salaires** et des primes
+- **Gestion des budgets** par département
+- **Rapports financiers** et analyses
+- **Historique des transactions**
 
-### Prerequisites
-To get started with TailAdmin, ensure you have the following prerequisites installed and set up:
+### 📋 Gestion des Demandes
+- **Demandes de congés** avec workflow d'approbation
+- **Demandes de formation** et développement
+- **Système de tickets** pour le support IT
+- **Notifications** en temps réel
 
-- Node.js 18.x or later (recommended to use Node.js 20.x or later)
+### 📊 Tableaux de Bord
+- **Dashboard administrateur** avec métriques clés
+- **Tableaux de bord** par rôle et département
+- **Graphiques interactifs** et statistiques
+- **Rapports exportables** en PDF/Excel
 
-### Cloning the Repository
-Clone the repository using the following command:
+## 🚀 Installation et Configuration
 
+### Prérequis
+- **Node.js** (version 18 ou supérieure)
+- **MySQL** (version 8.0 ou supérieure)
+- **npm** ou **yarn**
+
+### Installation
+
+1. **Cloner le repository**
 ```bash
-git clone https://github.com/TailAdmin/free-nextjs-admin-dashboard.git
+git clone https://github.com/mrgentil/hrms.git
+cd hrms
 ```
 
-> Windows Users: place the repository near the root of your drive if you face issues while cloning.
+2. **Installer les dépendances**
+```bash
+# Frontend et Backend
+npm install
+# ou
+yarn install
+```
 
-1. Install dependencies:
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
-    > Use `--legacy-peer-deps` flag if you face peer-dependency error during installation.
+3. **Configuration de la base de données**
+   - Créer une base de données MySQL nommée `hrms_db`
+   - Copier `.env.example` vers `.env`
+   - Configurer les variables d'environnement :
 
-2. Start the development server:
-    ```bash
-    npm run dev
-    # or
-    yarn dev
-    ```
+```env
+# Base de données
+DATABASE_URL="mysql://username:password@localhost:3306/hrms_db"
 
-## Components
+# JWT
+JWT_SECRET="your-super-secret-jwt-key"
+JWT_EXPIRES_IN="7d"
 
-TailAdmin is a pre-designed starting point for building a web-based dashboard using Next.js and Tailwind CSS. The template includes:
+# API
+API_BASE_URL="http://localhost:3001"
+NEXT_PUBLIC_API_URL="http://localhost:3001"
 
-- Sophisticated and accessible sidebar
-- Data visualization components
-- Profile management and custom 404 page
-- Tables and Charts(Line and Bar)
-- Authentication forms and input elements
-- Alerts, Dropdowns, Modals, Buttons and more
-- Can't forget Dark Mode 🕶️
+# Upload
+UPLOAD_DIR="./uploads"
+MAX_FILE_SIZE="5MB"
+```
 
-All components are built with React and styled using Tailwind CSS for easy customization.
+4. **Initialiser la base de données**
+```bash
+# Générer le client Prisma
+npx prisma generate
 
-## Feature Comparison
+# Exécuter les migrations
+npx prisma db push
 
-### Free Version
-- 1 Unique Dashboard
-- 30+ dashboard components
-- 50+ UI elements
-- Basic Figma design files
-- Community support
+# Seed de données initiales
+npm run seed
+```
 
-### Pro Version
-- 5 Unique Dashboards: Analytics, Ecommerce, Marketing, CRM, Stocks (more coming soon)
-- 400+ dashboard components and UI elements
-- Complete Figma design file
-- Email support
+5. **Lancer l'application**
+```bash
+# Démarrer le backend
+npm run backend
 
-To learn more about pro version features and pricing, visit our [pricing page](https://tailadmin.com/pricing).
+# Dans un autre terminal, démarrer le frontend
+npm run dev
+```
 
-## Changelog
+L'application sera accessible sur :
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
 
-### Version 2.0.2 - [March 25, 2025]
+## 👤 Comptes de Test
 
-- Upgraded to Next v15.2.3 for [CVE-2025-29927](https://nextjs.org/blog/cve-2025-29927) concerns
-- Included overrides vectormap for packages to prevent peer dependency errors during installation.
-- Migrated from react-flatpickr to flatpickr package for React 19 support
+Pour tester l'application, utilisez ces comptes prédéfinis :
 
-### Version 2.0.1 - [February 27, 2025]
+### Super Administrateur
+- **Email**: admin@hrms.com
+- **Mot de passe**: admin123
+- **Permissions**: Accès total au système
 
-#### Update Overview
+### Administrateur
+- **Email**: manager@hrms.com
+- **Mot de passe**: manager123
+- **Permissions**: Gestion globale
 
-- Upgraded to Tailwind CSS v4 for better performance and efficiency.
-- Updated class usage to match the latest syntax and features.
-- Replaced deprecated class and optimized styles.
+### RH Manager
+- **Email**: hr@hrms.com
+- **Mot de passe**: hr123
+- **Permissions**: Gestion RH complète
 
-#### Next Steps
+### Employé
+- **Email**: employee@hrms.com
+- **Mot de passe**: employee123
+- **Permissions**: Accès de base
 
-- Run npm install or yarn install to update dependencies.
-- Check for any style changes or compatibility issues.
-- Refer to the Tailwind CSS v4 [Migration Guide](https://tailwindcss.com/docs/upgrade-guide) on this release. if needed.
-- This update keeps the project up to date with the latest Tailwind improvements. 🚀
+## 📱 Utilisation
 
-### v2.0.0 (February 2025)
-A major update focused on Next.js 15 implementation and comprehensive redesign.
+### Interface Admin
+- **Dashboard principal** avec métriques et graphiques
+- **Gestion des utilisateurs** et attribution des rôles
+- **Configuration système** et paramètres globaux
+- **Rapports avancés** et analyses
 
-#### Major Improvements
-- Complete redesign using Next.js 15 App Router and React Server Components
-- Enhanced user interface with Next.js-optimized components
-- Improved responsiveness and accessibility
-- New features including collapsible sidebar, chat screens, and calendar
-- Redesigned authentication using Next.js App Router and server actions
-- Updated data visualization using ApexCharts for React
+### Interface Manager
+- **Gestion d'équipe** et validation des demandes
+- **Suivi des performances** et évaluations
+- **Planning** et organisation des ressources
+- **Budgets** et gestion financière
 
-#### Breaking Changes
+### Interface Employee
+- **Profil personnel** et informations
+- **Demandes** de congés et formations
+- **Consultation** des documents RH
+- **Communication** interne
 
-- Migrated from Next.js 14 to Next.js 15
-- Chart components now use ApexCharts for React
-- Authentication flow updated to use Server Actions and middleware
+## 🛠️ Scripts Disponibles
 
-[Read more](https://tailadmin.com/docs/update-logs/nextjs) on this release.
+```bash
+# Développement
+npm run dev          # Démarrer le frontend
+npm run backend      # Démarrer le backend
+npm run dev:full     # Démarrer frontend + backend
 
-#### Breaking Changes
-- Migrated from Next.js 14 to Next.js 15
-- Chart components now use ApexCharts for React
-- Authentication flow updated to use Server Actions and middleware
+# Base de données
+npm run db:generate  # Générer le client Prisma
+npm run db:push      # Pousser le schéma vers la DB
+npm run db:seed      # Insérer les données initiales
+npm run db:studio    # Ouvrir Prisma Studio
 
-### v1.3.4 (July 01, 2024)
-- Fixed JSvectormap rendering issues
+# Production
+npm run build        # Construire l'application
+npm run start        # Démarrer en production
+npm run lint         # Vérifier le code
+npm run test         # Exécuter les tests
+```
 
-### v1.3.3 (June 20, 2024)
-- Fixed build error related to Loader component
+## 📚 Documentation
 
-### v1.3.2 (June 19, 2024)
-- Added ClickOutside component for dropdown menus
-- Refactored sidebar components
-- Updated Jsvectormap package
+### Architecture du Système
+- **Frontend**: Next.js 15 avec App Router et Server Components
+- **Backend**: Express.js avec architecture REST API
+- **Base de données**: MySQL avec Prisma ORM
+- **Authentification**: JWT avec middleware de sécurité
+- **Permissions**: Système RBAC granulaire
 
-### v1.3.1 (Feb 12, 2024)
-- Fixed layout naming consistency
-- Updated styles
+### Structure du Projet
+```
+hrms/
+├── src/                    # Code source frontend
+│   ├── app/               # Pages Next.js (App Router)
+│   ├── components/        # Composants réutilisables
+│   ├── services/          # Services API
+│   ├── types/             # Types TypeScript
+│   └── lib/               # Utilitaires
+├── backend/               # Code source backend
+│   ├── controllers/       # Contrôleurs API
+│   ├── middleware/        # Middleware Express
+│   ├── models/           # Modèles Prisma
+│   ├── routes/           # Routes API
+│   └── utils/            # Utilitaires backend
+├── prisma/               # Configuration Prisma
+└── public/               # Assets statiques
+```
 
-### v1.3.0 (Feb 05, 2024)
-- Upgraded to Next.js 14
-- Added Flatpickr integration
-- Improved form elements
-- Enhanced multiselect functionality
-- Added default layout component
+### Système de Permissions
+Le système RBAC inclut 47 permissions granulaires organisées en catégories :
+- **Utilisateurs** : Création, modification, suppression, consultation
+- **Rôles** : Gestion des rôles et permissions
+- **Départements** : Gestion organisationnelle
+- **Finances** : Gestion budgétaire et salariale
+- **Rapports** : Génération et consultation des rapports
 
-## License
+## 🤝 Contribution
 
-TailAdmin Next.js Free Version is released under the MIT License.
+Les contributions sont les bienvenues ! Pour contribuer :
 
-## Support
+1. **Fork** le projet
+2. **Créer** une branche pour votre fonctionnalité (`git checkout -b feature/AmazingFeature`)
+3. **Commit** vos changements (`git commit -m 'Add some AmazingFeature'`)
+4. **Push** vers la branche (`git push origin feature/AmazingFeature`)
+5. **Ouvrir** une Pull Request
 
-If you find this project helpful, please consider giving it a star on GitHub. Your support helps us continue developing and maintaining this template.
+### Guidelines de Contribution
+- Suivre les conventions de code existantes
+- Ajouter des tests pour les nouvelles fonctionnalités
+- Mettre à jour la documentation si nécessaire
+- S'assurer que tous les tests passent
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+## 📞 Contact
+
+- **Développeur** : Mr. Gentil
+- **Email** : contact@mrgentil.dev
+- **GitHub** : [@mrgentil](https://github.com/mrgentil)
+- **Projet** : [https://github.com/mrgentil/hrms](https://github.com/mrgentil/hrms)
+
+---
+
+⭐ **Si ce projet vous aide, n'hésitez pas à lui donner une étoile sur GitHub !**

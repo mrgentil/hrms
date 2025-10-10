@@ -1,0 +1,585 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model application {
+  id               Int                @id @default(autoincrement())
+  reason           String?            @db.VarChar(255)
+  start_date       DateTime           @db.DateTime(0)
+  end_date         DateTime           @db.DateTime(0)
+  status           application_status @default(Pending)
+  type             application_type
+  user_id          Int
+  approver_user_id Int?
+  approved_at      DateTime?          @db.DateTime(0)
+  workflow_step    String?            @db.VarChar(255)
+  approver_comment String?            @db.Text
+  leave_type_id    Int?
+  created_at       DateTime           @db.DateTime(0)
+  updated_at       DateTime           @db.DateTime(0)
+  user             user               @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "application_ibfk_303")
+  leave_type       leave_type?        @relation(fields: [leave_type_id], references: [id], map: "application_ibfk_304")
+
+  @@index([leave_type_id], map: "leave_type_id")
+  @@index([user_id], map: "user_id")
+}
+
+model conversation {
+  id                       Int                        @id @default(autoincrement())
+  name                     String?                    @db.VarChar(255)
+  is_group                 Boolean                    @default(false)
+  created_by_user_id       Int
+  created_at               DateTime                   @db.DateTime(0)
+  updated_at               DateTime                   @db.DateTime(0)
+  user                     user                       @relation(fields: [created_by_user_id], references: [id], onDelete: NoAction, map: "conversation_ibfk_1")
+  conversation_participant conversation_participant[]
+  user_message             user_message[]
+
+  @@index([created_by_user_id], map: "created_by_user_id")
+}
+
+model conversation_participant {
+  id              Int          @id @default(autoincrement())
+  joined_at       DateTime     @db.DateTime(0)
+  left_at         DateTime?    @db.DateTime(0)
+  created_at      DateTime     @db.DateTime(0)
+  updated_at      DateTime     @db.DateTime(0)
+  conversation_id Int
+  user_id         Int
+  conversation    conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade, map: "conversation_participant_ibfk_285")
+  user            user         @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "conversation_participant_ibfk_286")
+
+  @@unique([conversation_id, user_id], map: "conversation_participant_user_id_conversation_id_unique")
+  @@index([user_id], map: "user_id")
+}
+
+model department {
+  id                                    Int                       @id @default(autoincrement())
+  department_name                       String                    @db.VarChar(255)
+  manager_user_id                       Int?
+  parent_department_id                  Int?
+  organization_id                       Int?
+  created_at                            DateTime                  @db.DateTime(0)
+  updated_at                            DateTime                  @db.DateTime(0)
+  user_department_manager_user_idTouser user?                     @relation("department_manager_user_idTouser", fields: [manager_user_id], references: [id], map: "department_ibfk_321")
+  department                            department?               @relation("departmentTodepartment", fields: [parent_department_id], references: [id], map: "department_ibfk_322")
+  other_department                      department[]              @relation("departmentTodepartment")
+  department_announcement               department_announcement[]
+  expense                               expense[]
+  position                              position[]
+  user_user_department_idTodepartment   user[]                    @relation("user_department_idTodepartment")
+
+  @@index([manager_user_id], map: "manager_user_id")
+  @@index([parent_department_id], map: "parent_department_id")
+}
+
+model department_announcement {
+  id                       Int         @id @default(autoincrement())
+  announcement_title       String      @db.VarChar(255)
+  announcement_description String?     @db.VarChar(255)
+  created_at               DateTime    @db.DateTime(0)
+  created_by_user_id       Int
+  department_id            Int?
+  user                     user        @relation(fields: [created_by_user_id], references: [id], onDelete: Cascade, map: "department_announcement_ibfk_307")
+  department               department? @relation(fields: [department_id], references: [id], map: "department_announcement_ibfk_308")
+
+  @@index([created_by_user_id], map: "created_by_user_id")
+  @@index([department_id], map: "department_id")
+}
+
+model employment_contract {
+  id                 Int                               @id @default(autoincrement())
+  contract_type      employment_contract_contract_type
+  start_date         DateTime                          @db.DateTime(0)
+  end_date           DateTime?                         @db.DateTime(0)
+  probation_end_date DateTime?                         @db.DateTime(0)
+  status             employment_contract_status        @default(DRAFT)
+  weekly_hours       Float?                            @db.Float
+  notes              String?                           @db.Text
+  created_at         DateTime                          @db.DateTime(0)
+  updated_at         DateTime                          @db.DateTime(0)
+  user_id            Int
+  user               user                              @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "employment_contract_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model expense {
+  id                 Int        @id @default(autoincrement())
+  expense_item_name  String     @db.VarChar(255)
+  expense_item_store String     @db.VarChar(255)
+  date               DateTime   @db.DateTime(0)
+  amount             Int
+  department_id      Int
+  user_id            Int?
+  department         department @relation(fields: [department_id], references: [id], onDelete: NoAction, map: "expense_ibfk_291")
+  user               user?      @relation(fields: [user_id], references: [id], map: "expense_ibfk_292")
+
+  @@index([department_id], map: "department_id")
+  @@index([user_id], map: "user_id")
+}
+
+model job {
+  id         Int       @id @default(autoincrement())
+  job_title  String    @db.VarChar(255)
+  start_date DateTime  @db.DateTime(0)
+  end_date   DateTime  @db.DateTime(0)
+  user_id    Int
+  user       user      @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "job_ibfk_1")
+  payment    payment[]
+
+  @@index([user_id], map: "user_id")
+}
+
+model leave_balance {
+  id                Int        @id @default(autoincrement())
+  year              Int
+  days_accrued      Float      @default(0) @db.Float
+  days_used         Float      @default(0) @db.Float
+  days_carried_over Float      @default(0) @db.Float
+  created_at        DateTime   @db.DateTime(0)
+  updated_at        DateTime   @db.DateTime(0)
+  user_id           Int
+  leave_type_id     Int
+  user              user       @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "leave_balance_ibfk_297")
+  leave_type        leave_type @relation(fields: [leave_type_id], references: [id], onDelete: Cascade, map: "leave_balance_ibfk_298")
+
+  @@index([leave_type_id], map: "leave_type_id")
+  @@index([user_id], map: "user_id")
+}
+
+model leave_type {
+  id                Int             @id @default(autoincrement())
+  name              String          @db.VarChar(255)
+  description       String?         @db.Text
+  requires_approval Boolean         @default(true)
+  default_allowance Float?          @db.Float
+  created_at        DateTime        @db.DateTime(0)
+  updated_at        DateTime        @db.DateTime(0)
+  application       application[]
+  leave_balance     leave_balance[]
+}
+
+model payment {
+  id             Int                  @id @default(autoincrement())
+  payment_type   payment_payment_type
+  payment_month  DateTime             @db.DateTime(0)
+  payment_date   DateTime             @db.DateTime(0)
+  payment_fine   Int?
+  payment_amount Int
+  comments       String?              @db.VarChar(255)
+  job_id         Int?
+  job            job?                 @relation(fields: [job_id], references: [id], onDelete: Cascade, map: "payment_ibfk_1")
+
+  @@index([job_id], map: "job_id")
+}
+
+model permission {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique(map: "name") @db.VarChar(255)
+  description     String?           @db.Text
+  created_at      DateTime          @db.DateTime(0)
+  updated_at      DateTime          @db.DateTime(0)
+  role_permission role_permission[]
+}
+
+model position {
+  id            Int         @id @default(autoincrement())
+  title         String      @db.VarChar(255)
+  level         String?     @db.VarChar(255)
+  description   String?     @db.Text
+  created_at    DateTime    @db.DateTime(0)
+  updated_at    DateTime    @db.DateTime(0)
+  department_id Int?
+  department    department? @relation(fields: [department_id], references: [id], map: "position_ibfk_1")
+  user          user[]
+
+  @@index([department_id], map: "department_id")
+}
+
+model project {
+  id             Int              @id @default(autoincrement())
+  name           String           @db.VarChar(255)
+  description    String?          @db.Text
+  status         project_status   @default(PLANNED)
+  start_date     DateTime?        @db.DateTime(0)
+  end_date       DateTime?        @db.DateTime(0)
+  owner_user_id  Int?
+  created_at     DateTime         @db.DateTime(0)
+  updated_at     DateTime         @db.DateTime(0)
+  user           user?            @relation(fields: [owner_user_id], references: [id], map: "project_ibfk_1")
+  project_member project_member[]
+  task           task[]
+  task_board     task_board[]
+
+  @@index([owner_user_id], map: "owner_user_id")
+}
+
+model project_member {
+  id         Int      @id @default(autoincrement())
+  role       String?  @db.VarChar(255)
+  created_at DateTime @db.DateTime(0)
+  updated_at DateTime @db.DateTime(0)
+  user_id    Int
+  project_id Int
+  user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "project_member_ibfk_279")
+  project    project  @relation(fields: [project_id], references: [id], onDelete: Cascade, map: "project_member_ibfk_280")
+
+  @@unique([user_id, project_id], map: "project_member_project_id_user_id_unique")
+  @@index([project_id], map: "project_id")
+}
+
+model role {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique(map: "name") @db.VarChar(255)
+  description     String?           @db.Text
+  permissions     Json?             // Stockage des permissions en JSON
+  color           String?           @db.VarChar(7) // Code couleur hex
+  icon            String?           @db.VarChar(10) // Emoji ou icône
+  is_system       Boolean           @default(false) // Rôle système non modifiable
+  created_at      DateTime          @db.DateTime(0)
+  updated_at      DateTime          @db.DateTime(0)
+  role_permission role_permission[]
+  user_role       user_role[]
+  users           user[]            // Relation avec les utilisateurs
+}
+
+model role_permission {
+  id            Int         @id @default(autoincrement())
+  created_at    DateTime    @db.DateTime(0)
+  updated_at    DateTime    @db.DateTime(0)
+  role_id       Int?
+  permission_id Int?
+  role          role?       @relation(fields: [role_id], references: [id], onDelete: Cascade, map: "role_permission_ibfk_123")
+  permission    permission? @relation(fields: [permission_id], references: [id], onDelete: Cascade, map: "role_permission_ibfk_124")
+
+  @@unique([role_id, permission_id], map: "role_permission_permission_id_role_id_unique")
+  @@index([permission_id], map: "permission_id")
+}
+
+model task {
+  id                                 Int               @id @default(autoincrement())
+  title                              String            @db.VarChar(255)
+  description                        String?           @db.Text
+  status                             task_status       @default(TODO)
+  priority                           task_priority     @default(MEDIUM)
+  start_date                         DateTime?         @db.DateTime(0)
+  due_date                           DateTime?         @db.DateTime(0)
+  completed_at                       DateTime?         @db.DateTime(0)
+  created_by_user_id                 Int
+  updated_by_user_id                 Int?
+  created_at                         DateTime          @db.DateTime(0)
+  updated_at                         DateTime          @db.DateTime(0)
+  task_column_id                     Int
+  project_id                         Int
+  user_task_created_by_user_idTouser user              @relation("task_created_by_user_idTouser", fields: [created_by_user_id], references: [id], onDelete: Cascade, map: "task_ibfk_548")
+  user_task_updated_by_user_idTouser user?             @relation("task_updated_by_user_idTouser", fields: [updated_by_user_id], references: [id], map: "task_ibfk_549")
+  task_column                        task_column       @relation(fields: [task_column_id], references: [id], onDelete: Cascade, map: "task_ibfk_550")
+  project                            project           @relation(fields: [project_id], references: [id], onDelete: Cascade, map: "task_ibfk_551")
+  task_assignment                    task_assignment[]
+
+  @@index([created_by_user_id], map: "created_by_user_id")
+  @@index([project_id], map: "project_id")
+  @@index([task_column_id], map: "task_column_id")
+  @@index([updated_by_user_id], map: "updated_by_user_id")
+}
+
+model task_assignment {
+  id          Int      @id @default(autoincrement())
+  role        String?  @db.VarChar(255)
+  assigned_at DateTime @db.DateTime(0)
+  created_at  DateTime @db.DateTime(0)
+  updated_at  DateTime @db.DateTime(0)
+  user_id     Int
+  task_id     Int
+  user        user     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "task_assignment_ibfk_271")
+  task        task     @relation(fields: [task_id], references: [id], onDelete: Cascade, map: "task_assignment_ibfk_272")
+
+  @@index([task_id], map: "task_id")
+  @@index([user_id], map: "user_id")
+}
+
+model task_board {
+  id          Int           @id @default(autoincrement())
+  name        String        @db.VarChar(255)
+  created_at  DateTime      @db.DateTime(0)
+  updated_at  DateTime      @db.DateTime(0)
+  project_id  Int
+  project     project       @relation(fields: [project_id], references: [id], onDelete: Cascade, map: "task_board_ibfk_1")
+  task_column task_column[]
+
+  @@index([project_id], map: "project_id")
+}
+
+model task_column {
+  id            Int        @id @default(autoincrement())
+  name          String     @db.VarChar(255)
+  sort_order    Int        @default(0)
+  created_at    DateTime   @db.DateTime(0)
+  updated_at    DateTime   @db.DateTime(0)
+  task_board_id Int
+  task          task[]
+  task_board    task_board @relation(fields: [task_board_id], references: [id], onDelete: Cascade, map: "task_column_ibfk_1")
+
+  @@index([task_board_id], map: "task_board_id")
+}
+
+model user {
+  id                                                    Int                        @id @default(autoincrement())
+  username                                              String                     @unique(map: "user_username_unique") @db.VarChar(255)
+  password                                              String                     @db.VarChar(255)
+  full_name                                             String                     @db.VarChar(255)
+  role                                                  UserRole                   // ⚠️ DEPRECATED - À supprimer après migration
+  role_id                                               Int?                       // Nouveau système de rôles
+  active                                                Boolean                    @default(true)
+  department_id                                         Int?
+  work_email                                            String?                    @db.VarChar(255)
+  hire_date                                             DateTime?                  @db.DateTime(0)
+  termination_date                                      DateTime?                  @db.DateTime(0)
+  profile_photo_url                                     String?                    @db.VarChar(255)
+  manager_user_id                                       Int?
+  position_id                                           Int?
+  created_at                                            DateTime                   @db.DateTime(0)
+  updated_at                                            DateTime                   @db.DateTime(0)
+  application                                           application[]
+  conversation                                          conversation[]
+  conversation_participant                              conversation_participant[]
+  department_department_manager_user_idTouser           department[]               @relation("department_manager_user_idTouser")
+  department_announcement                               department_announcement[]
+  employment_contract                                   employment_contract[]
+  expense                                               expense[]
+  job                                                   job[]
+  leave_balance                                         leave_balance[]
+  project                                               project[]
+  project_member                                        project_member[]
+  task_task_created_by_user_idTouser                    task[]                     @relation("task_created_by_user_idTouser")
+  task_task_updated_by_user_idTouser                    task[]                     @relation("task_updated_by_user_idTouser")
+  task_assignment                                       task_assignment[]
+  department_user_department_idTodepartment             department?                @relation("user_department_idTodepartment", fields: [department_id], references: [id], map: "user_ibfk_517")
+  user                                                  user?                      @relation("userTouser", fields: [manager_user_id], references: [id], map: "user_ibfk_518")
+  other_user                                            user[]                     @relation("userTouser")
+  position                                              position?                  @relation(fields: [position_id], references: [id], map: "user_ibfk_519")
+  role_relation                                         role?                      @relation(fields: [role_id], references: [id], map: "user_role_fk")
+  user_document_user_document_uploaded_by_user_idTouser user_document[]            @relation("user_document_uploaded_by_user_idTouser")
+  user_document_user_document_user_idTouser             user_document[]            @relation("user_document_user_idTouser")
+  user_employment_history                               user_employment_history[]
+  user_financial_info                                   user_financial_info[]
+  user_message_user_message_sender_user_idTouser        user_message[]             @relation("user_message_sender_user_idTouser")
+  user_message_user_message_recipient_user_idTouser     user_message[]             @relation("user_message_recipient_user_idTouser")
+  user_personal_event                                   user_personal_event[]
+  user_personal_info                                    user_personal_info[]
+  user_role                                             user_role[]
+
+  @@index([department_id], map: "department_id")
+  @@index([manager_user_id], map: "manager_user_id")
+  @@index([position_id], map: "position_id")
+  @@index([role_id], map: "role_id")
+}
+
+model user_document {
+  id                                           Int       @id @default(autoincrement())
+  name                                         String    @db.VarChar(255)
+  document_type                                String?   @db.VarChar(255)
+  file_path                                    String    @db.VarChar(255)
+  is_confidential                              Boolean   @default(false)
+  uploaded_by_user_id                          Int
+  description                                  String?   @db.Text
+  expires_at                                   DateTime? @db.DateTime(0)
+  created_at                                   DateTime  @db.DateTime(0)
+  updated_at                                   DateTime  @db.DateTime(0)
+  user_id                                      Int
+  user_user_document_uploaded_by_user_idTouser user      @relation("user_document_uploaded_by_user_idTouser", fields: [uploaded_by_user_id], references: [id], onDelete: NoAction, map: "user_document_ibfk_1")
+  user_user_document_user_idTouser             user      @relation("user_document_user_idTouser", fields: [user_id], references: [id], onDelete: Cascade, map: "user_document_ibfk_2")
+
+  @@index([uploaded_by_user_id], map: "uploaded_by_user_id")
+  @@index([user_id], map: "user_id")
+}
+
+model user_employment_history {
+  id             Int      @id @default(autoincrement())
+  change_type    String   @db.VarChar(255)
+  effective_date DateTime @db.DateTime(0)
+  notes          String?  @db.Text
+  created_at     DateTime @db.DateTime(0)
+  updated_at     DateTime @db.DateTime(0)
+  user_id        Int
+  user           user     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_employment_history_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model user_financial_info {
+  id                       Int                                  @id @default(autoincrement())
+  employment_type          user_financial_info_employment_type?
+  salary_basic             Int?
+  salary_gross             Int?
+  salary_net               Int?
+  allowance_house_rent     Int?
+  allowance_medical        Int?
+  allowance_special        Int?
+  allowance_fuel           Int?
+  allowance_phone_bill     Int?
+  allowance_other          Int?
+  allowance_total          Int?
+  deduction_provident_fund Int?
+  deduction_tax            Int?
+  deduction_other          Int?
+  deduction_total          Int?
+  bank_name                String?                              @db.VarChar(255)
+  account_name             String?                              @db.VarChar(255)
+  account_number           String?                              @db.VarChar(255)
+  iban                     String?                              @db.VarChar(255)
+  user_id                  Int
+  user                     user                                 @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_financial_info_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model user_message {
+  id                                        Int           @id @default(autoincrement())
+  text                                      String        @db.Text
+  sender_user_id                            Int
+  recipient_user_id                         Int?
+  conversation_id                           Int?
+  is_read                                   Boolean       @default(false)
+  read_at                                   DateTime?     @db.DateTime(0)
+  created_at                                DateTime      @db.DateTime(0)
+  updated_at                                DateTime      @db.DateTime(0)
+  user_user_message_sender_user_idTouser    user          @relation("user_message_sender_user_idTouser", fields: [sender_user_id], references: [id], onDelete: Cascade, map: "user_message_ibfk_436")
+  user_user_message_recipient_user_idTouser user?         @relation("user_message_recipient_user_idTouser", fields: [recipient_user_id], references: [id], map: "user_message_ibfk_437")
+  conversation                              conversation? @relation(fields: [conversation_id], references: [id], onDelete: Cascade, map: "user_message_ibfk_438")
+
+  @@index([conversation_id], map: "conversation_id")
+  @@index([recipient_user_id], map: "recipient_user_id")
+  @@index([sender_user_id], map: "sender_user_id")
+}
+
+model user_personal_event {
+  id                Int       @id @default(autoincrement())
+  event_title       String    @db.VarChar(255)
+  event_description String?   @db.VarChar(255)
+  event_start_date  DateTime  @db.DateTime(0)
+  event_end_date    DateTime? @db.DateTime(0)
+  user_id           Int
+  user              user      @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_personal_event_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model user_personal_info {
+  id             Int                                @id @default(autoincrement())
+  date_of_birth  DateTime?                          @db.DateTime(0)
+  gender         user_personal_info_gender?
+  marital_status user_personal_info_marital_status?
+  father_name    String?                            @db.VarChar(255)
+  id_number      String?                            @db.VarChar(255)
+  address        String?                            @db.VarChar(255)
+  city           String?                            @db.VarChar(255)
+  country        String?                            @db.VarChar(255)
+  mobile         String?                            @db.VarChar(255)
+  phone          String?                            @db.VarChar(255)
+  email_address  String?                            @db.VarChar(255)
+  user_id        Int
+  user           user                               @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_personal_info_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model user_role {
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @db.DateTime(0)
+  updated_at DateTime @db.DateTime(0)
+  user_id    Int?
+  role_id    Int?
+  user       user?    @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_role_ibfk_123")
+  role       role?    @relation(fields: [role_id], references: [id], onDelete: Cascade, map: "user_role_ibfk_124")
+
+  @@unique([user_id, role_id], map: "user_role_role_id_user_id_unique")
+  @@index([role_id], map: "role_id")
+}
+
+enum employment_contract_contract_type {
+  PERMANENT
+  FIXED_TERM
+  INTERNSHIP
+  CONTRACTOR
+}
+
+enum payment_payment_type {
+  Check
+  Bank_Transfer @map("Bank Transfer")
+  Cash
+}
+
+enum user_financial_info_employment_type {
+  Full_Time @map("Full Time")
+  Part_Time @map("Part Time")
+}
+
+enum user_personal_info_gender {
+  Male
+  Female
+}
+
+enum project_status {
+  PLANNED
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  ARCHIVED
+}
+
+enum task_status {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+  ARCHIVED
+}
+
+enum user_personal_info_marital_status {
+  Married
+  Single
+  Widowed
+}
+
+enum application_status {
+  Approved
+  Rejected
+  Pending
+  Cancelled
+}
+
+enum task_priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum UserRole {
+  ROLE_ADMIN
+  ROLE_MANAGER
+  ROLE_EMPLOYEE
+  ROLE_SUPER_ADMIN
+  ROLE_HR
+}
+
+enum application_type {
+  Normal
+  Student
+  Illness
+  Marriage
+}
+
+enum employment_contract_status {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
