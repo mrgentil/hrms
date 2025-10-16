@@ -514,7 +514,7 @@ export class RolesService {
           SYSTEM_PERMISSIONS.POSITIONS_EDIT,
           SYSTEM_PERMISSIONS.POSITIONS_DELETE,
         ];
-      case UserRole.ROLE_HR:
+      case UserRole.ROLE_RH:
         return [
           SYSTEM_PERMISSIONS.USERS_VIEW,
           SYSTEM_PERMISSIONS.USERS_CREATE,

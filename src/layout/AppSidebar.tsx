@@ -1,408 +1,1328 @@
 "use client";
-import React, { useEffect, useRef, useState,useCallback } from "react";
+
+import React, {
+
+  useCallback,
+
+  useEffect,
+
+  useMemo,
+
+  useRef,
+
+  useState,
+
+} from "react";
+
 import Link from "next/link";
+
 import Image from "next/image";
+
 import { usePathname } from "next/navigation";
+
 import { useSidebar } from "../context/SidebarContext";
+
+import { useUserRole } from "@/hooks/useUserRole";
+
+import EmployeeNavigation from "@/components/Sidebar/EmployeeNavigation";
+
 import {
-  BoxCubeIcon,
+
   CalenderIcon,
+
   ChevronDownIcon,
+
   GridIcon,
+
   HorizontaLDots,
-  ListIcon,
-  PageIcon,
+
   PieChartIcon,
+
   PlugInIcon,
-  TableIcon,
-  UserCircleIcon,
+
   UserIcon,
+
   GroupIcon,
+
   TaskIcon,
+
   DollarLineIcon,
+
   ChatIcon,
+
 } from "../icons/index";
+
 import SidebarWidget from "./SidebarWidget";
 
-type NavItem = {
+
+
+type RoleCode =
+
+  | "ROLE_EMPLOYEE"
+
+  | "ROLE_MANAGER"
+
+  | "ROLE_RH"
+
+  | "ROLE_ADMIN"
+
+  | "ROLE_SUPER_ADMIN";
+
+
+
+type NavSubItem = {
+
   name: string;
-  icon: React.ReactNode;
-  path?: string;
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
+
+  path: string;
+
+  pro?: boolean;
+
+  new?: boolean;
+
+  allowedRoles?: RoleCode[];
+
 };
 
-const navItems: NavItem[] = [
+
+
+type NavItem = {
+
+  name: string;
+
+  icon: React.ReactNode;
+
+  path?: string;
+
+  allowedRoles?: RoleCode[];
+
+  subItems?: NavSubItem[];
+
+};
+
+
+
+const mainNavItems: NavItem[] = [
+
   {
+
     icon: <GridIcon />,
+
     name: "Dashboard",
+
     path: "/",
+
+    allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
   },
+
   {
+
     icon: <UserIcon />,
+
     name: "Gestion Utilisateurs",
+
+    allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
     subItems: [
-      { name: "Liste Utilisateurs", path: "/users", pro: false },
-      { name: "Profils", path: "/users/profiles", pro: false },
-      { name: "Rôles & Permissions", path: "/users/roles", pro: false },
-      { name: "Documents", path: "/users/documents", pro: false },
+
+      {
+
+        name: "Liste Utilisateurs",
+
+        path: "/users",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Profils",
+
+        path: "/users/profiles",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Rles & Permissions",
+
+        path: "/users/roles",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Documents",
+
+        path: "/users/documents",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
     ],
+
   },
+
   {
+
     icon: <GroupIcon />,
+
     name: "Organisation",
+
+    allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
     subItems: [
-      { name: "Départements", path: "/departments", pro: false },
-      { name: "Postes", path: "/positions", pro: false },
-      { name: "Contrats", path: "/contracts", pro: false },
-      { name: "Annonces", path: "/announcements", pro: false },
+
+      {
+
+        name: "Dpartements",
+
+        path: "/departments",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Postes",
+
+        path: "/positions",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Contrats",
+
+        path: "/contracts",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Annonces",
+
+        path: "/announcements",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
     ],
+
   },
+
   {
+
     icon: <CalenderIcon />,
-    name: "Congés & Absences",
+
+    name: "Congs & Absences",
+
+    allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
     subItems: [
-      { name: "Demandes de Congés", path: "/leave/applications", pro: false },
-      { name: "Types de Congés", path: "/leave/types", pro: false },
-      { name: "Soldes de Congés", path: "/leave/balances", pro: false },
-      { name: "Calendrier", path: "/calendar", pro: false },
+
+      {
+
+        name: "Demandes de Congs",
+
+        path: "/leave/applications",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Types de Congs",
+
+        path: "/leave/types",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Soldes de Congs",
+
+        path: "/leave/balances",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Validation des Congs",
+
+        path: "/leaves/review",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Calendrier",
+
+        path: "/calendar",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
     ],
+
   },
+
   {
+
     icon: <TaskIcon />,
-    name: "Projets & Tâches",
+
+    name: "Projets & Tches",
+
+    allowedRoles: ["ROLE_MANAGER", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
     subItems: [
-      { name: "Projets", path: "/projects", pro: false },
-      { name: "Tâches", path: "/tasks", pro: false },
-      { name: "Tableaux Kanban", path: "/task-boards", pro: false },
-      { name: "Membres Projets", path: "/project-members", pro: false },
+
+      {
+
+        name: "Projets",
+
+        path: "/projects",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Tches",
+
+        path: "/tasks",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Tableaux Kanban",
+
+        path: "/task-boards",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Membres Projets",
+
+        path: "/project-members",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
     ],
+
   },
+
 ];
 
-const othersItems: NavItem[] = [
+
+
+const advancedNavItems: NavItem[] = [
+
   {
+
     icon: <DollarLineIcon />,
+
     name: "Finances & Paie",
+
+    allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
     subItems: [
-      { name: "Informations Financières", path: "/finance/info", pro: false },
-      { name: "Paiements", path: "/finance/payments", pro: false },
-      { name: "Dépenses", path: "/finance/expenses", pro: false },
-      { name: "Emplois", path: "/finance/jobs", pro: false },
+
+      {
+
+        name: "Informations Financires",
+
+        path: "/finance/info",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Paiements",
+
+        path: "/finance/payments",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Dpenses",
+
+        path: "/finance/expenses",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Emplois",
+
+        path: "/finance/jobs",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
     ],
+
   },
+
   {
+
     icon: <ChatIcon />,
+
     name: "Communication",
+
+    allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
     subItems: [
-      { name: "Messages", path: "/messages", pro: false },
-      { name: "Conversations", path: "/conversations", pro: false },
-      { name: "Événements Personnels", path: "/personal-events", pro: false },
+
+      {
+
+        name: "Messages",
+
+        path: "/messages",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Conversations",
+
+        path: "/conversations",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "vnements Personnels",
+
+        path: "/personal-events",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
     ],
+
   },
+
   {
+
     icon: <PieChartIcon />,
+
     name: "Rapports & Analytics",
+
+    allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
     subItems: [
-      { name: "Tableau de Bord RH", path: "/reports/hr", pro: false },
-      { name: "Statistiques Congés", path: "/reports/leave", pro: false },
-      { name: "Performance Projets", path: "/reports/projects", pro: false },
+
+      {
+
+        name: "Tableau de Bord RH",
+
+        path: "/reports/hr",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Statistiques Congs",
+
+        path: "/reports/leave",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Performance Projets",
+
+        path: "/reports/projects",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
     ],
+
   },
+
   {
+
     icon: <PlugInIcon />,
+
     name: "Administration",
+
+    allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
     subItems: [
-      { name: "Paramètres Système", path: "/admin/settings", pro: false },
-      { name: "Authentification", path: "/signin", pro: false },
-      { name: "Logs & Audit", path: "/admin/logs", pro: false },
+
+      {
+
+        name: "Paramtres Systme",
+
+        path: "/admin/settings",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Authentification",
+
+        path: "/signin",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Logs & Audit",
+
+        path: "/admin/logs",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
     ],
+
   },
+
 ];
+
+
 
 const AppSidebar: React.FC = () => {
+
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+
   const pathname = usePathname();
 
-  const renderMenuItems = (
-    navItems: NavItem[],
-    menuType: "main" | "others"
-  ) => (
-    <ul className="flex flex-col gap-4">
-      {navItems.map((nav, index) => (
-        <li key={nav.name}>
-          {nav.subItems ? (
-            <button
-              onClick={() => handleSubmenuToggle(index, menuType)}
-              className={`menu-item group  ${
-                openSubmenu?.type === menuType && openSubmenu?.index === index
-                  ? "menu-item-active"
-                  : "menu-item-inactive"
-              } cursor-pointer ${
-                !isExpanded && !isHovered
-                  ? "lg:justify-center"
-                  : "lg:justify-start"
-              }`}
-            >
-              <span
-                className={` ${
-                  openSubmenu?.type === menuType && openSubmenu?.index === index
-                    ? "menu-item-icon-active"
-                    : "menu-item-icon-inactive"
-                }`}
-              >
-                {nav.icon}
-              </span>
-              {(isExpanded || isHovered || isMobileOpen) && (
-                <span className={`menu-item-text`}>{nav.name}</span>
-              )}
-              {(isExpanded || isHovered || isMobileOpen) && (
-                <ChevronDownIcon
-                  className={`ml-auto w-5 h-5 transition-transform duration-200  ${
-                    openSubmenu?.type === menuType &&
-                    openSubmenu?.index === index
-                      ? "rotate-180 text-brand-500"
-                      : ""
-                  }`}
-                />
-              )}
-            </button>
-          ) : (
-            nav.path && (
-              <Link
-                href={nav.path}
-                className={`menu-item group ${
-                  isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
-                }`}
-              >
-                <span
-                  className={`${
-                    isActive(nav.path)
-                      ? "menu-item-icon-active"
-                      : "menu-item-icon-inactive"
-                  }`}
-                >
-                  {nav.icon}
-                </span>
-                {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className={`menu-item-text`}>{nav.name}</span>
-                )}
-              </Link>
-            )
-          )}
-          {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
-            <div
-              ref={(el) => {
-                subMenuRefs.current[`${menuType}-${index}`] = el;
-              }}
-              className="overflow-hidden transition-all duration-300"
-              style={{
-                height:
-                  openSubmenu?.type === menuType && openSubmenu?.index === index
-                    ? `${subMenuHeight[`${menuType}-${index}`]}px`
-                    : "0px",
-              }}
-            >
-              <ul className="mt-2 space-y-1 ml-9">
-                {nav.subItems.map((subItem) => (
-                  <li key={subItem.name}>
-                    <Link
-                      href={subItem.path}
-                      className={`menu-dropdown-item ${
-                        isActive(subItem.path)
-                          ? "menu-dropdown-item-active"
-                          : "menu-dropdown-item-inactive"
-                      }`}
-                    >
-                      {subItem.name}
-                      <span className="flex items-center gap-1 ml-auto">
-                        {subItem.new && (
-                          <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge `}
-                          >
-                            new
-                          </span>
-                        )}
-                        {subItem.pro && (
-                          <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge `}
-                          >
-                            pro
-                          </span>
-                        )}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
+  const { role: userRole, loading: roleLoading } = useUserRole();
+
+  const isEmployeeOnly = userRole?.role === "ROLE_EMPLOYEE";
+
+
 
   const [openSubmenu, setOpenSubmenu] = useState<{
+
     type: "main" | "others";
+
     index: number;
+
   } | null>(null);
+
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
-    {}
+
+    {},
+
   );
+
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // const isActive = (path: string) => path === pathname;
-   const isActive = useCallback((path: string) => path === pathname, [pathname]);
+
+
+  const isRoleAllowed = useCallback(
+
+    (allowedRoles?: RoleCode[]) => {
+
+      if (!allowedRoles || allowedRoles.length === 0) {
+
+        return true;
+
+      }
+
+
+
+      if (!userRole) {
+
+        return false;
+
+      }
+
+
+
+      if (userRole.isSuperAdmin) {
+
+        return true;
+
+      }
+
+
+
+      return allowedRoles.includes(userRole.role);
+
+    },
+
+    [userRole],
+
+  );
+
+
+
+  const filterNavItems = useCallback(
+
+    (items: NavItem[]) =>
+
+      items.reduce<NavItem[]>((visible, item) => {
+
+        if (!isRoleAllowed(item.allowedRoles)) {
+
+          return visible;
+
+        }
+
+
+
+        if (item.subItems) {
+
+          const filteredSubItems = item.subItems.filter((sub) =>
+
+            isRoleAllowed(sub.allowedRoles),
+
+          );
+
+
+
+          if (filteredSubItems.length === 0) {
+
+            return visible;
+
+          }
+
+
+
+          visible.push({
+
+            ...item,
+
+            subItems: filteredSubItems,
+
+          });
+
+          return visible;
+
+        }
+
+
+
+        visible.push(item);
+
+        return visible;
+
+      }, []),
+
+    [isRoleAllowed],
+
+  );
+
+
+
+  const visibleMainNavItems = useMemo(
+
+    () => filterNavItems(mainNavItems),
+
+    [filterNavItems],
+
+  );
+
+
+
+  const visibleAdvancedNavItems = useMemo(
+
+    () => filterNavItems(advancedNavItems),
+
+    [filterNavItems],
+
+  );
+
+
+
+  const isActive = useCallback(
+
+    (path: string) => pathname === path,
+
+    [pathname],
+
+  );
+
+
 
   useEffect(() => {
-    // Check if the current path matches any submenu item
+
+    if (isEmployeeOnly) {
+
+      setOpenSubmenu(null);
+
+      return;
+
+    }
+
+
+
     let submenuMatched = false;
-    ["main", "others"].forEach((menuType) => {
-      const items = menuType === "main" ? navItems : othersItems;
-      items.forEach((nav, index) => {
-        if (nav.subItems) {
-          nav.subItems.forEach((subItem) => {
-            if (isActive(subItem.path)) {
-              setOpenSubmenu({
-                type: menuType as "main" | "others",
-                index,
-              });
-              submenuMatched = true;
-            }
-          });
-        }
+
+    const menuMap: Record<"main" | "others", NavItem[]> = {
+
+      main: visibleMainNavItems,
+
+      others: visibleAdvancedNavItems,
+
+    };
+
+
+
+    (Object.keys(menuMap) as Array<"main" | "others">).forEach((menuType) => {
+
+      menuMap[menuType].forEach((nav, index) => {
+
+        nav.subItems?.forEach((subItem) => {
+
+          if (isActive(subItem.path)) {
+
+            setOpenSubmenu({ type: menuType, index });
+
+            submenuMatched = true;
+
+          }
+
+        });
+
       });
+
     });
 
-    // If no submenu item matches, close the open submenu
+
+
     if (!submenuMatched) {
+
       setOpenSubmenu(null);
+
     }
-  }, [pathname,isActive]);
+
+  }, [isEmployeeOnly, isActive, visibleMainNavItems, visibleAdvancedNavItems]);
+
+
 
   useEffect(() => {
-    // Set the height of the submenu items when the submenu is opened
+
     if (openSubmenu !== null) {
+
       const key = `${openSubmenu.type}-${openSubmenu.index}`;
+
       if (subMenuRefs.current[key]) {
-        setSubMenuHeight((prevHeights) => ({
-          ...prevHeights,
+
+        setSubMenuHeight((prev) => ({
+
+          ...prev,
+
           [key]: subMenuRefs.current[key]?.scrollHeight || 0,
+
         }));
+
       }
+
     }
+
   }, [openSubmenu]);
 
+
+
   const handleSubmenuToggle = (index: number, menuType: "main" | "others") => {
-    setOpenSubmenu((prevOpenSubmenu) => {
-      if (
-        prevOpenSubmenu &&
-        prevOpenSubmenu.type === menuType &&
-        prevOpenSubmenu.index === index
-      ) {
+
+    setOpenSubmenu((prev) => {
+
+      if (prev && prev.type === menuType && prev.index === index) {
+
         return null;
+
       }
+
       return { type: menuType, index };
+
     });
+
   };
 
-  return (
-    <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
-        ${
-          isExpanded || isMobileOpen
-            ? "w-[290px]"
-            : isHovered
-            ? "w-[290px]"
-            : "w-[90px]"
-        }
-        ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-        lg:translate-x-0`}
-      onMouseEnter={() => !isExpanded && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div
-        className={`py-8 flex  ${
-          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-        }`}
-      >
-        <Link href="/">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <Image
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <Image
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
-          ) : (
-            <Image
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
-          )}
-        </Link>
-      </div>
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
-        <nav className="mb-6">
-          <div className="flex flex-col gap-4">
-            <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
+
+
+  const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
+
+    <ul className="flex flex-col gap-4">
+
+      {items.map((nav, index) => (
+
+        <li key={`${nav.name}-${index}`}>
+
+          {nav.subItems ? (
+
+            <button
+
+              onClick={() => handleSubmenuToggle(index, menuType)}
+
+              className={`menu-item group ${
+
+                openSubmenu?.type === menuType && openSubmenu?.index === index
+
+                  ? "menu-item-active"
+
+                  : "menu-item-inactive"
+
+              } cursor-pointer ${
+
+                !isExpanded && !isHovered
+
+                  ? "lg:justify-center"
+
+                  : "lg:justify-start"
+
+              }`}
+
+            >
+
+              <span
+
+                className={`${
+
+                  openSubmenu?.type === menuType && openSubmenu?.index === index
+
+                    ? "menu-item-icon-active"
+
+                    : "menu-item-icon-inactive"
+
                 }`}
+
               >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Gestion RH"
-                ) : (
-                  <HorizontaLDots />
+
+                {nav.icon}
+
+              </span>
+
+              {(isExpanded || isHovered || isMobileOpen) && (
+
+                <span className="menu-item-text">{nav.name}</span>
+
+              )}
+
+              {(isExpanded || isHovered || isMobileOpen) && (
+
+                <ChevronDownIcon
+
+                  className={`ml-auto h-5 w-5 transition-transform duration-200 ${
+
+                    openSubmenu?.type === menuType &&
+
+                    openSubmenu?.index === index
+
+                      ? "rotate-180 text-brand-500"
+
+                      : ""
+
+                  }`}
+
+                />
+
+              )}
+
+            </button>
+
+          ) : (
+
+            nav.path && (
+
+              <Link
+
+                href={nav.path}
+
+                className={`menu-item group ${
+
+                  isActive(nav.path)
+
+                    ? "menu-item-active"
+
+                    : "menu-item-inactive"
+
+                }`}
+
+              >
+
+                <span
+
+                  className={`${
+
+                    isActive(nav.path)
+
+                      ? "menu-item-icon-active"
+
+                      : "menu-item-icon-inactive"
+
+                  }`}
+
+                >
+
+                  {nav.icon}
+
+                </span>
+
+                {(isExpanded || isHovered || isMobileOpen) && (
+
+                  <span className="menu-item-text">{nav.name}</span>
+
                 )}
-              </h2>
-              {renderMenuItems(navItems, "main")}
+
+              </Link>
+
+            )
+
+          )}
+
+          {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
+
+            <div
+
+              ref={(el) => {
+
+                subMenuRefs.current[`${menuType}-${index}`] = el;
+
+              }}
+
+              className="overflow-hidden transition-all duration-300"
+
+              style={{
+
+                height:
+
+                  openSubmenu?.type === menuType && openSubmenu?.index === index
+
+                    ? `${subMenuHeight[`${menuType}-${index}`]}px`
+
+                    : "0px",
+
+              }}
+
+            >
+
+              <ul className="ml-9 mt-2 space-y-1">
+
+                {nav.subItems.map((subItem) => (
+
+                  <li key={subItem.name}>
+
+                    <Link
+
+                      href={subItem.path}
+
+                      className={`menu-dropdown-item ${
+
+                        isActive(subItem.path)
+
+                          ? "menu-dropdown-item-active"
+
+                          : "menu-dropdown-item-inactive"
+
+                      }`}
+
+                    >
+
+                      {subItem.name}
+
+                      <span className="ml-auto flex items-center gap-1">
+
+                        {subItem.new && (
+
+                          <span
+
+                            className={`menu-dropdown-badge ${
+
+                              isActive(subItem.path)
+
+                                ? "menu-dropdown-badge-active"
+
+                                : "menu-dropdown-badge-inactive"
+
+                            }`}
+
+                          >
+
+                            new
+
+                          </span>
+
+                        )}
+
+                        {subItem.pro && (
+
+                          <span
+
+                            className={`menu-dropdown-badge ${
+
+                              isActive(subItem.path)
+
+                                ? "menu-dropdown-badge-active"
+
+                                : "menu-dropdown-badge-inactive"
+
+                            }`}
+
+                          >
+
+                            pro
+
+                          </span>
+
+                        )}
+
+                      </span>
+
+                    </Link>
+
+                  </li>
+
+                ))}
+
+              </ul>
+
             </div>
 
-            <div className="">
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Modules Avancés"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(othersItems, "others")}
-            </div>
-          </div>
-        </nav>
-        {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
-      </div>
-    </aside>
+          )}
+
+        </li>
+
+      ))}
+
+    </ul>
+
   );
+
+
+
+  return (
+
+    <aside
+
+      className={`fixed top-0 left-0 z-50 mt-16 flex h-screen flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900 lg:mt-0 
+
+        ${
+
+          isExpanded || isMobileOpen
+
+            ? "w-[290px]"
+
+            : isHovered
+
+            ? "w-[290px]"
+
+            : "w-[90px]"
+
+        }
+
+        ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+
+        lg:translate-x-0`}
+
+      onMouseEnter={() => !isExpanded && setIsHovered(true)}
+
+      onMouseLeave={() => setIsHovered(false)}
+
+    >
+
+      <div
+
+        className={`py-8 ${
+
+          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+
+        } flex`}
+
+      >
+
+        <Link href="/">
+
+          {isExpanded || isHovered || isMobileOpen ? (
+
+            <>
+
+              <Image
+
+                className="dark:hidden"
+
+                src="/images/logo/logo.svg"
+
+                alt="Logo"
+
+                width={150}
+
+                height={40}
+
+                style={{ height: 'auto', width: 'auto' }}
+
+              />
+
+              <Image
+
+                className="hidden dark:block"
+
+                src="/images/logo/logo-dark.svg"
+
+                alt="Logo"
+
+                width={150}
+
+                height={40}
+
+                style={{ height: 'auto', width: 'auto' }}
+
+              />
+
+            </>
+
+          ) : (
+
+            <Image
+
+              src="/images/logo/logo-icon.svg"
+
+              alt="Logo"
+
+              width={32}
+
+              height={32}
+
+              style={{ height: 'auto', width: 'auto' }}
+
+            />
+
+          )}
+
+        </Link>
+
+      </div>
+
+
+
+      <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
+
+        {roleLoading ? (
+
+          <div className="flex flex-1 items-center justify-center py-10 text-sm text-gray-500 dark:text-gray-400">
+
+            Chargement du menu...
+
+          </div>
+
+        ) : !userRole ? (
+
+          <div className="flex flex-1 items-center justify-center py-10 text-sm text-gray-500 dark:text-gray-400">
+
+            Accs non authentifi.
+
+          </div>
+
+        ) : isEmployeeOnly ? (
+
+          <EmployeeNavigation className="pb-10" />
+
+        ) : (
+
+          <>
+
+            <nav className="mb-6">
+
+              <div className="flex flex-col gap-4">
+
+                <div>
+
+                  <h2
+
+                    className={`mb-4 flex text-xs uppercase leading-[20px] text-gray-400 ${
+
+                      !isExpanded && !isHovered
+
+                        ? "lg:justify-center"
+
+                        : "justify-start"
+
+                    }`}
+
+                  >
+
+                    {isExpanded || isHovered || isMobileOpen ? (
+
+                      "Gestion RH"
+
+                    ) : (
+
+                      <HorizontaLDots />
+
+                    )}
+
+                  </h2>
+
+                  {renderMenuItems(visibleMainNavItems, "main")}
+
+                </div>
+
+                <div>
+
+                  <h2
+
+                    className={`mb-4 flex text-xs uppercase leading-[20px] text-gray-400 ${
+
+                      !isExpanded && !isHovered
+
+                        ? "lg:justify-center"
+
+                        : "justify-start"
+
+                    }`}
+
+                  >
+
+                    {isExpanded || isHovered || isMobileOpen ? (
+
+                      "Modules Avancs"
+
+                    ) : (
+
+                      <HorizontaLDots />
+
+                    )}
+
+                  </h2>
+
+                  {renderMenuItems(visibleAdvancedNavItems, "others")}
+
+                </div>
+
+              </div>
+
+            </nav>
+
+            {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
+
+          </>
+
+        )}
+
+      </div>
+
+    </aside>
+
+  );
+
 };
 
+
+
 export default AppSidebar;
+
+
+
+
+

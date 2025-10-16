@@ -2,7 +2,7 @@ export type UserRole =
   | 'ROLE_SUPER_ADMIN'
   | 'ROLE_ADMIN'
   | 'ROLE_MANAGER'
-  | 'ROLE_HR'
+  | 'ROLE_RH'
   | 'ROLE_EMPLOYEE';
 
 // Types pour les utilisateurs

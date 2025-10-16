@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { profileService, ChangePasswordData } from '@/lib/profile';
 import { formatUserRole } from '@/lib/roleLabels';
+import { resolveImageUrl } from '@/lib/images';
 
 export default function Profile() {
   const { user, refreshUser } = useAuth();
@@ -20,7 +21,7 @@ export default function Profile() {
 
   // État pour l'avatar
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
@@ -67,6 +68,7 @@ export default function Profile() {
       showMessage('success', result.message);
       await refreshUser();
       setAvatarFile(null);
+      setAvatarPreview(null);
     } catch (error: any) {
       showMessage('error', error.message);
     } finally {
@@ -75,6 +77,7 @@ export default function Profile() {
   };
 
   const roleLabel = user?.role_info?.name || user?.current_role || formatUserRole(user?.role);
+  const currentAvatar = avatarPreview || resolveImageUrl(user?.profile_photo_url) || undefined;
 
   return (
     <div>
@@ -104,9 +107,9 @@ export default function Profile() {
               
               <div className="mb-6 flex items-center gap-4">
                 <div className="h-20 w-20 overflow-hidden rounded-full bg-gray-200">
-                  {avatarPreview || (user as any)?.profile_photo_url ? (
+                  {currentAvatar ? (
                     <img
-                      src={avatarPreview || (user as any)?.profile_photo_url}
+                      src={currentAvatar}
                       alt="Avatar"
                       className="h-full w-full object-cover"
                     />

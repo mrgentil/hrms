@@ -1,11 +1,13 @@
 import { jwtDecode } from 'jwt-decode';
+import { resolveImageUrl } from './images';
+import type { UserRole as ApiUserRole } from '@/types/api';
 
 export interface User {
   id: number;
   username: string;
   full_name: string;
-  role: 'ROLE_ADMIN' | 'ROLE_MANAGER' | 'ROLE_EMPLOYEE'; // Ancien système (deprecated)
-  role_id?: number; // Nouveau système
+  role: ApiUserRole; // Ancien système (deprecated)
+  role_id?: number;
   role_info?: {
     id: number;
     name: string;
@@ -14,10 +16,10 @@ export interface User {
     icon: string;
     is_system: boolean;
   };
-  current_role?: string; // Nom du rôle actuel
+  current_role?: string;
   work_email?: string;
   active: boolean;
-  profile_photo_url?: string;
+  profile_photo_url?: string | null;
   department?: {
     id: number;
     department_name: string;
@@ -48,7 +50,6 @@ class AuthService {
   private readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly USER_KEY = 'user';
 
-  // Stockage sécurisé des tokens
   private setTokens(tokens: AuthTokens): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem(this.ACCESS_TOKEN_KEY, tokens.access_token);
@@ -60,6 +61,18 @@ class AuthService {
     if (typeof window !== 'undefined') {
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
     }
+  }
+
+  private normalizeUser(user: User): User {
+    const resolvedPhoto = resolveImageUrl(user.profile_photo_url);
+    return {
+      ...user,
+      profile_photo_url: resolvedPhoto ?? null,
+    };
+  }
+
+  public storeUser(user: User): void {
+    this.setUser(this.normalizeUser(user));
   }
 
   getAccessToken(): string | null {
@@ -84,7 +97,6 @@ class AuthService {
     return null;
   }
 
-  // Vérifier si le token est expiré
   isTokenExpired(token: string): boolean {
     try {
       const decoded: JWTPayload = jwtDecode(token);
@@ -95,13 +107,11 @@ class AuthService {
     }
   }
 
-  // Vérifier si l'utilisateur est authentifié
   isAuthenticated(): boolean {
     const token = this.getAccessToken();
     return token !== null && !this.isTokenExpired(token);
   }
 
-  // Login
   async login(username: string, password: string): Promise<AuthResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -118,22 +128,25 @@ class AuthService {
       }
 
       const authResponse: AuthResponse = await response.json();
-      
-      // Stocker les tokens et les informations utilisateur
-      this.setTokens({
-        access_token: authResponse.access_token,
-        refresh_token: authResponse.refresh_token,
-      });
-      this.setUser(authResponse.user);
+      const normalizedUser = this.normalizeUser(authResponse.user);
+      const normalizedResponse: AuthResponse = {
+        ...authResponse,
+        user: normalizedUser,
+      };
 
-      return authResponse;
+      this.setTokens({
+        access_token: normalizedResponse.access_token,
+        refresh_token: normalizedResponse.refresh_token,
+      });
+      this.setUser(normalizedUser);
+
+      return normalizedResponse;
     } catch (error) {
-      console.error('Erreur de connexion à l\'API:', error);
+      console.error("Erreur de connexion à l'API:", error);
       throw error;
     }
   }
 
-  // Register
   async register(userData: {
     username: string;
     password: string;
@@ -150,22 +163,25 @@ class AuthService {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Erreur lors de l\'inscription');
+      throw new Error(error.message || "Erreur lors de l'inscription");
     }
 
     const authResponse: AuthResponse = await response.json();
-    
-    // Stocker les tokens et les informations utilisateur
-    this.setTokens({
-      access_token: authResponse.access_token,
-      refresh_token: authResponse.refresh_token,
-    });
-    this.setUser(authResponse.user);
+    const normalizedUser = this.normalizeUser(authResponse.user);
+    const normalizedResponse: AuthResponse = {
+      ...authResponse,
+      user: normalizedUser,
+    };
 
-    return authResponse;
+    this.setTokens({
+      access_token: normalizedResponse.access_token,
+      refresh_token: normalizedResponse.refresh_token,
+    });
+    this.setUser(normalizedUser);
+
+    return normalizedResponse;
   }
 
-  // Rafraîchir le token
   async refreshAccessToken(): Promise<string | null> {
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
@@ -197,23 +213,18 @@ class AuthService {
     }
   }
 
-  // Logout
   logout(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(this.ACCESS_TOKEN_KEY);
       localStorage.removeItem(this.REFRESH_TOKEN_KEY);
       localStorage.removeItem(this.USER_KEY);
-      
-      // Rediriger vers la page de login
       window.location.href = '/signin';
     }
   }
 
-  // Faire une requête authentifiée
   async authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
     let token = this.getAccessToken();
-    
-    // Vérifier si le token est expiré et le rafraîchir si nécessaire
+
     if (token && this.isTokenExpired(token)) {
       token = await this.refreshAccessToken();
       if (!token) {
@@ -227,7 +238,7 @@ class AuthService {
     };
 
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${token}`;
     }
 
     const response = await fetch(url, {
@@ -235,34 +246,34 @@ class AuthService {
       headers,
     });
 
-    // Si le token est invalide, essayer de le rafraîchir
     if (response.status === 401) {
       const newToken = await this.refreshAccessToken();
       if (newToken) {
-        headers['Authorization'] = `Bearer ${newToken}`;
+        headers.Authorization = `Bearer ${newToken}`;
         return fetch(url, {
           ...options,
           headers,
         });
-      } else {
-        this.logout();
-        throw new Error('Session expirée');
       }
+      this.logout();
+      throw new Error('Session expirée');
     }
 
     return response;
   }
 
-  // Obtenir le profil utilisateur
   async getProfile(): Promise<User> {
     try {
       const response = await this.authenticatedFetch(`${API_BASE_URL}/auth/profile`);
-      
+
       if (!response.ok) {
         throw new Error('Erreur lors de la récupération du profil');
       }
 
-      return response.json();
+      const profile = await response.json();
+      const normalizedProfile = this.normalizeUser(profile);
+      this.setUser(normalizedProfile);
+      return normalizedProfile;
     } catch (error) {
       console.error('Erreur lors de la récupération du profil:', error);
       throw error;

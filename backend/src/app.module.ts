@@ -10,6 +10,8 @@ import { RolesModule } from './roles/roles.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PositionsModule } from './positions/positions.module';
 import { DepartmentsModule } from './departments/departments.module';
+import { EmployeesModule } from './employees/employees.module';
+import { LeavesModule } from './leaves/leaves.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { DepartmentsModule } from './departments/departments.module';
     RolesModule,
     PositionsModule,
     DepartmentsModule,
+    EmployeesModule,
+    LeavesModule,
   ],
   controllers: [AppController],
   providers: [

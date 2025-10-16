@@ -88,7 +88,7 @@ export class PermissionsService {
           'projects.view', 'projects.manage'
         ];
       
-      case UserRole.ROLE_HR:
+      case UserRole.ROLE_RH:
         return [
           'users.view', 'users.create',
           'users.create.manager', 'users.create.employee',

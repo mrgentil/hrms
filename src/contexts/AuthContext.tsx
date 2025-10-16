@@ -105,6 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const profile = await authService.getProfile();
       setUser(profile);
+      authService.storeUser(profile);
     } catch (error) {
       console.error('Erreur lors du rafraîchissement du profil:', error);
     }

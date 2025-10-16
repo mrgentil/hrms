@@ -378,7 +378,7 @@ model user {
   @@index([department_id], map: "department_id")
   @@index([manager_user_id], map: "manager_user_id")
   @@index([position_id], map: "position_id")
-  @@index([role_id], map: "role_id")
+  @@index([role_id], map: "user_role_fk")
 }
 
 model user_document {
@@ -484,6 +484,13 @@ model user_personal_info {
   mobile         String?                            @db.VarChar(255)
   phone          String?                            @db.VarChar(255)
   email_address  String?                            @db.VarChar(255)
+  spouse_name    String?                            @db.VarChar(255)
+  emergency_contact_primary_name     String?        @db.VarChar(255)
+  emergency_contact_primary_phone    String?        @db.VarChar(100)
+  emergency_contact_primary_relation String?        @db.VarChar(255)
+  emergency_contact_secondary_name     String?      @db.VarChar(255)
+  emergency_contact_secondary_phone    String?      @db.VarChar(100)
+  emergency_contact_secondary_relation String?      @db.VarChar(255)
   user_id        Int
   user           user                               @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_personal_info_ibfk_1")
 
@@ -567,14 +574,18 @@ enum UserRole {
   ROLE_MANAGER
   ROLE_EMPLOYEE
   ROLE_SUPER_ADMIN
-  ROLE_HR
+  ROLE_RH
 }
 
 enum application_type {
-  Normal
-  Student
-  Illness
+  CongePaye @map("Congé Payé")
+  Maladie
+  TeleTravail @map("TéléTravail")
   Marriage
+  Permission
+  Abscence
+  Demenagement @map("Déménagement")
+  Deces @map("Décès")
 }
 
 enum employment_contract_status {

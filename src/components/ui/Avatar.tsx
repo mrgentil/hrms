@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { resolveImageUrl } from "@/lib/images";
 
 interface AvatarProps {
   src?: string | null;
@@ -24,7 +25,9 @@ export const Avatar: React.FC<AvatarProps> = ({
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  const showFallback = !src || imageError || !imageLoaded;
+  const resolvedSrc = useMemo(() => resolveImageUrl(src), [src]);
+
+  const showFallback = !resolvedSrc || imageError || !imageLoaded;
 
   const fallbackContent = fallbackIcon || fallbackText?.charAt(0) || "👤";
 
@@ -33,11 +36,11 @@ export const Avatar: React.FC<AvatarProps> = ({
       className={`relative overflow-hidden rounded-full flex items-center justify-center ${className}`}
       style={{ width: size, height: size }}
     >
-      {src && !imageError && (
+      {resolvedSrc && !imageError && (
         <Image
           width={size}
           height={size}
-          src={src}
+          src={resolvedSrc}
           alt={alt}
           className={`object-cover w-full h-full transition-opacity duration-200 ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
