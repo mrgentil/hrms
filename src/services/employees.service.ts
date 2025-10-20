@@ -423,6 +423,13 @@ class EmployeesService {
     return response.data;
   }
 
+  async getMyDocuments() {
+    const response = await axios.get(`${API_BASE_URL}/employees/my-documents`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
   async createDocument(employeeId: number, formData: FormData) {
     const response = await axios.post(`${API_BASE_URL}/employees/${employeeId}/documents`, formData, {
       headers: this.getMultipartHeaders(),

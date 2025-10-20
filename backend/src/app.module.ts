@@ -12,6 +12,7 @@ import { PositionsModule } from './positions/positions.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { EmployeesModule } from './employees/employees.module';
 import { LeavesModule } from './leaves/leaves.module';
+import { DocumentModule } from './document/document.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { LeavesModule } from './leaves/leaves.module';
     DepartmentsModule,
     EmployeesModule,
     LeavesModule,
+    DocumentModule,
   ],
   controllers: [AppController],
   providers: [

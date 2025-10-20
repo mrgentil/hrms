@@ -3,10 +3,10 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateLeaveDto } from './dto/create-leave.dto';
-
 import { UpdateLeaveStatusDto } from './dto/update-leave-status.dto';
-
 import { application_status, application_type } from '@prisma/client';
+import { UpdateOwnLeaveDto } from './dto/update-own-leave.dto';
+import { CancelOwnLeaveDto } from './dto/cancel-own-leave.dto';
 
 
 
@@ -394,6 +394,243 @@ export class LeavesService {
           },
 
         },
+
+      },
+
+    });
+
+
+
+    return updated;
+
+  }
+
+
+  async updateOwnLeave(userId: number, leaveId: number, dto: UpdateOwnLeaveDto) {
+
+    if (!dto || Object.keys(dto).length === 0) {
+
+      throw new BadRequestException('Aucune modification n\'a été fournie.');
+
+    }
+
+
+
+    const existing = await this.prisma.application.findUnique({
+
+      where: { id: leaveId },
+
+    });
+
+
+
+    if (!existing || existing.user_id !== userId) {
+
+      throw new NotFoundException('Demande de congé introuvable.');
+
+    }
+
+
+
+    if (existing.status !== application_status.Pending) {
+
+      throw new BadRequestException('Impossible de modifier une demande qui n\'est pas en attente.');
+
+    }
+
+
+
+    const now = new Date();
+
+    if (existing.start_date <= now) {
+
+      throw new BadRequestException('Impossible de modifier une demande dont la date de début est passée.');
+
+    }
+
+
+
+    const targetStart = dto.start_date ? new Date(dto.start_date) : existing.start_date;
+
+    const targetEnd = dto.end_date ? new Date(dto.end_date) : existing.end_date;
+
+
+
+    if (targetEnd < targetStart) {
+
+      throw new BadRequestException('La date de fin doit être postérieure à la date de début.');
+
+    }
+
+
+
+    if (targetStart <= now) {
+
+      throw new BadRequestException('La date de début doit être postérieure à la date du jour.');
+
+    }
+
+
+
+    let approverId: number | null | undefined = undefined;
+
+    if (dto.approver_user_id) {
+
+      const approver = await this.prisma.user.findUnique({
+
+        where: { id: dto.approver_user_id },
+
+        select: { id: true, active: true },
+
+      });
+
+
+
+      if (!approver || !approver.active) {
+
+        throw new NotFoundException('Le responsable sélectionné est introuvable ou inactif.');
+
+      }
+
+
+
+      approverId = approver.id;
+
+    }
+
+
+
+    if (dto.leave_type_id) {
+
+      const leaveTypeExists = await this.prisma.leave_type.findUnique({
+
+        where: { id: dto.leave_type_id },
+
+        select: { id: true },
+
+      });
+
+
+
+      if (!leaveTypeExists) {
+
+        throw new NotFoundException('Le type de congé sélectionné est introuvable.');
+
+      }
+
+    }
+
+
+
+    const trimmedReason = dto.reason?.trim();
+
+
+
+    const updated = await this.prisma.application.update({
+
+      where: { id: leaveId },
+
+      data: {
+
+        type: dto.type ?? existing.type,
+
+        start_date: targetStart,
+
+        end_date: targetEnd,
+
+        reason: trimmedReason ?? existing.reason,
+
+        leave_type_id: dto.leave_type_id !== undefined ? dto.leave_type_id : existing.leave_type_id,
+
+        approver_user_id: approverId ?? existing.approver_user_id,
+
+        workflow_step: 'Pending',
+
+        approved_at: null,
+
+        approver_comment: null,
+
+        updated_at: now,
+
+      },
+
+      include: {
+
+        leave_type: true,
+
+      },
+
+    });
+
+
+
+    return updated;
+
+  }
+
+
+
+  async cancelOwnLeave(userId: number, leaveId: number, dto: CancelOwnLeaveDto) {
+
+    const existing = await this.prisma.application.findUnique({
+
+      where: { id: leaveId },
+
+    });
+
+
+
+    if (!existing || existing.user_id !== userId) {
+
+      throw new NotFoundException('Demande de congé introuvable.');
+
+    }
+
+
+
+    if (existing.status !== application_status.Pending) {
+
+      throw new BadRequestException('Seules les demandes en attente peuvent être annulées.');
+
+    }
+
+
+
+    const now = new Date();
+
+    if (existing.start_date <= now) {
+
+      throw new BadRequestException('Impossible d\'annuler une demande dont la date de début est passée.');
+
+    }
+
+
+
+    const trimmedReason = dto.reason?.trim();
+
+
+
+    const updated = await this.prisma.application.update({
+
+      where: { id: leaveId },
+
+      data: {
+
+        status: application_status.Cancelled,
+
+        workflow_step: 'Cancelled',
+
+        approver_comment: trimmedReason && trimmedReason.length > 0 ? trimmedReason : existing.approver_comment,
+
+        approved_at: null,
+
+        updated_at: now,
+
+      },
+
+      include: {
+
+        leave_type: true,
 
       },
 

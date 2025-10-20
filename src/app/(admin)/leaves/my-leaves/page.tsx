@@ -26,6 +26,8 @@ import {
 
   CreateLeaveRequestPayload,
 
+  UpdateLeaveRequestPayload,
+
   LeaveApprover,
 
 } from '@/services/leaves.service';
@@ -175,56 +177,138 @@ export default function MyLeavesPage() {
   const [formData, setFormData] = useState<LeaveFormState>(INITIAL_FORM);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingLeave, setEditingLeave] = useState<LeaveRequest | null>(null);
+  const [cancellingLeaveId, setCancellingLeaveId] = useState<number | null>(null);
 
   const toast = useToast();
 
-  const approverLookup = useMemo(() => {
+  const resetFormState = useCallback(() => {
 
-    const map = new Map<number, LeaveApprover>();
+    setFormData({
 
-    approvers.forEach((approver) => {
+      ...INITIAL_FORM,
 
-      map.set(approver.id, approver);
+      type: applicationTypes.length > 0 ? applicationTypes[0] : INITIAL_FORM.type,
 
     });
 
-    return map;
+    setEditingLeave(null);
 
-  }, [approvers]);
-
-
-
-  const getApproverLabel = useCallback(
-
-    (id?: number | null) => {
-
-      if (!id) {
-
-        return 'Non défini';
-
-      }
-
-      const approver = approverLookup.get(id);
-
-      if (!approver) {
-
-        return `#${id}`;
-
-      }
-
-      return approver.work_email
-
-        ? `${approver.full_name} (${approver.work_email})`
-
-        : approver.full_name;
-
-    },
-
-    [approverLookup],
-
-  );
+  }, [applicationTypes]);
 
 
+
+  const closeForm = useCallback(() => {
+
+    resetFormState();
+
+    setShowNewLeaveForm(false);
+
+  }, [resetFormState]);
+
+
+
+  const openCreateForm = useCallback(() => {
+
+    resetFormState();
+
+    setShowNewLeaveForm(true);
+
+  }, [resetFormState]);
+
+
+
+  const handleStartEditing = useCallback((request: LeaveRequest) => {
+
+    const normalizedType = applicationTypes.includes(request.type)
+
+      ? request.type
+
+      : applicationTypes[0] ?? INITIAL_FORM.type;
+
+
+
+    if (request.approver_user_id) {
+
+      setApprovers((current) => {
+
+        if (current.some((item) => item.id === request.approver_user_id)) {
+
+          return current;
+
+        }
+
+
+
+        return [
+
+          ...current,
+
+          {
+
+            id: request.approver_user_id,
+
+            full_name: `Responsable #${request.approver_user_id}`,
+
+            work_email: undefined,
+
+          },
+
+        ];
+
+      });
+
+    }
+
+
+
+    setFormData({
+
+      leave_type_id: request.leave_type_id ? String(request.leave_type_id) : '',
+
+      type: normalizedType,
+
+      start_date: request.start_date ? request.start_date.slice(0, 10) : '',
+
+      end_date: request.end_date ? request.end_date.slice(0, 10) : '',
+
+      reason: request.reason ?? '',
+
+      approver_user_id: request.approver_user_id ? String(request.approver_user_id) : '',
+
+    });
+
+    setEditingLeave(request);
+
+    setShowNewLeaveForm(true);
+
+  }, [applicationTypes]);
+
+
+
+  const handleToggleForm = useCallback(() => {
+
+    if (editingLeave) {
+
+      closeForm();
+
+      return;
+
+    }
+
+
+
+    if (showNewLeaveForm) {
+
+      closeForm();
+
+    } else {
+
+      openCreateForm();
+
+    }
+
+  }, [editingLeave, showNewLeaveForm, closeForm, openCreateForm]);
 
 
 
@@ -412,7 +496,7 @@ export default function MyLeavesPage() {
 
       setIsSubmitting(true);
 
-      const payload: CreateLeaveRequestPayload = {
+      const payload: UpdateLeaveRequestPayload = {
 
         type: formData.type,
 
@@ -442,9 +526,17 @@ export default function MyLeavesPage() {
 
 
 
+      let response;
 
+      if (editingLeave) {
 
-      const response = await leavesService.createLeaveRequest(payload);
+        response = await leavesService.updateMyLeave(editingLeave.id, payload);
+
+      } else {
+
+        response = await leavesService.createLeaveRequest(payload as CreateLeaveRequestPayload);
+
+      }
 
 
 
@@ -452,28 +544,36 @@ export default function MyLeavesPage() {
         const successMessage =
           typeof response.message === 'string' && response.message.trim().length > 0
             ? response.message
+            : editingLeave
+            ? 'Demande de conge mise a jour.'
             : 'Votre demande de conge a ete creee.';
 
         toast.success(successMessage);
 
-        setFormData({
-          ...INITIAL_FORM,
-          type: applicationTypes.length > 0 ? applicationTypes[0] : INITIAL_FORM.type,
-        });
-
-        setShowNewLeaveForm(false);
+        closeForm();
 
         await fetchLeaveData();
 
       } else {
+        const errorMessage =
+          response.message ||
+          (editingLeave
+            ? 'Impossible de mettre a jour la demande de conge.'
+            : 'Impossible de creer la demande de conge.');
 
-        toast.error(response.message || 'Impossible de creer la demande de conge.');
+        toast.error(errorMessage);
 
       }
 
     } catch (err) {
 
-      const message = getErrorMessage(err, 'Erreur lors de la creation de la demande de conge.');
+      const message = getErrorMessage(
+        err,
+
+        editingLeave
+          ? 'Erreur lors de la mise a jour de la demande de conge.'
+          : 'Erreur lors de la creation de la demande de conge.',
+      );
 
       toast.error(message);
 
@@ -484,6 +584,70 @@ export default function MyLeavesPage() {
     }
 
   };
+
+
+
+  const handleCancelRequest = useCallback(
+
+    async (request: LeaveRequest) => {
+
+      const confirmed = window.confirm('Voulez-vous vraiment annuler cette demande ?');
+
+      if (!confirmed) {
+
+        return;
+
+      }
+
+
+
+      try {
+
+        setCancellingLeaveId(request.id);
+
+        const response = await leavesService.cancelMyLeave(request.id, {});
+
+
+
+        if (response.success) {
+          const successMessage =
+            typeof response.message === 'string' && response.message.trim().length > 0
+              ? response.message
+              : 'Demande de conge annulee.';
+
+          toast.success(successMessage);
+
+          if (editingLeave?.id === request.id) {
+
+            closeForm();
+
+          }
+
+          await fetchLeaveData();
+
+        } else {
+
+          toast.error(response.message || "Impossible d'annuler la demande de conge.");
+
+        }
+
+      } catch (err) {
+
+        const message = getErrorMessage(err, "Erreur lors de l'annulation de la demande de conge.");
+
+        toast.error(message);
+
+      } finally {
+
+        setCancellingLeaveId(null);
+
+      }
+
+    },
+
+    [toast, fetchLeaveData, editingLeave, closeForm],
+
+  );
 
 
 
@@ -689,13 +853,21 @@ export default function MyLeavesPage() {
 
             <button
 
-              onClick={() => setShowNewLeaveForm((value) => !value)}
+              onClick={handleToggleForm}
 
               className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
 
             >
 
-              {showNewLeaveForm ? 'Fermer le formulaire' : 'Nouvelle demande de conge'}
+              {editingLeave
+
+                ? 'Annuler la modification'
+
+                : showNewLeaveForm
+
+                ? 'Fermer le formulaire'
+
+                : 'Nouvelle demande de conge'}
 
             </button>
 
@@ -721,7 +893,17 @@ export default function MyLeavesPage() {
 
         {showNewLeaveForm && (
 
-          <ComponentCard title="Nouvelle demande de conge">
+          <ComponentCard title={editingLeave ? 'Modifier une demande de conge' : 'Nouvelle demande de conge'}>
+
+            {editingLeave ? (
+
+              <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
+
+                Modification de la demande #{editingLeave.id} (du {new Date(editingLeave.start_date).toLocaleDateString('fr-FR')} au {new Date(editingLeave.end_date).toLocaleDateString('fr-FR')})
+
+              </div>
+
+            ) : null}
 
             <form onSubmit={handleSubmit} className="space-y-6">
 
@@ -951,7 +1133,19 @@ export default function MyLeavesPage() {
 
                 >
 
-                  {isSubmitting ? 'Envoi en cours...' : 'Envoyer la demande'}
+                  {isSubmitting
+
+                    ? editingLeave
+
+                      ? 'Mise a jour...'
+
+                      : 'Envoi en cours...'
+
+                    : editingLeave
+
+                    ? 'Mettre a jour la demande'
+
+                    : 'Envoyer la demande'}
 
                 </button>
 
@@ -959,13 +1153,7 @@ export default function MyLeavesPage() {
 
                   type="button"
 
-                  onClick={() => {
-
-                    setShowNewLeaveForm(false);
-
-                    setFormData(INITIAL_FORM);
-
-                  }}
+                  onClick={closeForm}
 
                   className="inline-flex items-center justify-center rounded-md border border-stroke px-6 py-3 text-sm font-medium text-black transition-colors hover:border-primary hover:text-primary dark:border-strokedark dark:text-white"
 
@@ -1117,105 +1305,164 @@ export default function MyLeavesPage() {
 
             <div className="space-y-4">
 
-              {leaveRequests.map((request) => (
+              {leaveRequests.map((request) => {
 
-                <div
+                const isEditingThisRequest = editingLeave?.id === request.id;
 
-                  key={request.id}
+                return (
 
-                  className="bg-white dark:bg-boxdark border border-stroke dark:border-strokedark rounded-lg p-5"
+                  <div
 
-                >
+                    key={request.id}
 
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    className={`bg-white dark:bg-boxdark border border-stroke dark:border-strokedark rounded-lg p-5 ${isEditingThisRequest ? 'border-primary shadow-lg shadow-primary/10' : ''}`}
 
-                    <div>
+                  >
 
-                      <h4 className="text-lg font-semibold text-black dark:text-white">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
 
-                        {request.leave_type?.name || 'Type non defini'}
+                      <div>
 
-                      </h4>
+                        <div className="flex items-center gap-2">
 
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <h4 className="text-lg font-semibold text-black dark:text-white">
 
-                        {new Date(request.start_date).toLocaleDateString('fr-FR')} &rarr;{' '}
+                            {request.leave_type?.name || 'Type non defini'}
 
-                        {new Date(request.end_date).toLocaleDateString('fr-FR')} (
+                          </h4>
 
-                        {calculateDays(request.start_date, request.end_date)} jours)
+                          {isEditingThisRequest ? (
 
-                      </p>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+
+                              Edition en cours
+
+                            </span>
+
+                          ) : null}
+
+                        </div>
+
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+
+                          {new Date(request.start_date).toLocaleDateString('fr-FR')} &rarr;{' '}
+
+                          {new Date(request.end_date).toLocaleDateString('fr-FR')} ({calculateDays(request.start_date, request.end_date)} jours)
+
+                        </p>
+
+                      </div>
+
+                      <span
+
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(request.status)}`}
+
+                      >
+
+                        {getStatusText(request.status)}
+
+                      </span>
 
                     </div>
 
-                    <span
+                    <div className="mt-4 text-sm text-gray-700 dark:text-gray-300">
 
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(request.status)}`}
+                      {request.reason}
 
-                    >
+                    </div>
 
-                      {getStatusText(request.status)}
+                    {request.status === 'Pending' ? (
 
-                    </span>
+                      <div className="mt-4 flex flex-wrap gap-2">
 
-                  </div>
+                        <button
 
-                  <div className="mt-4 text-sm text-gray-700 dark:text-gray-300">
+                          type="button"
 
-                    {request.reason}
+                          onClick={() => handleStartEditing(request)}
 
-                  </div>
+                          disabled={isEditingThisRequest || isSubmitting || cancellingLeaveId === request.id}
 
-                  <div className="mt-3 text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-4">
+                          className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-60"
 
-                    <span>
+                        >
 
-                      Cree le {new Date(request.created_at).toLocaleString('fr-FR')}
+                          {isEditingThisRequest ? 'Modification en cours' : 'Modifier'}
 
-                    </span>
+                        </button>
 
-                    {request.approver_user_id ? (
+                        <button
 
-                      <span>
+                          type="button"
 
-                        Responsable : {(() => {
+                          onClick={() => handleCancelRequest(request)}
 
-                          const approver = approvers.find((item) => item.id === request.approver_user_id);
+                          disabled={cancellingLeaveId === request.id}
 
-                          return approver ? `${approver.full_name}${approver.work_email ? ` (${approver.work_email})` : ''}` : `#${request.approver_user_id}`;
+                          className="inline-flex items-center rounded-md bg-danger px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-danger/90 disabled:opacity-60"
 
-                        })()}
+                        >
 
-                      </span>
+                          {cancellingLeaveId === request.id ? 'Annulation...' : 'Annuler la demande'}
+
+                        </button>
+
+                      </div>
 
                     ) : null}
 
-                    {request.workflow_step && (
+                    <div className="mt-3 text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-4">
 
                       <span>
 
-                        Etape du workflow : {request.workflow_step}
+                        Cree le {new Date(request.created_at).toLocaleString('fr-FR')}
 
                       </span>
 
-                    )}
+                      {request.approver_user_id ? (
 
-                    {request.approver_comment && (
+                        <span>
 
-                      <span className="italic">
+                          Responsable : {(() => {
 
-                        Commentaire manager : {request.approver_comment}
+                            const approver = approvers.find((item) => item.id === request.approver_user_id);
 
-                      </span>
+                            return approver ? `${approver.full_name}${approver.work_email ? ` (${approver.work_email})` : ''}` : `#${request.approver_user_id}`;
 
-                    )}
+                          })()}
+
+                        </span>
+
+                      ) : null}
+
+                      {request.workflow_step && (
+
+                        <span>
+
+                          Etape du workflow : {request.workflow_step}
+
+                        </span>
+
+                      )}
+
+                      {request.approver_comment && (
+
+                        <span className="italic">
+
+                          Commentaire manager : {request.approver_comment}
+
+                        </span>
+
+                      )}
+
+                    </div>
 
                   </div>
 
-                </div>
+                );
 
-              ))}
+              })}
+
 
             </div>
 

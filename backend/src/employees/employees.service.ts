@@ -579,6 +579,10 @@ export class EmployeesService {
     });
   }
 
+  async getMyDocuments(userId: number) {
+    return this.getDocuments(userId);
+  }
+
   async deleteDocument(documentId: number) {
     const document = await this.prisma.user_document.findUnique({
       where: { id: documentId },

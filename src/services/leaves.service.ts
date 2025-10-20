@@ -77,6 +77,19 @@ export interface CreateLeaveRequestPayload {
   approver_user_id?: number;
 }
 
+export interface UpdateLeaveRequestPayload {
+  type?: LeaveTypeCode;
+  start_date?: string;
+  end_date?: string;
+  reason?: string;
+  leave_type_id?: number;
+  approver_user_id?: number;
+}
+
+export interface CancelLeaveRequestPayload {
+  reason?: string;
+}
+
 export interface UpdateLeaveStatusPayload {
   status: LeaveStatus;
   workflow_step?: string;
@@ -145,6 +158,20 @@ class LeavesService {
 
   async createLeaveRequest(data: CreateLeaveRequestPayload) {
     const response = await axios.post(`${API_BASE_URL}/leaves`, data, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async updateMyLeave(leaveId: number, data: UpdateLeaveRequestPayload) {
+    const response = await axios.patch(`${API_BASE_URL}/leaves/my/${leaveId}`, data, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async cancelMyLeave(leaveId: number, data?: CancelLeaveRequestPayload) {
+    const response = await axios.patch(`${API_BASE_URL}/leaves/my/${leaveId}/cancel`, data ?? {}, {
       headers: this.getAuthHeaders(),
     });
     return response.data;

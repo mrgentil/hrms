@@ -322,6 +322,16 @@ export class EmployeesController {
     };
   }
 
+  @Get('my-documents')
+  async getMyDocuments(@CurrentUser() currentUser: any) {
+    const documents = await this.employeesService.getMyDocuments(currentUser.id);
+    return {
+      success: true,
+      data: documents,
+      message: 'Documents rǸcupǸrǸs avec succ��s',
+    };
+  }
+
   @Delete('documents/:documentId')
   @RequirePermissions(SYSTEM_PERMISSIONS.USERS_DELETE)
   async deleteDocument(@Param('documentId', ParseIntPipe) documentId: number) {

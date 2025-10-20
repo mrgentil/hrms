@@ -187,7 +187,7 @@ export default function EmployeeDashboard() {
         <ComponentCard title="Actions rapides">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
-              href="/employees/profile"
+              href="/employees/documents"
               className="flex flex-col items-center p-6 bg-primary/5 dark:bg-primary/10 rounded-lg border border-primary/20 hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
             >
               <div className="text-3xl mb-2">👤</div>
@@ -298,7 +298,7 @@ export default function EmployeeDashboard() {
               )}
 
               <Link
-                href="/employees/profile"
+                href="/employees/documents"
                 className="block w-full text-center bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2 px-4 rounded-lg transition-colors"
               >
                 Modifier mes informations
@@ -331,7 +331,7 @@ export default function EmployeeDashboard() {
               ))}
               
               <Link
-                href="/employees/profile"
+                href="/employees/documents"
                 className="block w-full text-center bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2 px-4 rounded-lg transition-colors"
               >
                 Voir tous mes documents

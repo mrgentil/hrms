@@ -12,6 +12,8 @@ import {
 import { LeavesService } from './leaves.service';
 import { CreateLeaveDto } from './dto/create-leave.dto';
 import { UpdateLeaveStatusDto } from './dto/update-leave-status.dto';
+import { UpdateOwnLeaveDto } from './dto/update-own-leave.dto';
+import { CancelOwnLeaveDto } from './dto/cancel-own-leave.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -44,6 +46,44 @@ export class LeavesController {
     return {
       success: true,
       data: leaves,
+    };
+  }
+
+  @Patch('my/:id')
+  @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_CREATE)
+  async updateMyLeave(
+    @Param('id', ParseIntPipe) leaveId: number,
+    @CurrentUser() currentUser: any,
+    @Body(ValidationPipe) updateOwnLeaveDto: UpdateOwnLeaveDto,
+  ) {
+    const updated = await this.leavesService.updateOwnLeave(
+      currentUser.id,
+      leaveId,
+      updateOwnLeaveDto,
+    );
+    return {
+      success: true,
+      data: updated,
+      message: 'Demande de congé mise à jour avec succès.',
+    };
+  }
+
+  @Patch('my/:id/cancel')
+  @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_CREATE)
+  async cancelMyLeave(
+    @Param('id', ParseIntPipe) leaveId: number,
+    @CurrentUser() currentUser: any,
+    @Body(ValidationPipe) cancelOwnLeaveDto: CancelOwnLeaveDto,
+  ) {
+    const updated = await this.leavesService.cancelOwnLeave(
+      currentUser.id,
+      leaveId,
+      cancelOwnLeaveDto,
+    );
+    return {
+      success: true,
+      data: updated,
+      message: 'Demande de congé annulée.',
     };
   }
 

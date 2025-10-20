@@ -24,6 +24,12 @@ const employeeNavigation: NavigationItem[] = [
     description: 'Mes informations personnelles'
   },
   {
+    title: 'Mes Documents',
+    href: '/employees/documents',
+    icon: '📄',
+    description: 'Contrats et fichiers partagés'
+  },
+  {
     title: 'Mes Congés',
     href: '/leaves/my-leaves',
     icon: '🏖️',
