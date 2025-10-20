@@ -30,6 +30,24 @@ const employeeNavigation: NavigationItem[] = [
     description: 'Contrats et fichiers partagés'
   },
   {
+    title: 'My Tasks',
+    href: '/employees/tasks',
+    icon: '[]',
+    description: 'Tasks qui me sont assignees'
+  },
+  {
+    title: 'Mes Annonces',
+    href: '/employees/announcements',
+    icon: '📢',
+    description: "Communications de l'entreprise"
+  },
+  {
+    title: 'Mon Historique',
+    href: '/employees/history',
+    icon: '🕑',
+    description: 'Parcours et changements'
+  },
+  {
     title: 'Mes Congés',
     href: '/leaves/my-leaves',
     icon: '🏖️',

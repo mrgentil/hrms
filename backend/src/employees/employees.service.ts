@@ -1,10 +1,11 @@
-﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { CreateContractDto } from './dto/create-contract.dto';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateOwnProfileDto } from './dto/update-own-profile.dto';
+import { UpdateOwnTaskDto } from './dto/update-own-task.dto';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -13,7 +14,7 @@ export class EmployeesService {
 
   async create(createEmployeeDto: CreateEmployeeDto) {
     const {
-      // DonnÃ©es utilisateur de base
+      // Données utilisateur de base
       username,
       password,
       full_name,
@@ -40,7 +41,7 @@ export class EmployeesService {
       phone,
       email_address,
       
-      // Informations financiÃ¨res
+      // Informations financières
       employment_type,
       salary_basic,
       salary_gross,
@@ -60,13 +61,13 @@ export class EmployeesService {
       iban,
     } = createEmployeeDto;
 
-    // VÃ©rifier si l'utilisateur existe dÃ©jÃ 
+    // Vérifier si l'utilisateur existe déjà
     const existingUser = await this.prisma.user.findUnique({
       where: { username },
     });
 
     if (existingUser) {
-      throw new BadRequestException('Un utilisateur avec ce nom d\'utilisateur existe dÃ©jÃ ');
+      throw new BadRequestException('Un utilisateur avec ce nom d\'utilisateur existe déjà');
     }
 
     // Hasher le mot de passe
@@ -85,7 +86,7 @@ export class EmployeesService {
                            (deduction_other || 0);
 
     return this.prisma.$transaction(async (prisma) => {
-      // CrÃ©er l'utilisateur principal
+      // Créer l'utilisateur principal
       const user = await prisma.user.create({
         data: {
           username,
@@ -105,7 +106,7 @@ export class EmployeesService {
         },
       });
 
-      // CrÃ©er les informations personnelles si fournies
+      // Créer les informations personnelles si fournies
       if (date_of_birth || gender || marital_status || father_name || id_number || 
           address || city || country || mobile || phone || email_address) {
         await prisma.user_personal_info.create({
@@ -126,7 +127,7 @@ export class EmployeesService {
         });
       }
 
-      // CrÃ©er les informations financiÃ¨res si fournies
+      // Créer les informations financières si fournies
       if (employment_type || salary_basic || salary_gross || salary_net || 
           allowance_house_rent || allowance_medical || allowance_special || 
           allowance_fuel || allowance_phone_bill || allowance_other || 
@@ -256,7 +257,7 @@ export class EmployeesService {
     });
 
     if (!employee) {
-      throw new NotFoundException('EmployÃ© non trouvÃ©');
+      throw new NotFoundException('Employé non trouvé');
     }
 
     return employee;
@@ -264,7 +265,7 @@ export class EmployeesService {
 
   async update(id: number, updateEmployeeDto: UpdateEmployeeDto) {
     const {
-      // DonnÃ©es utilisateur de base
+      // Données utilisateur de base
       username,
       password,
       full_name,
@@ -291,7 +292,7 @@ export class EmployeesService {
       phone,
       email_address,
       
-      // Informations financiÃ¨res
+      // Informations financières
       employment_type,
       salary_basic,
       salary_gross,
@@ -316,11 +317,11 @@ export class EmployeesService {
     });
 
     if (!existingEmployee) {
-      throw new NotFoundException('EmployÃ© non trouvÃ©');
+      throw new NotFoundException('Employé non trouvé');
     }
 
     return this.prisma.$transaction(async (prisma) => {
-      // PrÃ©parer les donnÃ©es utilisateur
+      // Préparer les données utilisateur
       const userData: any = {
         updated_at: new Date(),
       };
@@ -338,13 +339,13 @@ export class EmployeesService {
       if (profile_photo_url) userData.profile_photo_url = profile_photo_url;
       if (active !== undefined) userData.active = active;
 
-      // Mettre Ã  jour l'utilisateur principal
+      // Mettre à jour l'utilisateur principal
       const user = await prisma.user.update({
         where: { id },
         data: userData,
       });
 
-      // Mettre Ã  jour les informations personnelles
+      // Mettre à jour les informations personnelles
       if (date_of_birth || gender || marital_status || father_name || id_number || 
           address || city || country || mobile || phone || email_address) {
         
@@ -380,7 +381,7 @@ export class EmployeesService {
         }
       }
 
-      // Mettre Ã  jour les informations financiÃ¨res
+      // Mettre à jour les informations financières
       if (employment_type || salary_basic !== undefined || salary_gross !== undefined || 
           salary_net !== undefined || allowance_house_rent !== undefined || 
           allowance_medical !== undefined || allowance_special !== undefined || 
@@ -452,14 +453,14 @@ export class EmployeesService {
     });
 
     if (!employee) {
-      throw new NotFoundException('EmployÃ© non trouvÃ©');
+      throw new NotFoundException('Employé non trouvé');
     }
 
     await this.prisma.user.delete({
       where: { id },
     });
 
-    return { message: 'EmployÃ© supprimÃ© avec succÃ¨s' };
+    return { message: 'Employé supprimé avec succès' };
   }
 
   // Gestion des contrats
@@ -469,7 +470,7 @@ export class EmployeesService {
     });
 
     if (!employee) {
-      throw new NotFoundException('EmployÃ© non trouvÃ©');
+      throw new NotFoundException('Employé non trouvé');
     }
 
     return this.prisma.employment_contract.create({
@@ -501,7 +502,7 @@ export class EmployeesService {
     });
 
     if (!contract) {
-      throw new NotFoundException('Contrat non trouvÃ©');
+      throw new NotFoundException('Contrat non trouvé');
     }
 
     const data: any = { updated_at: new Date() };
@@ -526,14 +527,14 @@ export class EmployeesService {
     });
 
     if (!contract) {
-      throw new NotFoundException('Contrat non trouvÃ©');
+      throw new NotFoundException('Contrat non trouvé');
     }
 
     await this.prisma.employment_contract.delete({
       where: { id: contractId },
     });
 
-    return { message: 'Contrat supprimÃ© avec succÃ¨s' };
+    return { message: 'Contrat supprimé avec succès' };
   }
 
   // Gestion des documents
@@ -543,7 +544,7 @@ export class EmployeesService {
     });
 
     if (!employee) {
-      throw new NotFoundException('EmployÃ© non trouvÃ©');
+      throw new NotFoundException('Employé non trouvé');
     }
 
     return this.prisma.user_document.create({
@@ -582,6 +583,132 @@ export class EmployeesService {
   async getMyDocuments(userId: number) {
     return this.getDocuments(userId);
   }
+  async getMyTasks(userId: number) {
+    return this.prisma.task.findMany({
+      where: {
+        task_assignment: {
+          some: {
+            user_id: userId,
+          },
+        },
+      },
+      include: {
+        project: {
+          select: { id: true, name: true },
+        },
+        task_column: {
+          select: { id: true, name: true },
+        },
+        task_assignment: {
+          where: { user_id: userId },
+          select: { id: true, role: true, assigned_at: true },
+        },
+        user_task_created_by_user_idTouser: {
+          select: { id: true, full_name: true },
+        },
+      },
+      orderBy: [
+        { status: 'asc' },
+        { due_date: 'asc' },
+      ],
+    });
+  }
+
+  async updateMyTask(userId: number, taskId: number, updateOwnTaskDto: UpdateOwnTaskDto) {
+    const assignment = await this.prisma.task_assignment.findFirst({
+      where: {
+        task_id: taskId,
+        user_id: userId,
+      },
+    });
+
+    if (!assignment) {
+      throw new ForbiddenException('Vous ne pouvez pas modifier cette tâche');
+    }
+
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date(),
+      updated_by_user_id: userId,
+    };
+
+    if (updateOwnTaskDto.status !== undefined) {
+      updateData['status'] = updateOwnTaskDto.status;
+      if (updateOwnTaskDto.status === 'DONE' && !updateOwnTaskDto.completed_at) {
+        updateData['completed_at'] = new Date();
+      } else if (updateOwnTaskDto.status !== 'DONE') {
+        updateData['completed_at'] = null;
+      }
+    }
+
+    if (updateOwnTaskDto.completed_at !== undefined) {
+      updateData['completed_at'] = updateOwnTaskDto.completed_at
+        ? new Date(updateOwnTaskDto.completed_at)
+        : null;
+    }
+
+    return this.prisma.task.update({
+      where: { id: taskId },
+      data: updateData,
+      include: {
+        project: {
+          select: { id: true, name: true },
+        },
+        task_column: {
+          select: { id: true, name: true },
+        },
+        task_assignment: {
+          where: { user_id: userId },
+          select: { id: true, role: true, assigned_at: true },
+        },
+        user_task_created_by_user_idTouser: {
+          select: { id: true, full_name: true },
+        },
+      },
+    });
+  }
+
+  async getEmploymentHistory(employeeId: number) {
+    return this.prisma.user_employment_history.findMany({
+      where: { user_id: employeeId },
+      orderBy: { effective_date: 'desc' },
+    });
+  }
+
+  async getMyEmploymentHistory(userId: number) {
+    return this.getEmploymentHistory(userId);
+  }
+
+  async getMyAnnouncements(userId: number) {
+    const employee = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { department_id: true },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Employ� non trouv�');
+    }
+
+    const orConditions: Array<{ department_id: number | null }> = [{ department_id: null }];
+
+    if (employee.department_id !== null && employee.department_id !== undefined) {
+      orConditions.push({ department_id: employee.department_id });
+    }
+
+    return this.prisma.department_announcement.findMany({
+      where: {
+        OR: orConditions,
+      },
+      include: {
+        user: {
+          select: { id: true, full_name: true },
+        },
+        department: {
+          select: { id: true, department_name: true },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+  }
 
   async deleteDocument(documentId: number) {
     const document = await this.prisma.user_document.findUnique({
@@ -589,17 +716,17 @@ export class EmployeesService {
     });
 
     if (!document) {
-      throw new NotFoundException('Document non trouvÃ©');
+      throw new NotFoundException('Document non trouvé');
     }
 
     await this.prisma.user_document.delete({
       where: { id: documentId },
     });
 
-    return { message: 'Document supprimÃ© avec succÃ¨s' };
+    return { message: 'Document supprimé avec succès' };
   }
 
-  // Recherche d'employÃ©s
+  // Recherche d'employés
   async search(query: string) {
     return await this.prisma.user.findMany({
       where: {
@@ -645,11 +772,11 @@ export class EmployeesService {
         },
       },
       orderBy: { full_name: 'asc' },
-      take: 50, // Limiter les rÃ©sultats pour les performances
+      take: 50, // Limiter les résultats pour les performances
     });
   }
 
-  // Organigramme - RÃ©cupÃ©rer la hiÃ©rarchie des employÃ©s
+  // Organigramme - Récupérer la hiérarchie des employés
   async getOrganizationChart() {
     const employees = await this.prisma.user.findMany({
       where: { active: true },
@@ -674,12 +801,12 @@ export class EmployeesService {
       ],
     });
 
-    // Organiser par dÃ©partement et hiÃ©rarchie
+    // Organiser par département et hiérarchie
     const organizationMap = new Map();
     
     employees.forEach(employee => {
       const deptId = employee.department_id || 0;
-      const deptName = employee.department_user_department_idTodepartment?.department_name || 'Sans dÃ©partement';
+      const deptName = employee.department_user_department_idTodepartment?.department_name || 'Sans département';
       
       if (!organizationMap.has(deptId)) {
         organizationMap.set(deptId, {
@@ -695,7 +822,7 @@ export class EmployeesService {
       dept.employees.push({
         id: employee.id,
         full_name: employee.full_name,
-        position: employee.position?.title || 'Poste non dÃ©fini',
+        position: employee.position?.title || 'Poste non défini',
         level: employee.position?.level,
         manager: employee.user,
         subordinates: employee.other_user,
@@ -707,7 +834,7 @@ export class EmployeesService {
     return Array.from(organizationMap.values());
   }
 
-  // Profil employÃ© pour l'employÃ© connectÃ©
+  // Profil employé pour l'employé connecté
   async getMyProfile(userId: number) {
     return this.findOne(userId);
   }

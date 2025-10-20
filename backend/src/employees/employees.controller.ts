@@ -19,6 +19,7 @@ import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { CreateContractDto } from './dto/create-contract.dto';
 import { CreateDocumentDto } from './dto/create-document.dto';
+import { UpdateOwnTaskDto } from './dto/update-own-task.dto';
 import { UpdateOwnProfileDto } from './dto/update-own-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -179,6 +180,60 @@ export class EmployeesController {
     };
   }
 
+  @Get('my-documents')
+  async getMyDocuments(@CurrentUser() currentUser: any) {
+    const documents = await this.employeesService.getMyDocuments(currentUser.id);
+    return {
+      success: true,
+      data: documents,
+      message: 'Documents récupérés avec succès',
+    };
+  }
+
+
+  @Get('my-tasks')
+  async getMyTasks(@CurrentUser() currentUser: any) {
+    const tasks = await this.employeesService.getMyTasks(currentUser.id);
+    return {
+      success: true,
+      data: tasks,
+      message: 'Taches recuperees avec succes',
+    };
+  }
+
+  @Patch('my-tasks/:taskId')
+  async updateMyTask(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @CurrentUser() currentUser: any,
+    @Body(ValidationPipe) updateOwnTaskDto: UpdateOwnTaskDto,
+  ) {
+    const task = await this.employeesService.updateMyTask(currentUser.id, taskId, updateOwnTaskDto);
+    return {
+      success: true,
+      data: task,
+      message: 'Tache mise a jour avec succes',
+    };
+  }
+  @Get('my-employment-history')
+  async getMyEmploymentHistory(@CurrentUser() currentUser: any) {
+    const history = await this.employeesService.getMyEmploymentHistory(currentUser.id);
+    return {
+      success: true,
+      data: history,
+      message: 'Historique récupéré avec succès',
+    };
+  }
+
+  @Get('my-announcements')
+  async getMyAnnouncements(@CurrentUser() currentUser: any) {
+    const announcements = await this.employeesService.getMyAnnouncements(currentUser.id);
+    return {
+      success: true,
+      data: announcements,
+      message: 'Annonces récupérées avec succès',
+    };
+  }
+
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const employee = await this.employeesService.findOne(id);
@@ -321,17 +376,6 @@ export class EmployeesController {
       message: 'Documents récupérés avec succès',
     };
   }
-
-  @Get('my-documents')
-  async getMyDocuments(@CurrentUser() currentUser: any) {
-    const documents = await this.employeesService.getMyDocuments(currentUser.id);
-    return {
-      success: true,
-      data: documents,
-      message: 'Documents rǸcupǸrǸs avec succ��s',
-    };
-  }
-
   @Delete('documents/:documentId')
   @RequirePermissions(SYSTEM_PERMISSIONS.USERS_DELETE)
   async deleteDocument(@Param('documentId', ParseIntPipe) documentId: number) {

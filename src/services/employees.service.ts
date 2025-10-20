@@ -137,6 +137,43 @@ export interface EmploymentHistory {
   user_id: number;
 }
 
+export interface TaskAssignment {
+  id: number;
+  role?: string;
+  assigned_at: string;
+}
+
+export interface Task {
+  id: number;
+  title: string;
+  description?: string;
+  status: 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE' | 'ARCHIVED';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  start_date?: string;
+  due_date?: string;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
+  project?: {
+    id: number;
+    name: string;
+  };
+  task_column?: {
+    id: number;
+    name: string;
+  };
+  task_assignment: TaskAssignment[];
+  user_task_created_by_user_idTouser?: {
+    id: number;
+    full_name: string;
+  };
+}
+
+export interface UpdateMyTaskPayload {
+  status?: Task['status'];
+  completed_at?: string | null;
+}
+
 export interface UpdateMyProfilePayload {
   full_name?: string;
   work_email?: string;
@@ -425,6 +462,42 @@ class EmployeesService {
 
   async getMyDocuments() {
     const response = await axios.get(`${API_BASE_URL}/employees/my-documents`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async getMyTasks() {
+    const response = await axios.get(`${API_BASE_URL}/employees/my-tasks`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async updateMyTask(taskId: number, data: UpdateMyTaskPayload) {
+    const payload: Record<string, unknown> = {};
+    if (data.status !== undefined) {
+      payload.status = data.status;
+    }
+    if (data.completed_at !== undefined) {
+      payload.completed_at = data.completed_at;
+    }
+
+    const response = await axios.patch(`${API_BASE_URL}/employees/my-tasks/${taskId}`, payload, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async getMyEmploymentHistory() {
+    const response = await axios.get(`${API_BASE_URL}/employees/my-employment-history`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async getMyAnnouncements() {
+    const response = await axios.get(`${API_BASE_URL}/employees/my-announcements`, {
       headers: this.getAuthHeaders(),
     });
     return response.data;

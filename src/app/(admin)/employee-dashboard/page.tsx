@@ -370,6 +370,15 @@ export default function EmployeeDashboard() {
                 <Link href="/employees/search" className="block text-sm text-primary hover:underline">
                   &rarr; Rechercher un collegue
                 </Link>
+                <Link href="/employees/announcements" className="block text-sm text-primary hover:underline">
+                  &rarr; Voir mes annonces
+                </Link>
+                <Link href="/employees/tasks" className="block text-sm text-primary hover:underline">
+                  &rarr; Suivre mes taches
+                </Link>
+                <Link href="/employees/history" className="block text-sm text-primary hover:underline">
+                  &rarr; Consulter mon historique
+                </Link>
                 <Link href="/leaves/my-leaves" className="block text-sm text-primary hover:underline">
                   &rarr; Demander un conge
                 </Link>
