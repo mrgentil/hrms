@@ -8,6 +8,7 @@ import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { useDepartment } from "@/hooks/useDepartments";
 import { useToast } from "@/hooks/useToast";
+import { useUserRole, hasPermission } from "@/hooks/useUserRole";
 
 const InfoRow = ({
   label,
@@ -33,6 +34,10 @@ export default function DepartmentDetailsPage({
 }: {
   params: { id: string };
 }) {
+  const { role: userRole } = useUserRole();
+  const canEditDepartment =
+    !!userRole && hasPermission(userRole, 'departments.edit');
+
   const departmentId = Number(params.id);
   if (Number.isNaN(departmentId)) {
     notFound();
@@ -118,12 +123,14 @@ export default function DepartmentDetailsPage({
 
         <ComponentCard title="Actions">
           <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href={`/departments/${department.id}/edit`}
-              className="inline-flex items-center rounded-md bg-primary px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
-            >
-              Modifier
-            </Link>
+            {canEditDepartment && (
+              <Link
+                href={`/departments/${department.id}/edit`}
+                className="inline-flex items-center rounded-md bg-primary px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              >
+                Modifier
+              </Link>
+            )}
             <Link
               href="/departments"
               className="inline-flex items-center rounded-md border border-stroke px-5 py-2 text-sm font-medium text-black transition-colors hover:border-primary dark:border-strokedark dark:text-white"

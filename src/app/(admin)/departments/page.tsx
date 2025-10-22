@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import ComponentCard from '@/components/common/ComponentCard';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import { useToast } from '@/hooks/useToast';
+import { useUserRole, hasPermission } from '@/hooks/useUserRole';
 import {
   useDeleteDepartment,
   useDepartments,
@@ -13,6 +14,7 @@ import {
 
 export default function DepartmentsPage() {
   const toast = useToast();
+  const { role: userRole } = useUserRole();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -34,6 +36,13 @@ export default function DepartmentsPage() {
   const departments = data?.data ?? [];
   const totalPages = data?.totalPages ?? 0;
   const totalDepartments = data?.total ?? 0;
+
+  const canCreateDepartment =
+    !!userRole && hasPermission(userRole, 'departments.create');
+  const canEditDepartment =
+    !!userRole && hasPermission(userRole, 'departments.edit');
+  const canDeleteDepartment =
+    !!userRole && hasPermission(userRole, 'departments.delete');
 
   const { totalEmployees, totalPositions, managedDepartments } = useMemo(() => {
     return departments.reduce(
@@ -65,6 +74,11 @@ export default function DepartmentsPage() {
   };
 
   const handleDelete = (id: number, name: string) => {
+    if (!canDeleteDepartment) {
+      toast.error('Permissions insuffisantes pour supprimer un departement.');
+      return;
+    }
+
     if (
       !confirm(
         `Etes-vous sur de vouloir supprimer le departement "${name}" ? Cette action est irreversible.`
@@ -83,12 +97,14 @@ export default function DepartmentsPage() {
       <div className="space-y-6">
         <ComponentCard title="Actions rapides">
           <div className="flex flex-wrap items-center gap-4">
-            <Link
-              href="/departments/create"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
-            >
-              Nouveau departement
-            </Link>
+            {canCreateDepartment && (
+              <Link
+                href="/departments/create"
+                className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+              >
+                Nouveau departement
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => refetch()}
@@ -223,20 +239,29 @@ export default function DepartmentsPage() {
                           >
                             Voir
                           </Link>
-                          <Link
-                            href={`/departments/${department.id}/edit`}
-                            className="text-xs font-medium text-blue-500 hover:underline"
-                          >
-                            Modifier
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(department.id, department.department_name)}
-                            className="text-xs font-medium text-danger hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-                            disabled={deleteDepartmentMutation.isPending}
-                          >
-                            Supprimer
-                          </button>
+                          {canEditDepartment && (
+                            <Link
+                              href={`/departments/${department.id}/edit`}
+                              className="text-xs font-medium text-blue-500 hover:underline"
+                            >
+                              Modifier
+                            </Link>
+                          )}
+                          {canDeleteDepartment && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDelete(
+                                  department.id,
+                                  department.department_name,
+                                )
+                              }
+                              className="text-xs font-medium text-danger hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                              disabled={deleteDepartmentMutation.isPending}
+                            >
+                              Supprimer
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

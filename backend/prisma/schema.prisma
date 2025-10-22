@@ -24,9 +24,23 @@ model application {
   updated_at       DateTime           @db.DateTime(0)
   user             user               @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "application_ibfk_303")
   leave_type       leave_type?        @relation(fields: [leave_type_id], references: [id], map: "application_ibfk_304")
+  leave_messages   leave_message[]
 
   @@index([leave_type_id], map: "leave_type_id")
   @@index([user_id], map: "user_id")
+}
+
+model leave_message {
+  id               Int          @id @default(autoincrement())
+  application_id   Int
+  author_user_id   Int
+  message          String       @db.Text
+  created_at       DateTime     @default(now()) @db.DateTime(0)
+  application      application  @relation(fields: [application_id], references: [id], onDelete: Cascade, map: "leave_message_ibfk_application")
+  author           user         @relation("user_leave_messages", fields: [author_user_id], references: [id], onDelete: Cascade, map: "leave_message_ibfk_author")
+
+  @@index([application_id], map: "leave_message_application_id")
+  @@index([author_user_id], map: "leave_message_author_user_id")
 }
 
 model conversation {
@@ -355,6 +369,7 @@ model user {
   expense                                               expense[]
   job                                                   job[]
   leave_balance                                         leave_balance[]
+  leave_messages                                        leave_message[]          @relation("user_leave_messages")
   project                                               project[]
   project_member                                        project_member[]
   task_task_created_by_user_idTouser                    task[]                     @relation("task_created_by_user_idTouser")

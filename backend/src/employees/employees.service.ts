@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { application_status } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
@@ -665,6 +666,136 @@ export class EmployeesService {
         },
       },
     });
+  }
+
+  async getMyTeam(userId: number) {
+    return this.prisma.user.findMany({
+      where: { manager_user_id: userId },
+      select: {
+        id: true,
+        full_name: true,
+        work_email: true,
+        profile_photo_url: true,
+        active: true,
+        hire_date: true,
+        position: {
+          select: {
+            id: true,
+            title: true,
+            level: true,
+          },
+        },
+        department_user_department_idTodepartment: {
+          select: {
+            id: true,
+            department_name: true,
+          },
+        },
+      },
+      orderBy: { full_name: 'asc' },
+    });
+  }
+
+  async getMyTeamTasks(userId: number) {
+    const teamMembers = await this.prisma.user.findMany({
+      where: { manager_user_id: userId },
+      select: { id: true },
+    });
+
+    const teamIds = teamMembers.map((member) => member.id);
+
+    if (teamIds.length === 0) {
+      return [];
+    }
+
+    return this.prisma.task.findMany({
+      where: {
+        task_assignment: {
+          some: {
+            user_id: { in: teamIds },
+          },
+        },
+      },
+      include: {
+        project: {
+          select: { id: true, name: true },
+        },
+        task_column: {
+          select: { id: true, name: true },
+        },
+        task_assignment: {
+          include: {
+            user: {
+              select: { id: true, full_name: true, profile_photo_url: true },
+            },
+          },
+        },
+        user_task_created_by_user_idTouser: {
+          select: { id: true, full_name: true },
+        },
+      },
+      orderBy: [
+        { status: 'asc' },
+        { due_date: 'asc' },
+      ],
+    });
+  }
+
+  async getMyTeamStats(userId: number) {
+    const teamMembers = await this.prisma.user.findMany({
+      where: { manager_user_id: userId },
+      select: {
+        id: true,
+        active: true,
+      },
+    });
+
+    const teamIds = teamMembers.map((member) => member.id);
+    const activeMembers = teamMembers.filter((member) => member.active).length;
+    const inactiveMembers = teamMembers.length - activeMembers;
+
+    let pendingLeaves = 0;
+    let upcomingLeaves = 0;
+    let openTasks = 0;
+
+    if (teamIds.length > 0) {
+      pendingLeaves = await this.prisma.application.count({
+        where: {
+          user_id: { in: teamIds },
+          status: application_status.Pending,
+        },
+      });
+
+      upcomingLeaves = await this.prisma.application.count({
+        where: {
+          user_id: { in: teamIds },
+          status: application_status.Approved,
+          start_date: { gte: new Date() },
+        },
+      });
+
+      openTasks = await this.prisma.task.count({
+        where: {
+          task_assignment: {
+            some: {
+              user_id: { in: teamIds },
+            },
+          },
+          status: {
+            notIn: ['DONE', 'ARCHIVED'],
+          },
+        },
+      });
+    }
+
+    return {
+      totalTeamMembers: teamMembers.length,
+      activeTeamMembers: activeMembers,
+      inactiveTeamMembers: inactiveMembers,
+      pendingLeaves,
+      upcomingLeaves,
+      openTasks,
+    };
   }
 
   async getEmploymentHistory(employeeId: number) {

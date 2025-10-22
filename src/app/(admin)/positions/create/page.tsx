@@ -9,6 +9,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { useCreatePosition } from "@/hooks/usePositions";
 import { useToast } from "@/hooks/useToast";
 import { departmentService } from "@/services/departmentService";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 type FormState = {
   title: string;
@@ -63,112 +64,114 @@ export default function CreatePositionPage() {
   };
 
   return (
-    <div>
-      <PageBreadcrumb pageTitle="Creer un poste" />
+    <ProtectedRoute requiredPermission="positions.create">
+      <div>
+        <PageBreadcrumb pageTitle="Creer un poste" />
 
-      <ComponentCard title="Informations du poste">
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-black dark:text-white">
-                Titre du poste <span className="text-meta-1">*</span>
-              </label>
-              <input
-                type="text"
-                value={formState.title}
-                onChange={(event) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    title: event.target.value,
-                  }))
-                }
-                required
-                className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                placeholder="Ex: Developpeur Full Stack"
-              />
+        <ComponentCard title="Informations du poste">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-black dark:text-white">
+                  Titre du poste <span className="text-meta-1">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formState.title}
+                  onChange={(event) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      title: event.target.value,
+                    }))
+                  }
+                  required
+                  className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                  placeholder="Ex: Developpeur Full Stack"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-black dark:text-white">
+                  Niveau
+                </label>
+                <input
+                  type="text"
+                  value={formState.level}
+                  onChange={(event) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      level: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                  placeholder="Junior, Senior, Manager..."
+                />
+              </div>
             </div>
 
             <div>
               <label className="mb-2 block text-black dark:text-white">
-                Niveau
+                Departement
               </label>
-              <input
-                type="text"
-                value={formState.level}
+              <select
+                value={formState.department_id}
                 onChange={(event) =>
                   setFormState((prev) => ({
                     ...prev,
-                    level: event.target.value,
+                    department_id: event.target.value,
                   }))
                 }
                 className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                placeholder="Junior, Senior, Manager..."
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-black dark:text-white">
-              Departement
-            </label>
-            <select
-              value={formState.department_id}
-              onChange={(event) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  department_id: event.target.value,
-                }))
-              }
-              className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-            >
-              <option value="">
-                {departmentsLoading ? "Chargement..." : "Aucun"}
-              </option>
-              {departments.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.department_name}
+              >
+                <option value="">
+                  {departmentsLoading ? "Chargement..." : "Aucun"}
                 </option>
-              ))}
-            </select>
-          </div>
+                {departments.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.department_name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="mb-2 block text-black dark:text-white">
-              Description
-            </label>
-            <textarea
-              rows={4}
-              value={formState.description}
-              onChange={(event) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  description: event.target.value,
-                }))
-              }
-              className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-              placeholder="Resume des responsabilites du poste"
-            />
-          </div>
+            <div>
+              <label className="mb-2 block text-black dark:text-white">
+                Description
+              </label>
+              <textarea
+                rows={4}
+                value={formState.description}
+                onChange={(event) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    description: event.target.value,
+                  }))
+                }
+                className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                placeholder="Resume des responsabilites du poste"
+              />
+            </div>
 
-          <div className="flex justify-end gap-4">
-            <Link
-              href="/positions"
-              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-boxdark dark:text-gray-300"
-            >
-              Annuler
-            </Link>
-            <button
-              type="submit"
-              disabled={createPositionMutation.isPending}
-              className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {createPositionMutation.isPending
-                ? "Creation..."
-                : "Creer le poste"}
-            </button>
-          </div>
-        </form>
-      </ComponentCard>
-    </div>
+            <div className="flex justify-end gap-4">
+              <Link
+                href="/positions"
+                className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-boxdark dark:text-gray-300"
+              >
+                Annuler
+              </Link>
+              <button
+                type="submit"
+                disabled={createPositionMutation.isPending}
+                className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {createPositionMutation.isPending
+                  ? "Creation..."
+                  : "Creer le poste"}
+              </button>
+            </div>
+          </form>
+        </ComponentCard>
+      </div>
+    </ProtectedRoute>
   );
 }

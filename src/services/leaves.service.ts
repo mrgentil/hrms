@@ -68,6 +68,19 @@ export interface LeaveBalance {
   leave_type: LeaveType;
 }
 
+export interface LeaveMessage {
+  id: number;
+  application_id: number;
+  author_user_id: number;
+  message: string;
+  created_at: string;
+  author?: {
+    id: number;
+    full_name: string;
+    work_email?: string | null;
+  } | null;
+}
+
 export interface CreateLeaveRequestPayload {
   type: LeaveTypeCode;
   start_date: string;
@@ -135,6 +148,13 @@ class LeavesService {
     return response.data;
   }
 
+  async getMyLeaveUpdates() {
+    const response = await axios.get(`${API_BASE_URL}/leaves/my/updates`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
   async getLeaveApprovers() {
     const response = await axios.get(`${API_BASE_URL}/leaves/approvers`, {
       headers: this.getAuthHeaders(),
@@ -179,6 +199,36 @@ class LeavesService {
 
   async getTeamLeaveRequests() {
     const response = await axios.get(`${API_BASE_URL}/leaves/team`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async getAssignedLeaveRequests(status?: LeaveStatus | 'all') {
+    const query = status ? `?status=${encodeURIComponent(status)}` : '';
+
+    const response = await axios.get(`${API_BASE_URL}/leaves/assigned${query}`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async getPendingApprovalCount() {
+    const response = await axios.get(`${API_BASE_URL}/leaves/assigned/pending-count`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async getLeaveMessages(leaveId: number) {
+    const response = await axios.get(`${API_BASE_URL}/leaves/${leaveId}/messages`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async createLeaveMessage(leaveId: number, message: string) {
+    const response = await axios.post(`${API_BASE_URL}/leaves/${leaveId}/messages`, { message }, {
       headers: this.getAuthHeaders(),
     });
     return response.data;

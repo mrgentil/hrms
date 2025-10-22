@@ -9,6 +9,8 @@ import ComponentCard from '@/components/common/ComponentCard';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 
 import { useToast } from '@/hooks/useToast';
+import { useAuth } from '@/contexts/AuthContext';
+import { LeaveDiscussion } from '@/components/leaves/LeaveDiscussion';
 
 import {
 
@@ -31,6 +33,7 @@ import {
   LeaveApprover,
 
 } from '@/services/leaves.service';
+import { useSearchParams } from 'next/navigation';
 
 
 
@@ -181,6 +184,10 @@ export default function MyLeavesPage() {
   const [cancellingLeaveId, setCancellingLeaveId] = useState<number | null>(null);
 
   const toast = useToast();
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? null;
+  const searchParams = useSearchParams();
+  const [highlightedLeaveId, setHighlightedLeaveId] = useState<number | null>(null);
 
   const resetFormState = useCallback(() => {
 
@@ -208,7 +215,46 @@ export default function MyLeavesPage() {
 
 
 
-  const openCreateForm = useCallback(() => {
+  
+  useEffect(() => {
+    if (!searchParams) {
+      return;
+    }
+
+    const leaveIdParam = searchParams.get('leaveId');
+    if (!leaveIdParam) {
+      return;
+    }
+
+    const parsed = Number.parseInt(leaveIdParam, 10);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+
+    setHighlightedLeaveId(parsed);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (highlightedLeaveId === null) {
+      return;
+    }
+
+    const exists = leaveRequests.some((request) => request.id === highlightedLeaveId);
+    if (!exists) {
+      return;
+    }
+
+    const elementId = `leave-request-${highlightedLeaveId}`;
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    const timer = window.setTimeout(() => setHighlightedLeaveId(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [highlightedLeaveId, leaveRequests]);
+
+const openCreateForm = useCallback(() => {
 
     resetFormState();
 
@@ -657,21 +703,21 @@ export default function MyLeavesPage() {
 
       case 'Approved':
 
-        return 'bg-success/10 text-success';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200';
 
       case 'Rejected':
 
-        return 'bg-danger/10 text-danger';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200';
 
       case 'Pending':
 
-        return 'bg-warning/10 text-warning';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200';
 
       case 'Cancelled':
 
       default:
 
-        return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
 
     }
 
@@ -685,11 +731,11 @@ export default function MyLeavesPage() {
 
       case 'Approved':
 
-        return 'Approuve';
+        return 'Approuvee';
 
       case 'Rejected':
 
-        return 'Refuse';
+        return 'Refusee';
 
       case 'Pending':
 
@@ -697,7 +743,7 @@ export default function MyLeavesPage() {
 
       case 'Cancelled':
 
-        return 'Annule';
+        return 'Annulee';
 
       default:
 
@@ -1315,7 +1361,9 @@ export default function MyLeavesPage() {
 
                     key={request.id}
 
-                    className={`bg-white dark:bg-boxdark border border-stroke dark:border-strokedark rounded-lg p-5 ${isEditingThisRequest ? 'border-primary shadow-lg shadow-primary/10' : ''}`}
+                    id={`leave-request-${request.id}`}
+
+                    className={`bg-white dark:bg-boxdark border border-stroke dark:border-strokedark rounded-lg p-5 ${isEditingThisRequest ? 'border-primary shadow-lg shadow-primary/10' : ''} ${highlightedLeaveId === request.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-gray-900' : ''}`}
 
                   >
 
@@ -1445,17 +1493,16 @@ export default function MyLeavesPage() {
 
                       )}
 
-                      {request.approver_comment && (
-
-                        <span className="italic">
-
-                          Commentaire manager : {request.approver_comment}
-
-                        </span>
-
-                      )}
 
                     </div>
+                    <LeaveDiscussion
+                      leaveId={request.id}
+                      currentUserId={currentUserId}
+                      canPost
+                      defaultOpen={highlightedLeaveId === request.id}
+                      className="mt-4"
+                      title="Discussion avec mon manager"
+                    />
 
                   </div>
 

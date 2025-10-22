@@ -174,6 +174,33 @@ export interface UpdateMyTaskPayload {
   completed_at?: string | null;
 }
 
+export interface TeamMember {
+  id: number;
+  full_name: string;
+  work_email?: string | null;
+  profile_photo_url?: string | null;
+  active: boolean;
+  hire_date?: string | null;
+  position?: {
+    id: number;
+    title: string;
+    level?: string | null;
+  } | null;
+  department_user_department_idTodepartment?: {
+    id: number;
+    department_name: string;
+  } | null;
+}
+
+export interface TeamStats {
+  totalTeamMembers: number;
+  activeTeamMembers: number;
+  inactiveTeamMembers: number;
+  pendingLeaves: number;
+  upcomingLeaves: number;
+  openTasks: number;
+}
+
 export interface UpdateMyProfilePayload {
   full_name?: string;
   work_email?: string;
@@ -484,6 +511,27 @@ class EmployeesService {
     }
 
     const response = await axios.patch(`${API_BASE_URL}/employees/my-tasks/${taskId}`, payload, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async getMyTeam() {
+    const response = await axios.get(`${API_BASE_URL}/employees/my-team`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async getMyTeamTasks() {
+    const response = await axios.get(`${API_BASE_URL}/employees/my-team/tasks`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async getMyTeamStats() {
+    const response = await axios.get(`${API_BASE_URL}/employees/my-team/stats`, {
       headers: this.getAuthHeaders(),
     });
     return response.data;

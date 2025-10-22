@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { employeesService, Employee } from '@/services/employees.service';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
+import { useUserRole, hasPermission } from '@/hooks/useUserRole';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -12,6 +13,13 @@ export default function EmployeesPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>();
+  const { role: userRole } = useUserRole();
+
+  const canCreateEmployee =
+    !!userRole && hasPermission(userRole, 'users.create');
+  const canEditEmployee = !!userRole && hasPermission(userRole, 'users.edit');
+  const canDeleteEmployee =
+    !!userRole && hasPermission(userRole, 'users.delete');
 
   useEffect(() => {
     fetchEmployees();
@@ -40,6 +48,11 @@ export default function EmployeesPage() {
   };
 
   const handleDelete = async (id: number) => {
+    if (!canDeleteEmployee) {
+      toast.error('Permissions insuffisantes pour supprimer un employé.');
+      return;
+    }
+
     if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
       try {
         await employeesService.deleteEmployee(id);
@@ -102,15 +115,17 @@ export default function EmployeesPage() {
               Gérez les profils complets de vos employés
             </p>
           </div>
-          <Link
-            href="/employees/create"
-            className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Nouvel Employé
-          </Link>
+          {canCreateEmployee && (
+            <Link
+              href="/employees/create"
+              className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Nouvel Employé
+            </Link>
+          )}
         </div>
       </div>
 
@@ -238,22 +253,26 @@ export default function EmployeesPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                       </Link>
-                      <Link
-                        href={`/employees/${employee.id}/edit`}
-                        className="text-blue-600 hover:text-blue-800 transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(employee.id)}
-                        className="text-red-600 hover:text-red-800 transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                      {canEditEmployee && (
+                        <Link
+                          href={`/employees/${employee.id}/edit`}
+                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </Link>
+                      )}
+                      {canDeleteEmployee && (
+                        <button
+                          onClick={() => handleDelete(employee.id)}
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -340,17 +359,19 @@ export default function EmployeesPage() {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Commencez par créer votre premier employé.
           </p>
-          <div className="mt-6">
-            <Link
-              href="/employees/create"
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Nouvel Employé
-            </Link>
-          </div>
+          {canCreateEmployee && (
+            <div className="mt-6">
+              <Link
+                href="/employees/create"
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Nouvel Employé
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>

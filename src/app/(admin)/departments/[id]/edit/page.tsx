@@ -12,6 +12,7 @@ import {
   useUpdateDepartment,
 } from "@/hooks/useDepartments";
 import { useToast } from "@/hooks/useToast";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 type FormState = {
   department_name: string;
@@ -74,25 +75,12 @@ export default function EditDepartmentPage({
     }
   }, [isError, error, toast]);
 
-  if (!isLoading && !department) {
-    return notFound();
-  }
-
-  if (!formState) {
-    return (
-      <div>
-        <PageBreadcrumb pageTitle="Modifier un departement" />
-        <ComponentCard>
-          <p className="text-sm text-gray-500 dark:text-gray-300">
-            Chargement des informations...
-          </p>
-        </ComponentCard>
-      </div>
-    );
-  }
-
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!formState) {
+      return;
+    }
 
     updateDepartmentMutation.mutate(
       {
@@ -116,120 +104,145 @@ export default function EditDepartmentPage({
     );
   };
 
-  return (
-    <div>
-      <PageBreadcrumb pageTitle={`Modifier - ${department?.department_name ?? ""}`} />
+  if (!isLoading && !department) {
+    return notFound();
+  }
 
-      <ComponentCard title="Informations du departement">
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="md:col-span-2">
+  let pageContent;
+
+  if (!formState) {
+    pageContent = (
+      <div>
+        <PageBreadcrumb pageTitle="Modifier un departement" />
+        <ComponentCard>
+          <p className="text-sm text-gray-500 dark:text-gray-300">
+            Chargement des informations...
+          </p>
+        </ComponentCard>
+      </div>
+    );
+  } else {
+    pageContent = (
+      <div>
+        <PageBreadcrumb pageTitle={`Modifier - ${department?.department_name ?? ""}`} />
+
+        <ComponentCard title="Informations du departement">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-black dark:text-white">
+                  Nom du departement <span className="text-meta-1">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formState.department_name}
+                  onChange={(event) =>
+                    setFormState((prev) =>
+                      prev
+                        ? { ...prev, department_name: event.target.value }
+                        : prev
+                    )
+                  }
+                  required
+                  className="w-full rounded border border-stroke px-5 py-3 text-sm text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                  placeholder="Nom du departement"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-black dark:text-white">
+                  Manager
+                </label>
+                <select
+                  value={formState.manager_user_id}
+                  onChange={(event) =>
+                    setFormState((prev) =>
+                      prev ? { ...prev, manager_user_id: event.target.value } : prev
+                    )
+                  }
+                  className="w-full rounded border border-stroke px-5 py-3 text-sm text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                >
+                  <option value="">
+                    {optionsLoading ? "Chargement..." : "Aucun"}
+                  </option>
+                  {managers.map((manager) => (
+                    <option key={manager.id} value={manager.id}>
+                      {manager.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-black dark:text-white">
+                  Departement parent
+                </label>
+                <select
+                  value={formState.parent_department_id}
+                  onChange={(event) =>
+                    setFormState((prev) =>
+                      prev
+                        ? { ...prev, parent_department_id: event.target.value }
+                        : prev
+                    )
+                  }
+                  className="w-full rounded border border-stroke px-5 py-3 text-sm text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                >
+                  <option value="">
+                    {optionsLoading ? "Chargement..." : "Aucun (racine)"}
+                  </option>
+                  {parentDepartments.map((parent) => (
+                    <option key={parent.id} value={parent.id}>
+                      {parent.department_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
               <label className="mb-2 block text-black dark:text-white">
-                Nom du departement <span className="text-meta-1">*</span>
+                Description
               </label>
-              <input
-                type="text"
-                value={formState.department_name}
+              <textarea
+                rows={4}
+                value={formState.description}
                 onChange={(event) =>
                   setFormState((prev) =>
-                    prev
-                      ? { ...prev, department_name: event.target.value }
-                      : prev
+                    prev ? { ...prev, description: event.target.value } : prev
                   )
                 }
-                required
                 className="w-full rounded border border-stroke px-5 py-3 text-sm text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                placeholder="Nom du departement"
+                placeholder="Decrivez brièvement le role de ce departement..."
               />
             </div>
 
-            <div>
-              <label className="mb-2 block text-black dark:text-white">
-                Manager
-              </label>
-              <select
-                value={formState.manager_user_id}
-                onChange={(event) =>
-                  setFormState((prev) =>
-                    prev ? { ...prev, manager_user_id: event.target.value } : prev
-                  )
-                }
-                className="w-full rounded border border-stroke px-5 py-3 text-sm text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+            <div className="flex justify-end gap-4">
+              <Link
+                href="/departments"
+                className="inline-flex items-center justify-center rounded-md border border-stroke px-6 py-3 text-sm font-medium text-black transition-colors hover:border-primary dark:border-strokedark dark:text-white"
               >
-                <option value="">
-                  {optionsLoading ? "Chargement..." : "Aucun"}
-                </option>
-                {managers.map((manager) => (
-                  <option key={manager.id} value={manager.id}>
-                    {manager.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-black dark:text-white">
-                Departement parent
-              </label>
-              <select
-                value={formState.parent_department_id}
-                onChange={(event) =>
-                  setFormState((prev) =>
-                    prev
-                      ? { ...prev, parent_department_id: event.target.value }
-                      : prev
-                  )
-                }
-                className="w-full rounded border border-stroke px-5 py-3 text-sm text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                Annuler
+              </Link>
+              <button
+                type="submit"
+                disabled={updateDepartmentMutation.isPending}
+                className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <option value="">
-                  {optionsLoading ? "Chargement..." : "Aucun (racine)"}
-                </option>
-                {parentDepartments.map((parent) => (
-                  <option key={parent.id} value={parent.id}>
-                    {parent.department_name}
-                  </option>
-                ))}
-              </select>
+                {updateDepartmentMutation.isPending
+                  ? "Enregistrement..."
+                  : "Sauvegarder les modifications"}
+              </button>
             </div>
-          </div>
+          </form>
+        </ComponentCard>
+      </div>
+    );
+  }
 
-          <div>
-            <label className="mb-2 block text-black dark:text-white">
-              Description
-            </label>
-            <textarea
-              rows={4}
-              value={formState.description}
-              onChange={(event) =>
-                setFormState((prev) =>
-                  prev ? { ...prev, description: event.target.value } : prev
-                )
-              }
-              className="w-full rounded border border-stroke px-5 py-3 text-sm text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-              placeholder="Decrivez brièvement le role de ce departement..."
-            />
-          </div>
-
-          <div className="flex justify-end gap-4">
-            <Link
-              href="/departments"
-              className="inline-flex items-center justify-center rounded-md border border-stroke px-6 py-3 text-sm font-medium text-black transition-colors hover:border-primary dark:border-strokedark dark:text-white"
-            >
-              Annuler
-            </Link>
-            <button
-              type="submit"
-              disabled={updateDepartmentMutation.isPending}
-              className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {updateDepartmentMutation.isPending
-                ? "Enregistrement..."
-                : "Sauvegarder les modifications"}
-            </button>
-          </div>
-        </form>
-      </ComponentCard>
-    </div>
+  return (
+    <ProtectedRoute requiredPermission="departments.edit">
+      {pageContent}
+    </ProtectedRoute>
   );
 }

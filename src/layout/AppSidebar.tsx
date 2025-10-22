@@ -118,6 +118,68 @@ const mainNavItems: NavItem[] = [
 
   {
 
+    icon: <GroupIcon />,
+
+    name: "Gestion d'équipe",
+
+    allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+    subItems: [
+
+      {
+
+        name: "Annuaire des employés",
+
+        path: "/employees",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Organigramme",
+
+        path: "/employees/organigramme",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Recherche collaborateurs",
+
+        path: "/employees/search",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+      {
+
+        name: "Annonces d'équipe",
+
+        path: "/employees/announcements",
+
+        pro: false,
+
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+
+      },
+
+    ],
+
+  },
+
+  {
+
     icon: <UserIcon />,
 
     name: "Gestion Utilisateurs",

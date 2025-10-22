@@ -214,6 +214,37 @@ export class EmployeesController {
       message: 'Tache mise a jour avec succes',
     };
   }
+
+  @Get('my-team')
+  async getMyTeam(@CurrentUser() currentUser: any) {
+    const team = await this.employeesService.getMyTeam(currentUser.id);
+    return {
+      success: true,
+      data: team,
+      message: 'Equipe recuperee avec succes',
+    };
+  }
+
+  @Get('my-team/tasks')
+  async getMyTeamTasks(@CurrentUser() currentUser: any) {
+    const tasks = await this.employeesService.getMyTeamTasks(currentUser.id);
+    return {
+      success: true,
+      data: tasks,
+      message: 'Taches equipe recuperees avec succes',
+    };
+  }
+
+  @Get('my-team/stats')
+  async getMyTeamStats(@CurrentUser() currentUser: any) {
+    const stats = await this.employeesService.getMyTeamStats(currentUser.id);
+    return {
+      success: true,
+      data: stats,
+      message: 'Statistiques equipe recuperees avec succes',
+    };
+  }
+
   @Get('my-employment-history')
   async getMyEmploymentHistory(@CurrentUser() currentUser: any) {
     const history = await this.employeesService.getMyEmploymentHistory(currentUser.id);

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -6,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
@@ -14,11 +16,13 @@ import { CreateLeaveDto } from './dto/create-leave.dto';
 import { UpdateLeaveStatusDto } from './dto/update-leave-status.dto';
 import { UpdateOwnLeaveDto } from './dto/update-own-leave.dto';
 import { CancelOwnLeaveDto } from './dto/cancel-own-leave.dto';
+import { CreateLeaveMessageDto } from './dto/create-leave-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { SYSTEM_PERMISSIONS } from '../roles/roles.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { application_status } from '@prisma/client';
 
 @Controller('leaves')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -46,6 +50,46 @@ export class LeavesController {
     return {
       success: true,
       data: leaves,
+    };
+  }
+
+  @Get('my/updates')
+  @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_VIEW_OWN)
+  async findMyUpdates(@CurrentUser() currentUser: any) {
+    const updates = await this.leavesService.findMyUpdates(currentUser.id);
+    return {
+      success: true,
+      data: updates,
+    };
+  }
+
+  @Get(':id/messages')
+  async getMessages(
+    @Param('id', ParseIntPipe) leaveId: number,
+    @CurrentUser() currentUser: any,
+  ) {
+    const messages = await this.leavesService.getLeaveMessages(leaveId, currentUser.id);
+    return {
+      success: true,
+      data: messages,
+    };
+  }
+
+  @Post(':id/messages')
+  async createMessage(
+    @Param('id', ParseIntPipe) leaveId: number,
+    @CurrentUser() currentUser: any,
+    @Body(ValidationPipe) createLeaveMessageDto: CreateLeaveMessageDto,
+  ) {
+    const message = await this.leavesService.createLeaveMessage(
+      leaveId,
+      currentUser.id,
+      createLeaveMessageDto.message,
+    );
+    return {
+      success: true,
+      data: message,
+      message: 'Message ajoute avec succes.',
     };
   }
 
@@ -117,6 +161,36 @@ export class LeavesController {
     };
   }
 
+  @Get('assigned')
+  @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_APPROVE)
+  async findAssignedLeaves(
+    @CurrentUser() currentUser: any,
+    @Query('status') status?: string,
+  ) {
+    const normalizedStatus = this.normalizeStatus(status);
+    const leaves = await this.leavesService.findAssignedLeaves(
+      currentUser.id,
+      normalizedStatus,
+    );
+
+    return {
+      success: true,
+      data: leaves,
+    };
+  }
+
+  @Get('assigned/pending-count')
+  @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_APPROVE)
+  async getPendingAssignedCount(@CurrentUser() currentUser: any) {
+    const pending = await this.leavesService.countPendingApprovals(currentUser.id);
+    return {
+      success: true,
+      data: {
+        pending,
+      },
+    };
+  }
+
   @Get()
   @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_VIEW_ALL)
   async findAllLeaves() {
@@ -163,5 +237,32 @@ export class LeavesController {
       success: true,
       data: applicationTypes,
     };
+  }
+
+  private normalizeStatus(
+    status?: string,
+  ): application_status | 'all' | undefined {
+    if (!status) {
+      return undefined;
+    }
+
+    const trimmed = status.trim();
+    if (trimmed.length === 0) {
+      return undefined;
+    }
+
+    if (trimmed.toLowerCase() === 'all') {
+      return 'all';
+    }
+
+    const match = Object.values(application_status).find(
+      (value) => value.toLowerCase() === trimmed.toLowerCase(),
+    );
+
+    if (!match) {
+      throw new BadRequestException('Statut de conge invalide.');
+    }
+
+    return match;
   }
 }

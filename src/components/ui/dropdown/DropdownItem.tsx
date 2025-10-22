@@ -12,7 +12,7 @@ interface DropdownItemProps {
 }
 
 export const DropdownItem: React.FC<DropdownItemProps> = ({
-  tag = "button",
+  tag,
   href,
   onClick,
   onItemClick,
@@ -20,17 +20,18 @@ export const DropdownItem: React.FC<DropdownItemProps> = ({
   className = "",
   children,
 }) => {
+  const resolvedTag = tag ?? (href ? "a" : "button");
   const combinedClasses = `${baseClassName} ${className}`.trim();
 
   const handleClick = (event: React.MouseEvent) => {
-    if (tag === "button") {
+    if (resolvedTag === "button") {
       event.preventDefault();
     }
     if (onClick) onClick();
     if (onItemClick) onItemClick();
   };
 
-  if (tag === "a" && href) {
+  if (resolvedTag === "a" && href) {
     return (
       <Link href={href} className={combinedClasses} onClick={handleClick}>
         {children}

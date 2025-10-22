@@ -7,10 +7,12 @@ import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { useDeletePosition, usePositions } from "@/hooks/usePositions";
 import { useToast } from "@/hooks/useToast";
+import { useUserRole, hasPermission } from "@/hooks/useUserRole";
 
 export default function PositionsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const toast = useToast();
+  const { role: userRole } = useUserRole();
 
   const {
     data,
@@ -25,6 +27,14 @@ export default function PositionsPage() {
   const positions = data?.data ?? [];
   const totalPages = data?.totalPages ?? 0;
 
+  const canCreatePosition =
+    !!userRole && hasPermission(userRole, 'positions.create');
+  const canEditPosition =
+    !!userRole && hasPermission(userRole, 'positions.edit');
+  const canDeletePosition =
+    !!userRole && hasPermission(userRole, 'positions.delete');
+  const showActionsColumn = canEditPosition || canDeletePosition;
+
   useEffect(() => {
     if (isError) {
       const message =
@@ -36,6 +46,11 @@ export default function PositionsPage() {
   }, [isError, error, toast]);
 
   const handleDelete = (id: number) => {
+    if (!canDeletePosition) {
+      toast.error("Permissions insuffisantes pour supprimer un poste.");
+      return;
+    }
+
     if (!confirm("Voulez-vous vraiment supprimer ce poste ?")) {
       return;
     }
@@ -50,12 +65,14 @@ export default function PositionsPage() {
       <div className="space-y-6">
         <ComponentCard title="Actions rapides">
           <div className="flex flex-wrap items-center gap-4">
-            <Link
-              href="/positions/create"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-10 py-4 text-center font-medium text-white transition-colors hover:bg-primary/90"
-            >
-              Creer un poste
-            </Link>
+            {canCreatePosition && (
+              <Link
+                href="/positions/create"
+                className="inline-flex items-center justify-center rounded-md bg-primary px-10 py-4 text-center font-medium text-white transition-colors hover:bg-primary/90"
+              >
+                Creer un poste
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => refetch()}
@@ -93,9 +110,11 @@ export default function PositionsPage() {
                     <th className="min-w-[120px] px-4 py-4 font-medium text-black dark:text-white">
                       Employes
                     </th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-white">
-                      Actions
-                    </th>
+                    {showActionsColumn && (
+                      <th className="px-4 py-4 font-medium text-black dark:text-white">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -130,23 +149,29 @@ export default function PositionsPage() {
                           {position.employees_count ?? 0}
                         </span>
                       </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <div className="flex items-center gap-3">
-                          <Link
-                            href={`/positions/${position.id}/edit`}
-                            className="text-sm text-primary hover:underline"
-                          >
-                            Modifier
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(position.id)}
-                            className="text-sm text-danger hover:underline"
-                            disabled={deletePositionMutation.isPending}
-                          >
-                            Supprimer
-                          </button>
-                        </div>
-                      </td>
+                      {showActionsColumn && (
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <div className="flex items-center gap-3">
+                            {canEditPosition && (
+                              <Link
+                                href={`/positions/${position.id}/edit`}
+                                className="text-sm text-primary hover:underline"
+                              >
+                                Modifier
+                              </Link>
+                            )}
+                            {canDeletePosition && (
+                              <button
+                                onClick={() => handleDelete(position.id)}
+                                className="text-sm text-danger hover:underline"
+                                disabled={deletePositionMutation.isPending}
+                              >
+                                Supprimer
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

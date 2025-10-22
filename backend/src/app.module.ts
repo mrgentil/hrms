@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { resolve } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -13,11 +14,17 @@ import { DepartmentsModule } from './departments/departments.module';
 import { EmployeesModule } from './employees/employees.module';
 import { LeavesModule } from './leaves/leaves.module';
 import { DocumentModule } from './document/document.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: [
+        resolve(__dirname, '..', '..', '.env'),
+        resolve(process.cwd(), '..', '.env'),
+        '.env',
+      ],
     }),
     PrismaModule,
     AuthModule,
@@ -28,6 +35,7 @@ import { DocumentModule } from './document/document.module';
     EmployeesModule,
     LeavesModule,
     DocumentModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [
