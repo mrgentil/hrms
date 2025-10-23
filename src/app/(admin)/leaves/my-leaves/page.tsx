@@ -1309,6 +1309,33 @@ const openCreateForm = useCallback(() => {
 
                       </div>
 
+                      {balance.monthly_allowance && balance.monthly_allowance > 0 ? (
+                        <>
+                          <div className="flex justify-between pt-1">
+                            <span>Quota mensuel</span>
+                            <span className="font-semibold text-black dark:text-white">
+                              {balance.monthly_allowance.toFixed(1)} j
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Consommés ce mois</span>
+                            <span className="font-semibold text-danger">
+                              {(balance.monthly_used ?? 0).toFixed(1)} j
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Restants ce mois</span>
+                            <span className="font-semibold text-success">
+                              {Math.max(
+                                balance.monthly_allowance - (balance.monthly_used ?? 0),
+                                0,
+                              ).toFixed(1)}{" "}
+                              j
+                            </span>
+                          </div>
+                        </>
+                      ) : null}
+
                     </div>
 
                     <div className="mt-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">

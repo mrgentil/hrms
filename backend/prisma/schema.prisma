@@ -173,6 +173,7 @@ model leave_type {
   description       String?         @db.Text
   requires_approval Boolean         @default(true)
   default_allowance Float?          @db.Float
+  monthly_allowance Float?          @db.Float
   created_at        DateTime        @db.DateTime(0)
   updated_at        DateTime        @db.DateTime(0)
   application       application[]

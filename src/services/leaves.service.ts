@@ -20,8 +20,23 @@ export interface LeaveType {
   description?: string | null;
   requires_approval: boolean;
   default_allowance?: number | null;
+  monthly_allowance?: number | null;
   created_at: string;
   updated_at: string;
+}
+export interface CreateLeaveTypePayload {
+  name: string;
+  description?: string | null;
+  default_allowance?: number;
+  monthly_allowance?: number;
+  requires_approval?: boolean;
+}
+export interface UpdateLeaveTypePayload {
+  name?: string;
+  description?: string | null;
+  default_allowance?: number;
+  monthly_allowance?: number;
+  requires_approval?: boolean;
 }
 
 export interface LeaveRequest {
@@ -66,6 +81,8 @@ export interface LeaveBalance {
   user_id: number;
   leave_type_id: number;
   leave_type: LeaveType;
+  monthly_allowance?: number | null;
+  monthly_used?: number;
 }
 
 export interface LeaveMessage {
@@ -166,6 +183,24 @@ class LeavesService {
     const response = await axios.get(`${API_BASE_URL}/leaves/types`, {
       headers: this.getAuthHeaders(),
     });
+    return response.data;
+  }
+
+  async createLeaveType(data: CreateLeaveTypePayload) {
+    const response = await axios.post(`${API_BASE_URL}/leaves/types`, data, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
+  async updateLeaveType(leaveTypeId: number, data: UpdateLeaveTypePayload) {
+    const response = await axios.patch(
+      `${API_BASE_URL}/leaves/types/${leaveTypeId}`,
+      data,
+      {
+        headers: this.getAuthHeaders(),
+      },
+    );
     return response.data;
   }
 

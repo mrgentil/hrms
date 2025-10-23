@@ -325,15 +325,10 @@ const mainNavItems: NavItem[] = [
       },
 
       {
-
-        name: "Types de Congs",
-
-        path: "/leave/types",
-
+        name: "Quotas de Conges",
+        path: "/leaves/types",
         pro: false,
-
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
 
       {

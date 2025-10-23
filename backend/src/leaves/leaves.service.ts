@@ -13,6 +13,8 @@ import { UpdateLeaveStatusDto } from './dto/update-leave-status.dto';
 import { application_status, application_type, Prisma } from '@prisma/client';
 import { UpdateOwnLeaveDto } from './dto/update-own-leave.dto';
 import { CancelOwnLeaveDto } from './dto/cancel-own-leave.dto';
+import { CreateLeaveTypeDto } from './dto/create-leave-type.dto';
+import { UpdateLeaveTypeDto } from './dto/update-leave-type.dto';
 import { RolesService, SYSTEM_PERMISSIONS } from '../roles/roles.service';
 import { MailService } from '../mail/mail.service';
 
@@ -109,15 +111,15 @@ export class LeavesService {
 
       case application_status.Approved:
 
-        return 'Approuvee';
+        return 'Approuvée';
 
       case application_status.Rejected:
 
-        return 'Refusee';
+        return 'Refusée';
 
       case application_status.Cancelled:
 
-        return 'Annulee';
+        return 'Annulée';
 
       default:
 
@@ -125,6 +127,189 @@ export class LeavesService {
 
     }
 
+  }
+
+  private readonly dayInMs = 1000 * 60 * 60 * 24;
+
+  private normalizeDate(date: Date): Date {
+    return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  }
+
+  private calculateLeaveDurationInDays(startDate: Date, endDate: Date): number {
+    const start = this.normalizeDate(startDate);
+    const end = this.normalizeDate(endDate);
+
+    if (end < start) {
+      return 0;
+    }
+
+    const diff = end.getTime() - start.getTime();
+    return Math.floor(diff / this.dayInMs) + 1;
+  }
+
+  private splitLeaveDaysByYear(startDate: Date, endDate: Date) {
+    const start = this.normalizeDate(startDate);
+    const end = this.normalizeDate(endDate);
+
+    if (end < start) {
+      return [];
+    }
+
+    const segments: { year: number; days: number }[] = [];
+    let currentStart = start;
+
+    while (currentStart <= end) {
+      const year = currentStart.getUTCFullYear();
+      const yearEnd = new Date(Date.UTC(year, 11, 31));
+      const segmentEnd = end < yearEnd ? end : yearEnd;
+      const days = this.calculateLeaveDurationInDays(currentStart, segmentEnd);
+
+      if (days > 0) {
+        segments.push({ year, days });
+      }
+
+      currentStart = new Date(segmentEnd.getTime() + this.dayInMs);
+    }
+
+    return segments;
+  }
+
+  private calculateOverlapDays(
+    startDate: Date,
+    endDate: Date,
+    rangeStart: Date,
+    rangeEnd: Date,
+  ) {
+    const start = this.normalizeDate(startDate);
+    const end = this.normalizeDate(endDate);
+    const windowStart = this.normalizeDate(rangeStart);
+    const windowEnd = this.normalizeDate(rangeEnd);
+
+    if (end < windowStart || start > windowEnd) {
+      return 0;
+    }
+
+    const overlapStart = start > windowStart ? start : windowStart;
+    const overlapEnd = end < windowEnd ? end : windowEnd;
+
+    return this.calculateLeaveDurationInDays(overlapStart, overlapEnd);
+  }
+
+  private async updateLeaveUsage(params: {
+    userId: number;
+    leaveTypeId: number | null | undefined;
+    startDate: Date;
+    endDate: Date;
+    direction: 'consume' | 'release';
+  }) {
+    const { userId, leaveTypeId, startDate, endDate, direction } = params;
+
+    if (!leaveTypeId) {
+      this.logger.warn(`Impossible de mettre à jour le solde : aucun type de congé associé (user=${userId}).`);
+      return;
+    }
+
+    const segments = this.splitLeaveDaysByYear(startDate, endDate);
+    if (segments.length === 0) {
+      return;
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const leaveType = await tx.leave_type.findUnique({
+        where: { id: leaveTypeId },
+        select: { default_allowance: true },
+      });
+
+      for (const { year, days } of segments) {
+        let balance = await tx.leave_balance.findFirst({
+          where: { user_id: userId, leave_type_id: leaveTypeId, year },
+          orderBy: { created_at: 'desc' },
+        });
+
+        if (!balance) {
+          balance = await tx.leave_balance.create({
+            data: {
+              user_id: userId,
+              leave_type_id: leaveTypeId,
+              year,
+              days_accrued: leaveType?.default_allowance ?? 0,
+              days_used: 0,
+              days_carried_over: 0,
+              created_at: new Date(),
+              updated_at: new Date(),
+            },
+          });
+        }
+
+        const delta = direction === 'consume' ? days : -days;
+        const newDaysUsed = Math.max((balance.days_used ?? 0) + delta, 0);
+
+        if (newDaysUsed === balance.days_used) {
+          continue;
+        }
+
+        await tx.leave_balance.update({
+          where: { id: balance.id },
+          data: {
+            days_used: newDaysUsed,
+            updated_at: new Date(),
+          },
+        });
+      }
+    });
+  }
+
+  private async ensureLeaveBalancesForYear(userId: number, year: number) {
+    const [leaveTypes, existingBalances, previousYearBalances] = await Promise.all([
+      this.prisma.leave_type.findMany({
+        select: { id: true, default_allowance: true },
+      }),
+      this.prisma.leave_balance.findMany({
+        where: { user_id: userId, year },
+        select: { id: true, leave_type_id: true },
+      }),
+      this.prisma.leave_balance.findMany({
+        where: { user_id: userId, year: year - 1 },
+        select: {
+          leave_type_id: true,
+          days_accrued: true,
+          days_carried_over: true,
+          days_used: true,
+        },
+      }),
+    ]);
+
+    const existingSet = new Set(existingBalances.map((balance) => balance.leave_type_id));
+    const carryOverMap = new Map<number, number>();
+
+    previousYearBalances.forEach((balance) => {
+      const totalAvailable = (balance.days_accrued ?? 0) + (balance.days_carried_over ?? 0);
+      const remaining = Math.max(totalAvailable - (balance.days_used ?? 0), 0);
+      if (remaining > 0) {
+        carryOverMap.set(balance.leave_type_id, remaining);
+      }
+    });
+
+    const creations = leaveTypes
+      .filter((type) => !existingSet.has(type.id))
+      .map((type) =>
+        this.prisma.leave_balance.create({
+          data: {
+            user_id: userId,
+            leave_type_id: type.id,
+            year,
+            days_accrued: type.default_allowance ?? 0,
+            days_used: 0,
+            days_carried_over: carryOverMap.get(type.id) ?? 0,
+            created_at: new Date(),
+            updated_at: new Date(),
+          },
+        }),
+      );
+
+    if (creations.length > 0) {
+      await this.prisma.$transaction(creations);
+    }
   }
 
   private resolveUserEmail(user?: { work_email?: string | null; username?: string | null }) {
@@ -243,25 +428,29 @@ export class LeavesService {
     } = params;
 
 
-    const subject = `Nouvelle demande de congÃ© - ${employeeName ?? 'EmployÃ©'}`;
+    const subject = `Nouvelle demande de congé - ${employeeName ?? 'Employé'}`;
+
+    const greeting = approverName ? `Bonjour ${approverName},` : 'Bonjour,';
+
+    const formattedReason = reason?.trim?.() ?? '';
 
     const textLines = [
 
-      `Bonjour ${approverName ?? ''}`.trim(),
+      greeting,
 
       '',
 
-      `${employeeName ?? 'Un employÃ©'} a soumis une nouvelle demande de congÃ© (#${leaveId}).`,
+      `${employeeName ?? 'Un employé'} a soumis une nouvelle demande de congé (n°${leaveId}).`,
 
       leaveType ? `Type : ${leaveType}` : null,
 
-      `PÃ©riode : du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}`,
+      `Période : du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}`,
 
-      `Motif : ${reason}`,
+      formattedReason ? `Motif : ${formattedReason}` : null,
 
       '',
 
-      'Connectez-vous a HRMS pour valider ou commenter cette demande.',
+      'Connectez-vous à HRMS pour valider ou commenter cette demande.',
 
     ].filter(Boolean);
 
@@ -321,25 +510,27 @@ export class LeavesService {
 
     const statusLabel = this.getStatusLabel(status);
 
-    const subject = `Votre demande de congÃ© (#${leaveId}) est ${statusLabel.toLowerCase()}`;
+    const subject = `Votre demande de congé (n°${leaveId}) est ${statusLabel.toLowerCase()}`;
+
+    const greeting = employeeName ? `Bonjour ${employeeName},` : 'Bonjour,';
 
     const textLines = [
 
-      `Bonjour ${employeeName ?? ''}`.trim(),
+      greeting,
 
       '',
 
-      `Votre demande de congÃ© ${leaveType ? `(${leaveType}) ` : ''}a Ã©tÃ© ${statusLabel.toLowerCase()}.`,
+      `Votre demande de congé${leaveType ? ` (${leaveType})` : ''} a été ${statusLabel.toLowerCase()}.`,
 
-      `PÃ©riode : du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}`,
+      `Période : du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}`,
 
-      approverName ? `ValidÃ©e par : ${approverName}` : null,
+      approverName ? `Validée par : ${approverName}` : null,
 
       comment ? `Commentaire : ${comment}` : null,
 
       '',
 
-      'Connectez-vous a HRMS pour consulter les dÃ©tails.',
+      'Connectez-vous à HRMS pour consulter les détails.',
 
     ].filter(Boolean);
 
@@ -366,7 +557,7 @@ export class LeavesService {
 
     const { recipients, authorName, leaveId, message } = params;
 
-    const subject = `Nouveau commentaire sur la demande de congÃ© #${leaveId}`;
+    const subject = `Nouveau commentaire sur la demande de congé n°${leaveId}`;
 
     await Promise.all(
 
@@ -394,7 +585,7 @@ export class LeavesService {
 
             '',
 
-            'Connectez-vous a HRMS pour rÃ©pondre.',
+            'Connectez-vous à HRMS pour répondre.',
 
           ];
 
@@ -894,21 +1085,71 @@ export class LeavesService {
 
 
   async getMyBalances(userId: number) {
+    const currentYear = new Date().getFullYear();
+    await this.ensureLeaveBalancesForYear(userId, currentYear);
 
-    return this.prisma.leave_balance.findMany({
-
+    const balances = await this.prisma.leave_balance.findMany({
       where: { user_id: userId },
-
+      include: {
+        leave_type: true,
+      },
       orderBy: [
-
         { year: 'desc' },
-
         { created_at: 'desc' },
-
       ],
-
     });
 
+    const monthlyTypeIds = balances
+      .filter(
+        (balance) =>
+          balance.leave_type_id &&
+          (balance.leave_type?.monthly_allowance ?? null) !== null &&
+          (balance.leave_type?.monthly_allowance ?? 0) > 0,
+      )
+      .map((balance) => balance.leave_type_id) as number[];
+
+    const monthlyUsageMap = new Map<number, number>();
+
+    if (monthlyTypeIds.length > 0) {
+      const now = new Date();
+      const monthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+      const monthEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999));
+
+      const monthlyApplications = await this.prisma.application.findMany({
+        where: {
+          user_id: userId,
+          status: application_status.Approved,
+          leave_type_id: { in: monthlyTypeIds },
+          start_date: { lte: monthEnd },
+          end_date: { gte: monthStart },
+        },
+        select: {
+          leave_type_id: true,
+          start_date: true,
+          end_date: true,
+        },
+      });
+
+      monthlyApplications.forEach((application) => {
+        if (!application.leave_type_id) {
+          return;
+        }
+        const days = this.calculateOverlapDays(
+          application.start_date,
+          application.end_date,
+          monthStart,
+          monthEnd,
+        );
+        const current = monthlyUsageMap.get(application.leave_type_id) ?? 0;
+        monthlyUsageMap.set(application.leave_type_id, current + days);
+      });
+    }
+
+    return balances.map((balance) => ({
+      ...balance,
+      monthly_allowance: balance.leave_type?.monthly_allowance ?? null,
+      monthly_used: monthlyUsageMap.get(balance.leave_type_id) ?? 0,
+    }));
   }
 
 
@@ -1244,6 +1485,27 @@ export class LeavesService {
 
     }
 
+    const wasApproved = existing.status === application_status.Approved;
+    const isNowApproved = updated.status === application_status.Approved;
+
+    if (isNowApproved && !wasApproved) {
+      await this.updateLeaveUsage({
+        userId: existing.user_id,
+        leaveTypeId: updated.leave_type?.id ?? existing.leave_type_id,
+        startDate: updated.start_date,
+        endDate: updated.end_date,
+        direction: 'consume',
+      });
+    } else if (wasApproved && !isNowApproved) {
+      await this.updateLeaveUsage({
+        userId: existing.user_id,
+        leaveTypeId: updated.leave_type?.id ?? existing.leave_type_id,
+        startDate: updated.start_date,
+        endDate: updated.end_date,
+        direction: 'release',
+      });
+    }
+
     const approverInfo = await this.prisma.user.findUnique({
 
       where: { id: approverId },
@@ -1531,6 +1793,105 @@ export class LeavesService {
 
     return this.prisma.leave_type.findMany();
 
+  }
+
+  async createLeaveType(dto: CreateLeaveTypeDto) {
+    const trimmedName = dto.name.trim();
+    if (trimmedName.length === 0) {
+      throw new BadRequestException('Le nom du type de congé ne peut pas être vide.');
+    }
+
+    const existing = await this.prisma.leave_type.findFirst({
+      where: {
+        name: trimmedName,
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException('Un type de congé portant ce nom existe déjà.');
+    }
+
+    const trimmedDescription = dto.description?.trim();
+    const defaultAllowance =
+      dto.default_allowance !== undefined && dto.default_allowance !== null
+        ? dto.default_allowance
+        : 0;
+
+    const monthlyAllowance =
+      dto.monthly_allowance !== undefined && dto.monthly_allowance !== null
+        ? dto.monthly_allowance
+        : null;
+
+    const leaveType = await this.prisma.leave_type.create({
+      data: {
+        name: trimmedName,
+        description: trimmedDescription && trimmedDescription.length > 0 ? trimmedDescription : null,
+        default_allowance: defaultAllowance,
+        monthly_allowance: monthlyAllowance,
+        requires_approval: dto.requires_approval ?? true,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    return leaveType;
+  }
+
+  async updateLeaveType(leaveTypeId: number, dto: UpdateLeaveTypeDto) {
+    const existing = await this.prisma.leave_type.findUnique({
+      where: { id: leaveTypeId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Type de congé introuvable.');
+    }
+
+    const data: Prisma.leave_typeUpdateInput = {
+      updated_at: new Date(),
+    };
+
+    if (dto.name !== undefined) {
+      const trimmedName = dto.name.trim();
+      if (trimmedName.length === 0) {
+        throw new BadRequestException('Le nom du type de congé ne peut pas être vide.');
+      }
+      data.name = trimmedName;
+    }
+
+    if (dto.description !== undefined) {
+      const trimmedDescription = dto.description?.trim();
+      data.description = trimmedDescription && trimmedDescription.length > 0 ? trimmedDescription : null;
+    }
+
+    if (dto.default_allowance !== undefined) {
+      data.default_allowance = dto.default_allowance;
+    }
+
+    if (dto.monthly_allowance !== undefined) {
+      data.monthly_allowance = dto.monthly_allowance;
+    }
+
+    if (dto.requires_approval !== undefined) {
+      data.requires_approval = dto.requires_approval;
+    }
+
+    const updated = await this.prisma.leave_type.update({
+      where: { id: leaveTypeId },
+      data,
+    });
+
+    if (dto.default_allowance !== undefined) {
+      const currentYear = new Date().getFullYear();
+      await this.prisma.leave_balance.updateMany({
+        where: { leave_type_id: leaveTypeId, year: currentYear },
+        data: {
+          days_accrued: dto.default_allowance,
+          updated_at: new Date(),
+        },
+      });
+    }
+
+    return updated;
   }
 
 

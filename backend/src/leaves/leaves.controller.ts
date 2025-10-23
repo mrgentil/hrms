@@ -17,6 +17,8 @@ import { UpdateLeaveStatusDto } from './dto/update-leave-status.dto';
 import { UpdateOwnLeaveDto } from './dto/update-own-leave.dto';
 import { CancelOwnLeaveDto } from './dto/cancel-own-leave.dto';
 import { CreateLeaveMessageDto } from './dto/create-leave-message.dto';
+import { UpdateLeaveTypeDto } from './dto/update-leave-type.dto';
+import { CreateLeaveTypeDto } from './dto/create-leave-type.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -220,12 +222,37 @@ export class LeavesController {
     };
   }
 
+  @Post('types')
+  @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_MANAGE_TYPES)
+  async createLeaveType(@Body(ValidationPipe) createLeaveTypeDto: CreateLeaveTypeDto) {
+    const created = await this.leavesService.createLeaveType(createLeaveTypeDto);
+    return {
+      success: true,
+      data: created,
+      message: 'Type de congé créé.',
+    };
+  }
+
   @Get('types')
   async getLeaveTypes() {
     const leaveTypes = await this.leavesService.getLeaveTypes();
     return {
       success: true,
       data: leaveTypes,
+    };
+  }
+
+  @Patch('types/:id')
+  @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_MANAGE_TYPES)
+  async updateLeaveType(
+    @Param('id', ParseIntPipe) leaveTypeId: number,
+    @Body(ValidationPipe) updateLeaveTypeDto: UpdateLeaveTypeDto,
+  ) {
+    const updated = await this.leavesService.updateLeaveType(leaveTypeId, updateLeaveTypeDto);
+    return {
+      success: true,
+      data: updated,
+      message: 'Type de congé mis à jour.',
     };
   }
 

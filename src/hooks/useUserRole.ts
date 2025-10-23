@@ -121,6 +121,12 @@ export function useUserRole(): UseUserRoleResult {
           permissionSet.add('users.view');
         }
 
+        if (
+          ['ROLE_RH', 'ROLE_ADMIN', 'ROLE_SUPER_ADMIN'].includes(resolvedRole)
+        ) {
+          permissionSet.add('leaves.manage_types');
+        }
+
         if (['ROLE_ADMIN', 'ROLE_SUPER_ADMIN'].includes(resolvedRole)) {
           permissionSet.add('system.admin');
         }
