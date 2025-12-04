@@ -30,7 +30,8 @@ export default function SignInForm() {
     try {
       await login(username, password);
       toast.success("Connexion reussie !");
-      router.push("/");
+      // Utiliser window.location pour forcer un rechargement complet
+      window.location.href = "/";
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Erreur de connexion";
