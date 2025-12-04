@@ -9,47 +9,33 @@ export class AttendanceService {
 
   // Check-in pour aujourd'hui
   async checkIn(userId: number, dto: CheckInDto) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Vérifier s'il y a déjà un pointage aujourd'hui
-    const existing = await this.prisma.attendance.findUnique({
-      where: {
-        user_id_date: {
-          user_id: userId,
-          date: today,
-        },
-      },
-    });
-
-    if (existing?.check_in) {
-      throw new BadRequestException('Vous avez déjà pointé votre arrivée aujourd\'hui');
-    }
-
     const now = new Date();
+    
+    // Date du jour à minuit UTC (pour correspondre au format stocké en DB)
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
+
     const workStartHour = 9; // 9h00
     const isLate = now.getHours() > workStartHour || 
                    (now.getHours() === workStartHour && now.getMinutes() > 15);
 
     const status = dto.status || (isLate ? attendance_status.LATE : attendance_status.PRESENT);
 
-    if (existing) {
-      // Mise à jour du pointage existant
-      return this.prisma.attendance.update({
-        where: { id: existing.id },
-        data: {
-          check_in: now,
-          check_in_location: dto.location,
-          status,
-          notes: dto.notes,
+    // Utiliser upsert pour gérer la création ou mise à jour
+    const attendance = await this.prisma.attendance.upsert({
+      where: {
+        user_id_date: {
+          user_id: userId,
+          date: today,
         },
-        include: { user: { select: { id: true, full_name: true } } },
-      });
-    }
-
-    // Créer un nouveau pointage
-    return this.prisma.attendance.create({
-      data: {
+      },
+      update: {
+        // Si l'enregistrement existe déjà et a un check_in, on ne fait rien (sera géré après)
+        check_in: now,
+        check_in_location: dto.location,
+        status,
+        notes: dto.notes,
+      },
+      create: {
         user_id: userId,
         date: today,
         check_in: now,
@@ -59,12 +45,14 @@ export class AttendanceService {
       },
       include: { user: { select: { id: true, full_name: true } } },
     });
+
+    return attendance;
   }
 
   // Check-out pour aujourd'hui
   async checkOut(userId: number, dto: CheckOutDto) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
 
     const attendance = await this.prisma.attendance.findUnique({
       where: {
@@ -87,7 +75,6 @@ export class AttendanceService {
       throw new BadRequestException('Vous avez déjà pointé votre départ aujourd\'hui');
     }
 
-    const now = new Date();
     const checkInTime = new Date(attendance.check_in);
     
     // Calcul des heures travaillées
@@ -112,8 +99,8 @@ export class AttendanceService {
 
   // Obtenir le pointage d'aujourd'hui
   async getTodayAttendance(userId: number) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
 
     return this.prisma.attendance.findUnique({
       where: {
