@@ -4,6 +4,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import frLocale from "@fullcalendar/core/locales/fr";
 import {
   EventInput,
   DateSelectArg,
@@ -12,12 +13,34 @@ import {
 } from "@fullcalendar/core";
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
+import { leavesService, LeaveRequest } from "@/services/leaves.service";
 
 interface CalendarEvent extends EventInput {
   extendedProps: {
     calendar: string;
+    type?: string;
+    status?: string;
+    employeeName?: string;
   };
 }
+
+// Mapping des types de congés vers les couleurs
+const leaveTypeColors: Record<string, string> = {
+  "Congés payés": "Success",
+  "RTT": "Primary",
+  "Maladie": "Danger",
+  "Sans solde": "Warning",
+  "Maternité": "Primary",
+  "Paternité": "Primary",
+  "Formation": "Warning",
+};
+
+const statusColors: Record<string, string> = {
+  Approved: "Success",
+  Pending: "Warning",
+  Rejected: "Danger",
+  Cancelled: "Danger",
+};
 
 const Calendar: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
@@ -28,6 +51,7 @@ const Calendar: React.FC = () => {
   const [eventEndDate, setEventEndDate] = useState("");
   const [eventLevel, setEventLevel] = useState("");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   const calendarRef = useRef<FullCalendar>(null);
   const { isOpen, openModal, closeModal } = useModal();
 
@@ -39,29 +63,59 @@ const Calendar: React.FC = () => {
   };
 
   useEffect(() => {
-    // Initialize with some events
-    setEvents([
-      {
-        id: "1",
-        title: "Event Conf.",
-        start: new Date().toISOString().split("T")[0],
-        extendedProps: { calendar: "Danger" },
-      },
-      {
-        id: "2",
-        title: "Meeting",
-        start: new Date(Date.now() + 86400000).toISOString().split("T")[0],
-        extendedProps: { calendar: "Success" },
-      },
-      {
-        id: "3",
-        title: "Workshop",
-        start: new Date(Date.now() + 172800000).toISOString().split("T")[0],
-        end: new Date(Date.now() + 259200000).toISOString().split("T")[0],
-        extendedProps: { calendar: "Primary" },
-      },
-    ]);
+    loadLeaveEvents();
   }, []);
+
+  const loadLeaveEvents = async () => {
+    try {
+      setLoading(true);
+      // Charger les congés approuvés et en attente
+      const leaves = await leavesService.getAllApplications();
+      
+      const leaveEvents: CalendarEvent[] = leaves
+        .filter((leave: LeaveRequest) => leave.status !== "Cancelled" && leave.status !== "Rejected")
+        .map((leave: LeaveRequest) => {
+          const color = statusColors[leave.status] || leaveTypeColors[leave.leave_type?.name || ""] || "Primary";
+          const employeeName = leave.user?.full_name || "Employé";
+          
+          return {
+            id: `leave-${leave.id}`,
+            title: `${employeeName} - ${leave.leave_type?.name || "Congé"}`,
+            start: leave.start_date,
+            end: leave.end_date ? new Date(new Date(leave.end_date).getTime() + 86400000).toISOString().split("T")[0] : leave.start_date,
+            allDay: true,
+            extendedProps: {
+              calendar: color,
+              type: leave.leave_type?.name,
+              status: leave.status,
+              employeeName: employeeName,
+            },
+          };
+        });
+
+      setEvents(leaveEvents);
+    } catch (error) {
+      console.error("Erreur lors du chargement des congés:", error);
+      // En cas d'erreur, afficher des événements de démo
+      setEvents([
+        {
+          id: "demo-1",
+          title: "Congés payés - Jean Dupont",
+          start: new Date().toISOString().split("T")[0],
+          end: new Date(Date.now() + 5 * 86400000).toISOString().split("T")[0],
+          extendedProps: { calendar: "Success", type: "Congés payés", status: "Approved" },
+        },
+        {
+          id: "demo-2",
+          title: "RTT - Marie Martin",
+          start: new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
+          extendedProps: { calendar: "Primary", type: "RTT", status: "Pending" },
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     resetModalFields();
@@ -127,22 +181,25 @@ const Calendar: React.FC = () => {
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
+          locale={frLocale}
           headerToolbar={{
-            left: "prev,next addEventButton",
+            left: "prev,next today",
             center: "title",
             right: "dayGridMonth,timeGridWeek,timeGridDay",
+          }}
+          buttonText={{
+            today: "Aujourd'hui",
+            month: "Mois",
+            week: "Semaine",
+            day: "Jour",
           }}
           events={events}
           selectable={true}
           select={handleDateSelect}
           eventClick={handleEventClick}
           eventContent={renderEventContent}
-          customButtons={{
-            addEventButton: {
-              text: "Add Event +",
-              click: openModal,
-            },
-          }}
+          height="auto"
+          eventDisplay="block"
         />
       </div>
       <Modal

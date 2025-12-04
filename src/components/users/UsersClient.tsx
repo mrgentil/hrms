@@ -11,7 +11,7 @@ import {
   useExportUsers, 
   useImportUsers 
 } from "@/hooks/useUsers";
-import { formatUserRole } from "@/lib/roleLabels";
+import { formatUserRole, getRoleBadgeClass, getRoleEmoji } from "@/lib/roleLabels";
 
 export default function UsersClient() {
   const toast = useToast();
@@ -294,15 +294,9 @@ export default function UsersClient() {
                   </tr>
                 ) : (
                   users.map((user) => {
-                  const roleName =
-                    user.role_info?.name ||
-                    user.current_role ||
-                    formatUserRole(user.role);
-                  const badgeTone = user.role_info?.is_system
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-blue-100 text-blue-800";
-                  const roleIcon = user.role_info?.icon || "👤";
-                  const roleColor = user.role_info?.color || "#6b7280";
+                  const roleName = user.role_info?.name || formatUserRole(user.role);
+                  const roleIcon = user.role_info?.icon || getRoleEmoji(user.role);
+                  const badgeClass = getRoleBadgeClass(user.role);
 
                   return (
                   <tr key={user.id}>
@@ -311,7 +305,7 @@ export default function UsersClient() {
                         {user.full_name}
                       </h5>
                       <p className="text-sm text-gray-500">
-                        Embauché le {user.hire_date}
+                        Embauché le {user.hire_date ? new Date(user.hire_date).toLocaleDateString('fr-FR') : 'N/A'}
                       </p>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
@@ -320,17 +314,10 @@ export default function UsersClient() {
                       </p>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <div className="flex items-center">
-                        <div 
-                          className="mr-3 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-white font-bold"
-                          style={{ backgroundColor: roleColor }}
-                        >
-                          {roleIcon}
-                        </div>
-                        <p className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${badgeTone}`}>
-                          {roleName}
-                        </p>
-                      </div>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${badgeClass}`}>
+                        <span>{roleIcon}</span>
+                        <span>{roleName}</span>
+                      </span>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <p className="text-black dark:text-white">

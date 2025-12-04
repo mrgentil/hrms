@@ -240,6 +240,49 @@ export class UsersService {
             full_name: true,
           },
         },
+        role_relation: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            icon: true,
+          },
+        },
+        user_personal_info: {
+          select: {
+            id: true,
+            date_of_birth: true,
+            gender: true,
+            marital_status: true,
+            mobile: true,
+            phone: true,
+            email_address: true,
+            address: true,
+            city: true,
+            country: true,
+            emergency_contact_primary_name: true,
+            emergency_contact_primary_phone: true,
+          },
+        },
+        user_employment_history: {
+          select: {
+            id: true,
+            change_type: true,
+            effective_date: true,
+            notes: true,
+          },
+          orderBy: { effective_date: 'desc' },
+        },
+        user_document_user_document_user_idTouser: {
+          select: {
+            id: true,
+            name: true,
+            document_type: true,
+            file_path: true,
+            is_confidential: true,
+          },
+          take: 10,
+        },
       },
     });
 

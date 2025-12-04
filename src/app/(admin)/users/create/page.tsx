@@ -7,7 +7,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { useToast } from "@/hooks/useToast";
 import { useCreateUser, useUserAdminOptions } from "@/hooks/useUsers";
 import { CreateUserDto, UserRole } from "@/types/api";
-import { formatUserRole } from "@/lib/roleLabels";
+import { formatUserRole, ROLE_CATEGORIES, sortRolesByHierarchy, getRoleEmoji } from "@/lib/roleLabels";
 
 type FormState = {
   username: string;
@@ -215,12 +215,24 @@ export default function CreateUser() {
                   className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-not-allowed disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                   required
                 >
-                  {!roles.length && <option value="">Aucun role disponible</option>}
-                  {roles.map((role) => (
-                    <option key={role} value={role}>
-                      {formatUserRole(role)}
-                    </option>
-                  ))}
+                  {!roles.length && <option value="">Aucun rôle disponible</option>}
+                  {roles.length > 0 && (
+                    <>
+                      {Object.entries(ROLE_CATEGORIES).map(([key, category]) => {
+                        const availableRoles = category.roles.filter(r => roles.includes(r));
+                        if (availableRoles.length === 0) return null;
+                        return (
+                          <optgroup key={key} label={category.label}>
+                            {availableRoles.map((role) => (
+                              <option key={role} value={role}>
+                                {getRoleEmoji(role)} {formatUserRole(role)}
+                              </option>
+                            ))}
+                          </optgroup>
+                        );
+                      })}
+                    </>
+                  )}
                 </select>
               </div>
 

@@ -15,6 +15,9 @@ import { EmployeesModule } from './employees/employees.module';
 import { LeavesModule } from './leaves/leaves.module';
 import { DocumentModule } from './document/document.module';
 import { MailModule } from './mail/mail.module';
+import { AttendanceModule } from './attendance/attendance.module';
+import { ExpensesModule } from './expenses/expenses.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -36,6 +39,9 @@ import { MailModule } from './mail/mail.module';
     LeavesModule,
     DocumentModule,
     MailModule,
+    AttendanceModule,
+    ExpensesModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [

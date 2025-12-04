@@ -118,6 +118,26 @@ const mainNavItems: NavItem[] = [
 
   {
 
+    icon: <CalenderIcon />,
+
+    name: "Pointage",
+
+    path: "/attendance",
+
+  },
+
+  {
+
+    icon: <DollarLineIcon />,
+
+    name: "Notes de Frais",
+
+    path: "/expenses",
+
+  },
+
+  {
+
     icon: <GroupIcon />,
 
     name: "Gestion d'équipe",

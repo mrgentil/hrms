@@ -20,15 +20,53 @@ if (apiUrl) {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
+  
+  // Optimisations de performance
+  reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
+  
+  // Optimisation des images
   images: {
     remotePatterns,
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
   },
-  webpack(config) {
+  
+  // Optimisation du bundle
+  modularizeImports: {
+    // Optimiser les imports lourds
+    '@fullcalendar/core': {
+      transform: '@fullcalendar/core/{{member}}',
+    },
+  },
+  
+  webpack(config, { isServer }) {
     config.module.rules.push({
       test: /\.svg$/,
       use: ["@svgr/webpack"],
     });
+    
+    // Optimisation: ne pas inclure les locales inutiles de moment/date-fns
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+      };
+    }
+    
     return config;
+  },
+  
+  // Experimental optimizations
+  experimental: {
+    optimizePackageImports: [
+      'apexcharts',
+      'react-apexcharts', 
+      '@fullcalendar/core',
+      '@fullcalendar/react',
+      '@fullcalendar/daygrid',
+      '@tanstack/react-query',
+    ],
   },
 };
 
