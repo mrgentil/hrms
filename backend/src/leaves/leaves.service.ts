@@ -1152,7 +1152,39 @@ export class LeavesService {
     }));
   }
 
+  async getAllBalances(year: number) {
+    const balances = await this.prisma.leave_balance.findMany({
+      where: { year },
+      include: {
+        leave_type: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            full_name: true,
+            work_email: true,
+            department_user_department_idTodepartment: {
+              select: { department_name: true },
+            },
+          },
+        },
+      },
+      orderBy: [
+        { user: { full_name: 'asc' } },
+        { leave_type: { name: 'asc' } },
+      ],
+    });
 
+    return balances.map((balance) => ({
+      ...balance,
+      days_remaining: (balance.days_accrued || 0) - (balance.days_used || 0),
+      days_pending: 0, // À calculer si nécessaire
+    }));
+  }
 
   async getApprovers(userId: number) {
     const requester = await this.prisma.user.findUnique({
@@ -1332,45 +1364,31 @@ export class LeavesService {
 
 
   async findAllLeaves() {
-
     return this.prisma.application.findMany({
-
       include: {
-
         leave_type: true,
-
         user: {
-
           select: {
-
             id: true,
-
             full_name: true,
-
             work_email: true,
-
             username: true,
-
             department_id: true,
-
             position_id: true,
-
             manager_user_id: true,
-
+            department_user_department_idTodepartment: {
+              select: { department_name: true },
+            },
+            position: {
+              select: { title: true },
+            },
           },
-
         },
-
       },
-
       orderBy: {
-
         created_at: 'desc',
-
       },
-
     });
-
   }
 
 

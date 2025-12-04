@@ -143,6 +143,17 @@ export class LeavesController {
     };
   }
 
+  @Get('balances/all')
+  @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_VIEW_ALL)
+  async getAllBalances(@Query('year') year?: string) {
+    const yearNum = year ? parseInt(year) : new Date().getFullYear();
+    const balances = await this.leavesService.getAllBalances(yearNum);
+    return {
+      success: true,
+      data: balances,
+    };
+  }
+
   @Get('approvers')
   @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_VIEW_OWN)
   async getPotentialApprovers(@CurrentUser() currentUser: any) {

@@ -24,6 +24,8 @@ import { useSidebar } from "../context/SidebarContext";
 
 import { useUserRole } from "@/hooks/useUserRole";
 
+import { useAppSettings } from "@/contexts/AppSettingsContext";
+
 import EmployeeNavigation from "@/components/Sidebar/EmployeeNavigation";
 
 import {
@@ -333,34 +335,30 @@ const mainNavItems: NavItem[] = [
     subItems: [
 
       {
-
-        name: "Demandes de Congs",
-
-        path: "/leave/applications",
-
+        name: "Mes Congés",
+        path: "/leaves/my-leaves",
         pro: false,
-
-        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
 
       {
-        name: "Quotas de Conges",
+        name: "Tous les Congés",
+        path: "/leaves/all",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+
+      {
+        name: "Quotas de Congés",
         path: "/leaves/types",
         pro: false,
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
 
       {
-
-        name: "Soldes de Congs",
-
-        path: "/leave/balances",
-
+        name: "Soldes de Congés",
+        path: "/leaves/balances",
         pro: false,
-
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
 
       {
@@ -632,39 +630,16 @@ const advancedNavItems: NavItem[] = [
     subItems: [
 
       {
-
-        name: "Paramtres Systme",
-
-        path: "/admin/settings",
-
+        name: "Paramètres Application",
+        path: "/settings",
         pro: false,
-
         allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
-        name: "Authentification",
-
-        path: "/signin",
-
-        pro: false,
-
-        allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
-      },
-
-      {
-
         name: "Logs & Audit",
-
         path: "/admin/logs",
-
         pro: false,
-
         allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
 
     ],
@@ -682,6 +657,8 @@ const AppSidebar: React.FC = () => {
   const pathname = usePathname();
 
   const { role: userRole, loading: roleLoading } = useUserRole();
+
+  const { settings, getImageUrl } = useAppSettings();
 
   const isEmployeeOnly = userRole?.role === "ROLE_EMPLOYEE";
 
@@ -1220,67 +1197,63 @@ const AppSidebar: React.FC = () => {
       >
 
         <Link href="/">
-
           {isExpanded || isHovered || isMobileOpen ? (
-
             <>
-
-              <Image
-
-                className="dark:hidden"
-
-                src="/images/logo/logo.svg"
-
-                alt="Logo"
-
-                width={150}
-
-                height={40}
-
-                priority
-
-                style={{ height: 'auto', width: 'auto' }}
-
-              />
-
-              <Image
-
-                className="hidden dark:block"
-
-                src="/images/logo/logo-dark.svg"
-
-                alt="Logo"
-
-                width={150}
-
-                height={40}
-
-                priority
-
-                style={{ height: 'auto', width: 'auto' }}
-
-              />
-
+              {/* Logo dynamique ou fallback */}
+              {settings.logo_light ? (
+                <img
+                  className="dark:hidden h-10 w-auto"
+                  src={getImageUrl(settings.logo_light)}
+                  alt={settings.app_name || "Logo"}
+                />
+              ) : (
+                <Image
+                  className="dark:hidden"
+                  src="/images/logo/logo.svg"
+                  alt="Logo"
+                  width={150}
+                  height={40}
+                  priority
+                  style={{ height: 'auto', width: 'auto' }}
+                />
+              )}
+              {settings.logo_dark ? (
+                <img
+                  className="hidden dark:block h-10 w-auto"
+                  src={getImageUrl(settings.logo_dark)}
+                  alt={settings.app_name || "Logo"}
+                />
+              ) : (
+                <Image
+                  className="hidden dark:block"
+                  src="/images/logo/logo-dark.svg"
+                  alt="Logo"
+                  width={150}
+                  height={40}
+                  priority
+                  style={{ height: 'auto', width: 'auto' }}
+                />
+              )}
             </>
-
           ) : (
-
-            <Image
-
-              src="/images/logo/logo-icon.svg"
-
-              alt="Logo"
-
-              width={32}
-
-              height={32}
-
-              style={{ height: 'auto', width: 'auto' }}
-
-            />
-
+            <>
+              {settings.favicon ? (
+                <img
+                  className="h-8 w-8"
+                  src={getImageUrl(settings.favicon)}
+                  alt={settings.app_name || "Logo"}
+                />
+              ) : (
+                <Image
+                  src="/images/logo/logo-icon.svg"
+                  alt="Logo"
+                  width={32}
+                  height={32}
+                  style={{ height: 'auto', width: 'auto' }}
+                />
+              )}
+            </>
           )}
-
         </Link>
 
       </div>

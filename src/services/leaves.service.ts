@@ -282,6 +282,14 @@ class LeavesService {
     });
     return response.data;
   }
+
+  async getLeaveBalances(year?: number) {
+    const yearParam = year || new Date().getFullYear();
+    const response = await axios.get(`${API_BASE_URL}/leaves/balances/all?year=${yearParam}`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
 }
 
 export const leavesService = new LeavesService();

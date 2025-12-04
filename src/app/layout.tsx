@@ -4,7 +4,9 @@ import './globals.css';
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { AppSettingsProvider } from '@/contexts/AppSettingsContext';
 import Toaster from '@/components/common/Toaster';
+import DynamicHead from '@/components/common/DynamicHead';
 import QueryProvider from '@/providers/QueryProvider';
 
 const outfit = Outfit({
@@ -20,14 +22,17 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.className} dark:bg-gray-900`} suppressHydrationWarning>
         <QueryProvider>
-          <AuthProvider>
-            <ThemeProvider>
-              <SidebarProvider>
-                {children}
-              </SidebarProvider>
-              <Toaster />
-            </ThemeProvider>
-          </AuthProvider>
+          <AppSettingsProvider>
+            <DynamicHead />
+            <AuthProvider>
+              <ThemeProvider>
+                <SidebarProvider>
+                  {children}
+                </SidebarProvider>
+                <Toaster />
+              </ThemeProvider>
+            </AuthProvider>
+          </AppSettingsProvider>
         </QueryProvider>
       </body>
     </html>

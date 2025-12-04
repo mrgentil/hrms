@@ -9,6 +9,7 @@ import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/useToast";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,6 +21,7 @@ export default function SignInForm() {
   const { login } = useAuth();
   const router = useRouter();
   const toast = useToast();
+  const { settings, getImageUrl } = useAppSettings();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -56,11 +58,28 @@ export default function SignInForm() {
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
+            {/* Logo mobile */}
+            {settings.logo_light && (
+              <div className="mb-4 lg:hidden">
+                <img
+                  className="h-10 w-auto mx-auto dark:hidden"
+                  src={getImageUrl(settings.logo_light)}
+                  alt={settings.app_name || "Logo"}
+                />
+                {settings.logo_dark && (
+                  <img
+                    className="h-10 w-auto mx-auto hidden dark:block"
+                    src={getImageUrl(settings.logo_dark)}
+                    alt={settings.app_name || "Logo"}
+                  />
+                )}
+              </div>
+            )}
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Connexion
+              Connexion {settings.app_name ? `à ${settings.app_name}` : ''}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Entrez votre nom d'utilisateur et mot de passe pour vous connecter!
+              Entrez votre nom d&apos;utilisateur et mot de passe pour vous connecter!
             </p>
           </div>
 
@@ -127,14 +146,8 @@ export default function SignInForm() {
           </form>
 
           <div className="mt-5">
-            <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-              Vous n'avez pas de compte?{" "}
-              <Link
-                href="/signup"
-                className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
-              >
-                S'inscrire
-              </Link>
+            <p className="text-sm font-normal text-center text-gray-500 dark:text-gray-400 sm:text-start">
+              Contactez votre administrateur pour obtenir un compte.
             </p>
           </div>
         </div>

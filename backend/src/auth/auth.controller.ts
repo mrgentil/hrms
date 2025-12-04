@@ -41,11 +41,12 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  @Public()
-  @Post('register')
-  async register(@Body(ValidationPipe) registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
-  }
+  // Register est désactivé - les utilisateurs sont créés par les admins via /users
+  // @UseGuards(JwtAuthGuard)
+  // @Post('register')
+  // async register(@Body(ValidationPipe) registerDto: RegisterDto) {
+  //   return this.authService.register(registerDto);
+  // }
 
   @Public()
   @Post('refresh')

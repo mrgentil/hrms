@@ -18,6 +18,9 @@ import { MailModule } from './mail/mail.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { ContractsModule } from './contracts/contracts.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -42,6 +45,9 @@ import { AnalyticsModule } from './analytics/analytics.module';
     AttendanceModule,
     ExpensesModule,
     AnalyticsModule,
+    ContractsModule,
+    AnnouncementsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [
