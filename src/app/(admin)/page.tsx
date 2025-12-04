@@ -180,15 +180,15 @@ export default function Dashboard() {
   };
 
   // Configuration ApexCharts - Graphique Présences
-  const attendanceChartOptions: ApexOptions = {
+  const attendanceChartOptions: ApexOptions = useMemo(() => ({
     chart: {
-      type: "area",
+      type: "area" as const,
       height: 250,
       fontFamily: "Inter, sans-serif",
       toolbar: { show: false },
       animations: {
         enabled: true,
-        easing: "easeinout",
+        easing: "easeinout" as const,
         speed: 800,
         animateGradually: { enabled: true, delay: 150 },
         dynamicAnimation: { enabled: true, speed: 350 },
@@ -196,7 +196,7 @@ export default function Dashboard() {
     },
     colors: ["#3b82f6"],
     fill: {
-      type: "gradient",
+      type: "gradient" as const,
       gradient: {
         shadeIntensity: 1,
         opacityFrom: 0.45,
@@ -204,7 +204,7 @@ export default function Dashboard() {
         stops: [0, 100],
       },
     },
-    stroke: { curve: "smooth", width: 3 },
+    stroke: { curve: "smooth" as const, width: 3 },
     dataLabels: { enabled: false },
     xaxis: {
       categories: displayAttendance.map(d => d.day),
@@ -222,26 +222,26 @@ export default function Dashboard() {
       xaxis: { lines: { show: false } },
     },
     tooltip: {
-      theme: "light",
-      y: { formatter: (val) => `${val} présents` },
+      theme: "light" as const,
+      y: { formatter: (val: number) => `${val} présents` },
     },
-  };
+  }), [displayAttendance]);
 
-  const attendanceChartSeries = [{
+  const attendanceChartSeries = useMemo(() => [{
     name: "Présences",
     data: displayAttendance.map(d => d.count),
-  }];
+  }], [displayAttendance]);
 
   // Configuration ApexCharts - Graphique Dépenses
-  const expensesChartOptions: ApexOptions = {
+  const expensesChartOptions: ApexOptions = useMemo(() => ({
     chart: {
-      type: "bar",
+      type: "bar" as const,
       height: 250,
       fontFamily: "Inter, sans-serif",
       toolbar: { show: false },
       animations: {
         enabled: true,
-        easing: "easeinout",
+        easing: "easeinout" as const,
         speed: 800,
       },
     },
@@ -250,7 +250,7 @@ export default function Dashboard() {
       bar: {
         borderRadius: 8,
         columnWidth: "50%",
-        dataLabels: { position: "top" },
+        dataLabels: { position: "top" as const },
       },
     },
     dataLabels: { enabled: false },
@@ -263,7 +263,7 @@ export default function Dashboard() {
     yaxis: {
       labels: {
         style: { colors: "#64748b", fontSize: "12px" },
-        formatter: (val) => `$${val}`,
+        formatter: (val: number) => `$${val}`,
       },
     },
     grid: {
@@ -272,32 +272,32 @@ export default function Dashboard() {
       yaxis: { lines: { show: true } },
     },
     tooltip: {
-      theme: "light",
-      y: { formatter: (val) => formatCurrency(val) },
+      theme: "light" as const,
+      y: { formatter: (val: number) => formatCurrency(val) },
     },
-  };
+  }), [displayExpenses]);
 
-  const expensesChartSeries = [{
+  const expensesChartSeries = useMemo(() => [{
     name: "Dépenses",
     data: displayExpenses.map(m => Number(m.amount)),
-  }];
+  }], [displayExpenses]);
 
   // Configuration ApexCharts - Donut Départements
-  const departmentChartOptions: ApexOptions = {
+  const departmentChartOptions: ApexOptions = useMemo(() => ({
     chart: {
-      type: "donut",
+      type: "donut" as const,
       height: 280,
       fontFamily: "Inter, sans-serif",
       animations: {
         enabled: true,
-        easing: "easeinout",
+        easing: "easeinout" as const,
         speed: 800,
       },
     },
     colors: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"],
     labels: displayDepartments.slice(0, 6).map(d => d.name),
     legend: {
-      position: "bottom",
+      position: "bottom" as const,
       fontSize: "12px",
       labels: { colors: "#64748b" },
     },
@@ -323,19 +323,21 @@ export default function Dashboard() {
       },
     },
     tooltip: {
-      y: { formatter: (val) => `${val} employés` },
+      y: { formatter: (val: number) => `${val} employés` },
     },
-  };
+  }), [displayDepartments]);
 
-  const departmentChartSeries = displayDepartments.slice(0, 6).map(d => d.count);
+  const departmentChartSeries = useMemo(() => 
+    displayDepartments.slice(0, 6).map(d => d.count),
+  [displayDepartments]);
 
   // Configuration ApexCharts - Gauge Taux de présence
-  const attendanceRateOptions: ApexOptions = {
+  const attendanceRateOptions: ApexOptions = useMemo(() => ({
     chart: {
-      type: "radialBar",
+      type: "radialBar" as const,
       height: 200,
       fontFamily: "Inter, sans-serif",
-      animations: { enabled: true, easing: "easeinout", speed: 1000 },
+      animations: { enabled: true, easing: "easeinout" as const, speed: 1000 },
     },
     colors: ["#10b981"],
     plotOptions: {
@@ -349,13 +351,13 @@ export default function Dashboard() {
             fontWeight: 700,
             color: "#1e293b",
             offsetY: -10,
-            formatter: (val) => `${val}%`,
+            formatter: (val: number) => `${val}%`,
           },
         },
       },
     },
     labels: ["Présence"],
-  };
+  }), []);
 
   if (loading) {
     return (
@@ -448,12 +450,16 @@ export default function Dashboard() {
               <ClockIcon />
             </div>
             <div className="w-16 h-16 -mt-2 -mr-2">
-              <ReactApexChart
-                options={attendanceRateOptions}
-                series={[displayOverview?.attendance.attendanceRate || 0]}
-                type="radialBar"
-                height={80}
-              />
+              {mounted ? (
+                <ReactApexChart
+                  options={attendanceRateOptions}
+                  series={[displayOverview?.attendance.attendanceRate || 0]}
+                  type="radialBar"
+                  height={80}
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-100 dark:bg-gray-700 rounded-full animate-pulse" />
+              )}
             </div>
           </div>
           <h3 className="text-4xl font-bold text-gray-900 dark:text-white mb-1">
@@ -522,12 +528,20 @@ export default function Dashboard() {
               📊 Présences (7 derniers jours)
             </h3>
           </div>
-          <ReactApexChart
-            options={attendanceChartOptions}
-            series={attendanceChartSeries}
-            type="area"
-            height={250}
-          />
+          {mounted && displayAttendance.length > 0 ? (
+            <div style={{ minHeight: 250 }}>
+              <ReactApexChart
+                key={`attendance-${displayAttendance.length}`}
+                options={attendanceChartOptions}
+                series={attendanceChartSeries}
+                type="area"
+                height={250}
+                width="100%"
+              />
+            </div>
+          ) : (
+            <ChartSkeleton height={250} />
+          )}
         </div>
 
         {/* Expenses Chart */}
@@ -537,12 +551,20 @@ export default function Dashboard() {
               💰 Dépenses (6 derniers mois)
             </h3>
           </div>
-          <ReactApexChart
-            options={expensesChartOptions}
-            series={expensesChartSeries}
-            type="bar"
-            height={250}
-          />
+          {mounted && displayExpenses.length > 0 ? (
+            <div style={{ minHeight: 250 }}>
+              <ReactApexChart
+                key={`expenses-${displayExpenses.length}`}
+                options={expensesChartOptions}
+                series={expensesChartSeries}
+                type="bar"
+                height={250}
+                width="100%"
+              />
+            </div>
+          ) : (
+            <ChartSkeleton height={250} />
+          )}
         </div>
       </div>
 
@@ -553,13 +575,19 @@ export default function Dashboard() {
           <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
             👥 Répartition par département
           </h3>
-          {displayDepartments.length > 0 ? (
-            <ReactApexChart
-              options={departmentChartOptions}
-              series={departmentChartSeries}
-              type="donut"
-              height={280}
-            />
+          {!mounted ? (
+            <ChartSkeleton height={280} />
+          ) : displayDepartments.length > 0 ? (
+            <div style={{ minHeight: 280 }}>
+              <ReactApexChart
+                key={`departments-${displayDepartments.length}`}
+                options={departmentChartOptions}
+                series={departmentChartSeries}
+                type="donut"
+                height={280}
+                width="100%"
+              />
+            </div>
           ) : (
             <div className="flex items-center justify-center h-64 text-gray-400">
               Aucun département configuré

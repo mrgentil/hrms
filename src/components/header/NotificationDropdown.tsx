@@ -139,8 +139,11 @@ export default function NotificationDropdown() {
           if (listResponse?.success && Array.isArray(listResponse.data)) {
             pendingList = listResponse.data as LeaveRequest[];
           }
-        } catch (error) {
-          console.error("Failed to load pending approvals", error);
+        } catch (error: any) {
+          // Silently ignore 403/404 errors
+          if (error?.response?.status !== 403 && error?.response?.status !== 404) {
+            console.error("Failed to load pending approvals", error);
+          }
         }
       }
 
@@ -159,8 +162,11 @@ export default function NotificationDropdown() {
               (item) => item.status !== "Pending",
             );
           }
-        } catch (error) {
-          console.error("Failed to load leave updates", error);
+        } catch (error: any) {
+          // Silently ignore 403 errors (permission issues)
+          if (error?.response?.status !== 403) {
+            console.error("Failed to load leave updates", error);
+          }
         }
       }
 

@@ -1237,6 +1237,8 @@ const AppSidebar: React.FC = () => {
 
                 height={40}
 
+                priority
+
                 style={{ height: 'auto', width: 'auto' }}
 
               />
@@ -1252,6 +1254,8 @@ const AppSidebar: React.FC = () => {
                 width={150}
 
                 height={40}
+
+                priority
 
                 style={{ height: 'auto', width: 'auto' }}
 

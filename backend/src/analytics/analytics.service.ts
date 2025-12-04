@@ -10,6 +10,9 @@ export class AnalyticsService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    const endOfToday = new Date(today);
+    endOfToday.setHours(23, 59, 59, 999);
+    
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     const startOfYear = new Date(today.getFullYear(), 0, 1);
@@ -34,9 +37,12 @@ export class AnalyticsService {
       }),
       // Nombre de départements
       this.prisma.department.count(),
-      // Présences aujourd'hui
+      // Présences aujourd'hui (plage de dates)
       this.prisma.attendance.count({
-        where: { date: today, check_in: { not: null } },
+        where: { 
+          date: { gte: today, lte: endOfToday },
+          check_in: { not: null },
+        },
       }),
       // Congés en attente
       this.prisma.application.count({
@@ -98,27 +104,34 @@ export class AnalyticsService {
 
   // Tendance des présences (7 derniers jours)
   async getAttendanceTrend() {
-    const days: Date[] = [];
+    const days: { start: Date; end: Date; display: Date }[] = [];
     const today = new Date();
 
     for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      date.setHours(0, 0, 0, 0);
-      days.push(date);
+      const start = new Date(today);
+      start.setDate(start.getDate() - i);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(start);
+      end.setHours(23, 59, 59, 999);
+      
+      days.push({ start, end, display: start });
     }
 
     const attendanceData = await Promise.all(
-      days.map(async (date) => {
+      days.map(async ({ start, end, display }) => {
         const count = await this.prisma.attendance.count({
           where: {
-            date,
+            date: {
+              gte: start,
+              lte: end,
+            },
             check_in: { not: null },
           },
         });
         return {
-          date: date.toISOString().split('T')[0],
-          day: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
+          date: display.toISOString().split('T')[0],
+          day: display.toLocaleDateString('fr-FR', { weekday: 'short' }),
           count,
         };
       })
