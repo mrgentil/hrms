@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { employeesService, Employee } from '@/services/employees.service';
+import { departmentsService, Department } from '@/services/departments.service';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { useUserRole, hasPermission } from '@/hooks/useUserRole';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -22,8 +24,21 @@ export default function EmployeesPage() {
     !!userRole && hasPermission(userRole, 'users.delete');
 
   useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  useEffect(() => {
     fetchEmployees();
   }, [currentPage, search, selectedDepartment]);
+
+  const fetchDepartments = async () => {
+    try {
+      const depts = await departmentsService.getDepartments();
+      setDepartments(depts);
+    } catch (error) {
+      console.error('Erreur lors du chargement des départements:', error);
+    }
+  };
 
   const fetchEmployees = async () => {
     try {
@@ -154,7 +169,11 @@ export default function EmployeesPage() {
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
             >
               <option value="">Tous les départements</option>
-              {/* TODO: Load departments dynamically */}
+              {departments.map((dept) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.department_name}
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex items-end">

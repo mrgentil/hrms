@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { leavesService, LeaveRequest, LeaveStatus } from "@/services/leaves.service";
+import { notificationsService, Notification, NOTIFICATION_TYPE_ICONS } from "@/services/notifications.service";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
@@ -78,6 +80,7 @@ const getInitials = (fullName?: string | null) => {
 };
 
 export default function NotificationDropdown() {
+  const router = useRouter();
   const { role: userRole, loading: roleLoading } = useUserRole();
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
@@ -91,6 +94,10 @@ export default function NotificationDropdown() {
   const [myUpdates, setMyUpdates] = useState<LeaveRequest[]>([]);
   const [unreadUpdates, setUnreadUpdates] = useState(0);
   const [latestUpdateTs, setLatestUpdateTs] = useState<number | null>(null);
+
+  // Notifications système (projets, tâches, etc.)
+  const [systemNotifications, setSystemNotifications] = useState<Notification[]>([]);
+  const [unreadSystemCount, setUnreadSystemCount] = useState(0);
 
   const canReviewLeaves = useMemo(
     () =>
@@ -108,7 +115,7 @@ export default function NotificationDropdown() {
   const displayedUpdates = useMemo(() => myUpdates.slice(0, 5), [myUpdates]);
   const extraUpdateCount = Math.max(0, myUpdates.length - displayedUpdates.length);
 
-  const totalBadgeCount = (canReviewLeaves ? pendingCount : 0) + unreadUpdates;
+  const totalBadgeCount = (canReviewLeaves ? pendingCount : 0) + unreadUpdates + unreadSystemCount;
 
   const refreshNotifications = useCallback(async () => {
     if (authLoading) {
@@ -182,6 +189,19 @@ export default function NotificationDropdown() {
       setMyUpdates(updatesList);
       setUnreadUpdates(unread);
       setLatestUpdateTs(latestTs);
+
+      // Charger les notifications système (projets, tâches)
+      try {
+        const sysNotifs = await notificationsService.getNotifications(10);
+        setSystemNotifications(sysNotifs);
+        const sysUnread = sysNotifs.filter(n => !n.is_read).length;
+        setUnreadSystemCount(sysUnread);
+      } catch (error: any) {
+        // Silently ignore errors
+        if (error?.response?.status !== 403 && error?.response?.status !== 404) {
+          console.error("Failed to load system notifications", error);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -405,6 +425,94 @@ export default function NotificationDropdown() {
             )}
           </ul>
         )}
+      </section>
+    );
+  };
+
+  const handleSystemNotificationClick = async (notification: Notification) => {
+    closeDropdown();
+    
+    if (!notification.is_read) {
+      try {
+        await notificationsService.markAsRead([notification.id]);
+        setSystemNotifications(systemNotifications.map(n => 
+          n.id === notification.id ? { ...n, is_read: true } : n
+        ));
+        setUnreadSystemCount(Math.max(0, unreadSystemCount - 1));
+      } catch (error) {
+        console.error("Failed to mark notification as read", error);
+      }
+    }
+
+    if (notification.link) {
+      router.push(notification.link);
+    }
+  };
+
+  const getTimeAgo = (date: string) => {
+    const now = new Date();
+    const notifDate = new Date(date);
+    const diff = now.getTime() - notifDate.getTime();
+    
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return "À l'instant";
+    if (minutes < 60) return `${minutes}min`;
+    if (hours < 24) return `${hours}h`;
+    if (days === 1) return "Hier";
+    if (days < 7) return `${days}j`;
+    return notifDate.toLocaleDateString("fr-FR");
+  };
+
+  const renderSystemNotifications = () => {
+    if (systemNotifications.length === 0) {
+      return null;
+    }
+
+    return (
+      <section>
+        <header className="flex items-center justify-between pb-2">
+          <h6 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+            Projets & Tâches
+          </h6>
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {unreadSystemCount} non lue{unreadSystemCount > 1 ? "s" : ""}
+          </span>
+        </header>
+        <ul className="space-y-2">
+          {systemNotifications.slice(0, 5).map((notification) => (
+            <li key={`sys-${notification.id}`}>
+              <button
+                onClick={() => handleSystemNotificationClick(notification)}
+                className={`w-full flex gap-3 rounded-lg border px-4 py-3 hover:bg-gray-100 dark:hover:bg-white/5 text-left ${
+                  !notification.is_read 
+                    ? "border-primary/30 bg-primary/5" 
+                    : "border-gray-100 dark:border-gray-800"
+                }`}
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg">
+                  {NOTIFICATION_TYPE_ICONS[notification.type] || "📌"}
+                </span>
+                <span className="flex flex-1 flex-col">
+                  <span className={`text-sm ${!notification.is_read ? "font-semibold" : ""} text-gray-800 dark:text-white/90`}>
+                    {notification.title}
+                  </span>
+                  <span className="line-clamp-1 text-xs text-gray-500 dark:text-gray-400">
+                    {notification.message}
+                  </span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    {getTimeAgo(notification.created_at)}
+                  </span>
+                </span>
+                {!notification.is_read && (
+                  <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
       </section>
     );
   };

@@ -22,6 +22,11 @@ import { ContractsModule } from './contracts/contracts.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { SettingsModule } from './settings/settings.module';
 import { AuditModule } from './audit/audit.module';
+import { ProjectsModule } from './projects/projects.module';
+import { TasksModule } from './tasks/tasks.module';
+import { MessagesModule } from './messages/messages.module';
+import { TagsModule } from './tags/tags.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -50,6 +55,11 @@ import { AuditModule } from './audit/audit.module';
     AnnouncementsModule,
     SettingsModule,
     AuditModule,
+    ProjectsModule,
+    TasksModule,
+    MessagesModule,
+    TagsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

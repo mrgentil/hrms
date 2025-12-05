@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { ApexOptions } from "apexcharts";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -12,6 +13,7 @@ import {
   DepartmentStat,
   Activity,
 } from "@/services/analyticsService";
+import { leavesService, LeaveRequest } from "@/services/leaves.service";
 import { KPICardSkeleton, ChartSkeleton, ActivitySkeleton } from "@/components/common/Skeleton";
 
 // Import ApexCharts dynamiquement (SSR disabled + loading state)
@@ -66,6 +68,7 @@ export default function Dashboard() {
   const [expensesTrend, setExpensesTrend] = useState<ExpenseTrend[]>([]);
   const [departments, setDepartments] = useState<DepartmentStat[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [pendingLeaves, setPendingLeaves] = useState<LeaveRequest[]>([]);
 
   useEffect(() => {
     setMounted(true);
@@ -81,18 +84,22 @@ export default function Dashboard() {
         analyticsService.clearCache();
       }
       
-      const [overviewData, attendance, expenses, depts, activity] = await Promise.all([
+      const [overviewData, attendance, expenses, depts, activity, leavesResponse] = await Promise.all([
         analyticsService.getDashboardOverview(),
         analyticsService.getAttendanceTrend(),
         analyticsService.getExpensesTrend(),
         analyticsService.getEmployeesByDepartment(),
         analyticsService.getRecentActivity(),
+        leavesService.getAssignedLeaveRequests('Pending').catch(() => ({ success: false, data: [] })),
       ]);
       setOverview(overviewData);
       setAttendanceTrend(attendance);
       setExpensesTrend(expenses);
       setDepartments(depts);
       setActivities(activity);
+      if (leavesResponse?.success && Array.isArray(leavesResponse.data)) {
+        setPendingLeaves(leavesResponse.data.slice(0, 5));
+      }
     } catch (error) {
       console.error("Erreur chargement dashboard:", error);
     } finally {
@@ -518,6 +525,95 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Quick Actions */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+          ⚡ Actions rapides
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <Link href="/employees" className="flex flex-col items-center p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors group">
+            <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">👥</span>
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Employés</span>
+          </Link>
+          <Link href="/leaves/my-leaves" className="flex flex-col items-center p-4 rounded-xl bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group">
+            <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">🏖️</span>
+            <span className="text-sm font-medium text-green-700 dark:text-green-300">Mes Congés</span>
+          </Link>
+          <Link href="/leaves/review" className="flex flex-col items-center p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors group relative">
+            <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">✅</span>
+            <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Approbations</span>
+            {(displayOverview?.pending.leaves || 0) > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                {displayOverview?.pending.leaves}
+              </span>
+            )}
+          </Link>
+          <Link href="/departments" className="flex flex-col items-center p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors group">
+            <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">🏢</span>
+            <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Départements</span>
+          </Link>
+          <Link href="/attendance" className="flex flex-col items-center p-4 rounded-xl bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors group">
+            <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">⏰</span>
+            <span className="text-sm font-medium text-teal-700 dark:text-teal-300">Présence</span>
+          </Link>
+          <Link href="/expenses" className="flex flex-col items-center p-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors group">
+            <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">💳</span>
+            <span className="text-sm font-medium text-rose-700 dark:text-rose-300">Dépenses</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Pending Leave Requests */}
+      {pendingLeaves.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-amber-200 dark:border-amber-800">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+              </span>
+              Congés en attente d'approbation
+            </h3>
+            <Link href="/leaves/review" className="text-sm text-primary hover:underline">
+              Voir tout →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pendingLeaves.map((leave) => (
+              <div key={leave.id} className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {leave.user?.full_name || 'Employé'}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {leave.leave_type?.name || leave.type}
+                    </p>
+                  </div>
+                  <span className="px-2 py-1 text-xs font-medium bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 rounded-full">
+                    En attente
+                  </span>
+                </div>
+                <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <span>📅</span>
+                    <span suppressHydrationWarning>
+                      {mounted ? `${new Date(leave.start_date).toLocaleDateString('fr-FR')} - ${new Date(leave.end_date).toLocaleDateString('fr-FR')}` : '...'}
+                    </span>
+                  </div>
+                </div>
+                <Link 
+                  href="/leaves/review" 
+                  className="mt-3 inline-flex items-center text-sm text-primary hover:underline"
+                >
+                  Traiter la demande →
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

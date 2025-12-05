@@ -10,23 +10,25 @@ import {
   ValidationPipe,
   ParseIntPipe,
 } from '@nestjs/common';
-import { RolesService } from './roles.service';
+import { RolesService, SYSTEM_PERMISSIONS } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('roles')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Post()
+  @RequirePermissions(SYSTEM_PERMISSIONS.ROLES_MANAGE)
   async create(
     @Body(ValidationPipe) createRoleDto: CreateRoleDto,
     @CurrentUser() user: any,
   ) {
-    // TODO: Vérifier que l'utilisateur a la permission de créer des rôles
     const role = await this.rolesService.create(createRoleDto);
     return {
       success: true,
@@ -54,8 +56,8 @@ export class RolesController {
   }
 
   @Post('initialize')
+  @RequirePermissions(SYSTEM_PERMISSIONS.PERMISSIONS_MANAGE)
   async initializePredefinedRoles(@CurrentUser() user: any) {
-    // TODO: Vérifier que l'utilisateur est super admin
     const results = await this.rolesService.initializePredefinedRoles();
     return {
       success: true,
@@ -74,12 +76,12 @@ export class RolesController {
   }
 
   @Patch(':id')
+  @RequirePermissions(SYSTEM_PERMISSIONS.ROLES_MANAGE)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(ValidationPipe) updateRoleDto: UpdateRoleDto,
     @CurrentUser() user: any,
   ) {
-    // TODO: Vérifier que l'utilisateur a la permission de modifier des rôles
     const role = await this.rolesService.update(id, updateRoleDto);
     return {
       success: true,
@@ -89,8 +91,8 @@ export class RolesController {
   }
 
   @Delete(':id')
+  @RequirePermissions(SYSTEM_PERMISSIONS.ROLES_MANAGE)
   async remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
-    // TODO: Vérifier que l'utilisateur a la permission de supprimer des rôles
     const result = await this.rolesService.remove(id);
     return {
       success: true,
@@ -108,11 +110,11 @@ export class RolesController {
   }
 
   @Post('assign')
+  @RequirePermissions(SYSTEM_PERMISSIONS.USERS_MANAGE_ROLES)
   async assignRoleToUser(
     @Body() body: { userId: number; roleId: number },
     @CurrentUser() user: any,
   ) {
-    // TODO: Vérifier que l'utilisateur a la permission d'assigner des rôles
     const updatedUser = await this.rolesService.assignRoleToUser(body.userId, body.roleId);
     return {
       success: true,

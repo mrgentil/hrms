@@ -232,6 +232,7 @@ model project {
   project_member project_member[]
   task           task[]
   task_board     task_board[]
+  project_tags   project_tag[]
 
   @@index([owner_user_id], map: "owner_user_id")
 }
@@ -298,6 +299,7 @@ model task {
   task_column                        task_column       @relation(fields: [task_column_id], references: [id], onDelete: Cascade, map: "task_ibfk_550")
   project                            project           @relation(fields: [project_id], references: [id], onDelete: Cascade, map: "task_ibfk_551")
   task_assignment                    task_assignment[]
+  task_tags                          task_tag[]
 
   @@index([created_by_user_id], map: "created_by_user_id")
   @@index([project_id], map: "project_id")
@@ -400,6 +402,7 @@ model user {
   announcement_reads                                    announcement_read[]
   app_settings_updated                                  app_settings[]
   audit_logs                                            audit_log[]
+  notifications                                         notification[]
 
   @@index([department_id], map: "department_id")
   @@index([manager_user_id], map: "manager_user_id")
@@ -816,6 +819,51 @@ enum announcement_priority {
 }
 
 // ============================================
+// SYSTÈME DE TAGS
+// ============================================
+
+model tag {
+  id          Int           @id @default(autoincrement())
+  name        String        @db.VarChar(50)
+  color       String        @default("#6B7280") @db.VarChar(7)
+  created_at  DateTime      @default(now()) @db.DateTime(0)
+  updated_at  DateTime      @updatedAt @db.DateTime(0)
+  
+  project_tags project_tag[]
+  task_tags    task_tag[]
+
+  @@unique([name], map: "tag_name_unique")
+}
+
+model project_tag {
+  id          Int      @id @default(autoincrement())
+  project_id  Int
+  tag_id      Int
+  created_at  DateTime @default(now()) @db.DateTime(0)
+  
+  project     project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  tag         tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, tag_id], map: "project_tag_unique")
+  @@index([project_id], map: "project_tag_project_id")
+  @@index([tag_id], map: "project_tag_tag_id")
+}
+
+model task_tag {
+  id          Int      @id @default(autoincrement())
+  task_id     Int
+  tag_id      Int
+  created_at  DateTime @default(now()) @db.DateTime(0)
+  
+  task        task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  tag         tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@unique([task_id, tag_id], map: "task_tag_unique")
+  @@index([task_id], map: "task_tag_task_id")
+  @@index([tag_id], map: "task_tag_tag_id")
+}
+
+// ============================================
 // PARAMÈTRES DE L'APPLICATION
 // ============================================
 
@@ -856,4 +904,46 @@ model audit_log {
   @@index([action], map: "audit_log_action")
   @@index([entity_type], map: "audit_log_entity_type")
   @@index([created_at], map: "audit_log_created_at")
+}
+
+// ============================================
+// SYSTÈME DE NOTIFICATIONS
+// ============================================
+
+model notification {
+  id            Int               @id @default(autoincrement())
+  user_id       Int
+  type          notification_type
+  title         String            @db.VarChar(255)
+  message       String            @db.Text
+  link          String?           @db.VarChar(500)
+  entity_type   String?           @db.VarChar(50) // project, task, leave, etc.
+  entity_id     Int?
+  is_read       Boolean           @default(false)
+  read_at       DateTime?         @db.DateTime(0)
+  created_at    DateTime          @default(now()) @db.DateTime(0)
+  
+  user          user              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "notification_user_id")
+  @@index([is_read], map: "notification_is_read")
+  @@index([created_at], map: "notification_created_at")
+  @@index([type], map: "notification_type")
+}
+
+enum notification_type {
+  PROJECT_ADDED      // Ajouté à un projet
+  PROJECT_REMOVED    // Retiré d'un projet
+  TASK_ASSIGNED      // Assigné à une tâche
+  TASK_UNASSIGNED    // Désassigné d'une tâche
+  TASK_UPDATED       // Tâche mise à jour
+  TASK_COMPLETED     // Tâche terminée
+  TASK_COMMENT       // Commentaire sur une tâche
+  LEAVE_APPROVED     // Congé approuvé
+  LEAVE_REJECTED     // Congé refusé
+  LEAVE_PENDING      // Nouvelle demande de congé (pour manager)
+  ANNOUNCEMENT       // Nouvelle annonce
+  MESSAGE            // Nouveau message
+  MENTION            // Mentionné dans un commentaire
+  SYSTEM             // Notification système
 }
