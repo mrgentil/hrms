@@ -21,6 +21,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { ContractsModule } from './contracts/contracts.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { SettingsModule } from './settings/settings.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { SettingsModule } from './settings/settings.module';
     ContractsModule,
     AnnouncementsModule,
     SettingsModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [

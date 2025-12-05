@@ -54,7 +54,7 @@ import {
 
 } from "../icons/index";
 
-import SidebarWidget from "./SidebarWidget";
+// SidebarWidget removed (TailAdmin promo)
 
 
 
@@ -1358,7 +1358,7 @@ const AppSidebar: React.FC = () => {
 
             </nav>
 
-            {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
+            {/* TailAdmin promo widget removed */}
 
           </>
 

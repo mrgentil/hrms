@@ -7,12 +7,14 @@ import { UpdatePersonalProfileDto, ChangePasswordDto } from './dto/update-profil
 import * as bcrypt from 'bcryptjs';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { UserRole } from '@prisma/client';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private auditService: AuditService,
   ) {}
 
   async validateUser(username: string, password: string): Promise<any> {
@@ -42,6 +44,9 @@ export class AuthService {
 
     // Récupérer le profil complet avec les nouvelles informations
     const fullProfile = await this.getProfile(user.id);
+
+    // Log de connexion
+    await this.auditService.logLogin(user.id);
 
     return {
       access_token,

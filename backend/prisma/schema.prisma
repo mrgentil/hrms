@@ -399,6 +399,7 @@ model user {
   announcements                                         announcement[]
   announcement_reads                                    announcement_read[]
   app_settings_updated                                  app_settings[]
+  audit_logs                                            audit_log[]
 
   @@index([department_id], map: "department_id")
   @@index([manager_user_id], map: "manager_user_id")
@@ -835,4 +836,24 @@ model app_settings {
 
   @@index([category], map: "app_settings_category")
   @@index([is_public], map: "app_settings_public")
+}
+
+model audit_log {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  action      String   @db.VarChar(50) // LOGIN, LOGOUT, CREATE, UPDATE, DELETE, VIEW
+  entity_type String   @db.VarChar(100) // user, leave, attendance, etc.
+  entity_id   Int?
+  old_values  String?  @db.Text // JSON des anciennes valeurs
+  new_values  String?  @db.Text // JSON des nouvelles valeurs
+  ip_address  String?  @db.VarChar(45)
+  user_agent  String?  @db.VarChar(500)
+  created_at  DateTime @default(now()) @db.DateTime(0)
+
+  user        user?    @relation(fields: [user_id], references: [id])
+
+  @@index([user_id], map: "audit_log_user_id")
+  @@index([action], map: "audit_log_action")
+  @@index([entity_type], map: "audit_log_entity_type")
+  @@index([created_at], map: "audit_log_created_at")
 }

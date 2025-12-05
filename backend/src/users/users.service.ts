@@ -7,6 +7,7 @@ import { QueryParamsDto } from './dto/query-params.dto';
 import { UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { RolesService, SYSTEM_PERMISSIONS } from '../roles/roles.service';
+import { AuditService } from '../audit/audit.service';
 
 export const ROLE_CREATION_PERMISSIONS: Record<UserRole, string> = {
   [UserRole.ROLE_SUPER_ADMIN]: SYSTEM_PERMISSIONS.USERS_CREATE_SUPER_ADMIN,
@@ -21,6 +22,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private rolesService: RolesService,
+    private auditService: AuditService,
   ) {}
 
   async validateRoleAssignment(userId: number, targetRole: UserRole) {
@@ -110,6 +112,13 @@ export class UsersService {
           },
         },
       },
+    });
+
+    // Log de création
+    await this.auditService.logCreate(currentUserId, 'user', user.id, {
+      username: user.username,
+      full_name: user.full_name,
+      role: user.role,
     });
 
     // Retourner l'utilisateur sans le mot de passe

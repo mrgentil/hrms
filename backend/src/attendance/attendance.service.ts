@@ -2,10 +2,14 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CheckInDto, CheckOutDto } from './dto/check-in.dto';
 import { attendance_status } from '@prisma/client';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class AttendanceService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) {}
 
   // Check-in pour aujourd'hui
   async checkIn(userId: number, dto: CheckInDto) {
@@ -46,6 +50,15 @@ export class AttendanceService {
       include: { user: { select: { id: true, full_name: true } } },
     });
 
+    // Log de pointage arrivée
+    await this.auditService.log({
+      user_id: userId,
+      action: 'CHECK_IN',
+      entity_type: 'attendance',
+      entity_id: attendance.id,
+      new_values: { check_in: now.toISOString(), status },
+    });
+
     return attendance;
   }
 
@@ -84,7 +97,7 @@ export class AttendanceService {
     // Calcul des heures supplémentaires (> 8h)
     const overtimeHours = workedHours > 8 ? Math.round((workedHours - 8) * 100) / 100 : 0;
 
-    return this.prisma.attendance.update({
+    const updated = await this.prisma.attendance.update({
       where: { id: attendance.id },
       data: {
         check_out: now,
@@ -95,6 +108,17 @@ export class AttendanceService {
       },
       include: { user: { select: { id: true, full_name: true } } },
     });
+
+    // Log de pointage départ
+    await this.auditService.log({
+      user_id: userId,
+      action: 'CHECK_OUT',
+      entity_type: 'attendance',
+      entity_id: updated.id,
+      new_values: { check_out: now.toISOString(), worked_hours: workedHours },
+    });
+
+    return updated;
   }
 
   // Obtenir le pointage d'aujourd'hui

@@ -2,13 +2,17 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class AnnouncementsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) {}
 
   async create(createAnnouncementDto: CreateAnnouncementDto, authorId: number) {
-    return this.prisma.announcement.create({
+    const announcement = await this.prisma.announcement.create({
       data: {
         ...createAnnouncementDto,
         author_id: authorId,
@@ -28,6 +32,14 @@ export class AnnouncementsService {
         },
       },
     });
+
+    // Log de création
+    await this.auditService.logCreate(authorId, 'announcement', announcement.id, {
+      title: announcement.title,
+      type: announcement.type,
+    });
+
+    return announcement;
   }
 
   async findAll(params?: {
@@ -37,6 +49,7 @@ export class AnnouncementsService {
     include_expired?: boolean;
   }) {
     const where: any = {};
+    const andConditions: any[] = [];
 
     if (params?.is_published !== undefined) {
       where.is_published = params.is_published;
@@ -47,19 +60,33 @@ export class AnnouncementsService {
     }
 
     if (params?.department_id) {
-      where.OR = [
-        { target_all: true },
-        { department_id: params.department_id },
-      ];
+      andConditions.push({
+        OR: [
+          { target_all: true },
+          { department_id: params.department_id },
+        ],
+      });
     }
 
     // Par défaut, exclure les annonces expirées
     if (!params?.include_expired) {
-      where.OR = [
-        { expire_date: null },
-        { expire_date: { gte: new Date() } },
-      ];
+      andConditions.push({
+        OR: [
+          { expire_date: null },
+          { expire_date: { gte: new Date() } },
+        ],
+      });
     }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
+    }
+
+    console.log('findAll where:', JSON.stringify(where, null, 2));
+
+    // DEBUG: Compter toutes les annonces sans filtre
+    const totalCount = await this.prisma.announcement.count();
+    console.log('Total announcements in DB:', totalCount);
 
     return this.prisma.announcement.findMany({
       where,
