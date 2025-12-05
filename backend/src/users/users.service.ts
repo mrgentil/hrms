@@ -321,7 +321,7 @@ export class UsersService {
         where: { username: updateUserDto.username },
       });
 
-      if (usernameExists) {
+      if (usernameExists && usernameExists.id !== id) {
         throw new ConflictException('Ce nom d\'utilisateur est déjà utilisé');
       }
     }
@@ -332,7 +332,7 @@ export class UsersService {
         where: { work_email: updateUserDto.work_email },
       });
 
-      if (emailExists) {
+      if (emailExists && emailExists.id !== id) {
         throw new ConflictException('Cette adresse email est déjà utilisée');
       }
     }
