@@ -60,7 +60,7 @@ export class SettingsUploadController {
   )
   async uploadSettingImage(
     @Param('key') key: string,
-    @UploadedFile() file: Multer.File,
+    @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: any,
   ) {
     if (!file) {

@@ -494,6 +494,13 @@ class EmployeesService {
     return response.data;
   }
 
+  async getMyProjects() {
+    const response = await axios.get(`${API_BASE_URL}/employees/my-projects`, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
+  }
+
   async getMyTasks() {
     const response = await axios.get(`${API_BASE_URL}/employees/my-tasks`, {
       headers: this.getAuthHeaders(),

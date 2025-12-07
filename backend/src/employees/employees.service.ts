@@ -584,6 +584,44 @@ export class EmployeesService {
   async getMyDocuments(userId: number) {
     return this.getDocuments(userId);
   }
+
+  async getMyProjects(userId: number) {
+    return this.prisma.project.findMany({
+      where: {
+        project_member: {
+          some: {
+            user_id: userId,
+          },
+        },
+      },
+      include: {
+        user: {
+          select: { id: true, full_name: true, profile_photo_url: true },
+        },
+        project_member: {
+          include: {
+            user: {
+              select: { id: true, full_name: true, profile_photo_url: true },
+            },
+          },
+        },
+        task: {
+          select: {
+            id: true,
+            status: true,
+          },
+        },
+        _count: {
+          select: {
+            task: true,
+            project_member: true,
+          },
+        },
+      },
+      orderBy: { updated_at: 'desc' },
+    });
+  }
+
   async getMyTasks(userId: number) {
     return this.prisma.task.findMany({
       where: {

@@ -393,15 +393,33 @@ const mainNavItems: NavItem[] = [
 
     icon: <TaskIcon />,
 
-    name: "Projets & Tches",
-
-    allowedRoles: ["ROLE_MANAGER", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    name: "Projets & Tâches",
 
     subItems: [
 
       {
 
-        name: "Projets",
+        name: "Mes Projets",
+
+        path: "/employees/projects",
+
+        pro: false,
+
+      },
+
+      {
+
+        name: "Mes Tâches",
+
+        path: "/employees/tasks",
+
+        pro: false,
+
+      },
+
+      {
+
+        name: "Tous les Projets",
 
         path: "/projects",
 
@@ -413,7 +431,7 @@ const mainNavItems: NavItem[] = [
 
       {
 
-        name: "Tches",
+        name: "Toutes les Tâches",
 
         path: "/tasks",
 

@@ -385,10 +385,56 @@ export default function EmployeeTasksPage() {
                         </div>
                       </div>
 
-                      <div className="flex w-full flex-col gap-3 md:w-60">
+                      <div className="flex w-full flex-col gap-3 md:w-72">
+                        {/* Boutons d'action rapide */}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                            Actions rapides
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {task.status !== 'IN_PROGRESS' && task.status !== 'DONE' && (
+                              <button
+                                onClick={() => handleStatusChange(task, 'IN_PROGRESS')}
+                                disabled={updatingTaskId === task.id}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-full bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                              >
+                                ▶️ Démarrer
+                              </button>
+                            )}
+                            {task.status === 'IN_PROGRESS' && (
+                              <button
+                                onClick={() => handleStatusChange(task, 'DONE')}
+                                disabled={updatingTaskId === task.id}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-full bg-success/10 text-success hover:bg-success/20 disabled:opacity-50 transition-colors"
+                              >
+                                ✅ Terminer
+                              </button>
+                            )}
+                            {task.status !== 'BLOCKED' && task.status !== 'DONE' && (
+                              <button
+                                onClick={() => handleStatusChange(task, 'BLOCKED')}
+                                disabled={updatingTaskId === task.id}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-full bg-warning/10 text-warning hover:bg-warning/20 disabled:opacity-50 transition-colors"
+                              >
+                                ⚠️ Bloquer
+                              </button>
+                            )}
+                            {task.status === 'BLOCKED' && (
+                              <button
+                                onClick={() => handleStatusChange(task, 'IN_PROGRESS')}
+                                disabled={updatingTaskId === task.id}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-full bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                              >
+                                🔄 Débloquer
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Select pour tous les statuts */}
                         <div>
                           <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">
-                            Modifier le statut
+                            Changer le statut
                           </label>
                           <select
                             value={task.status}

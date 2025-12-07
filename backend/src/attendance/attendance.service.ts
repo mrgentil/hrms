@@ -6,21 +6,81 @@ import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class AttendanceService {
+  // Valeurs par défaut des horaires de travail
+  private defaultWorkSchedule = {
+    workStartHour: 9,      // 9h00
+    workStartMinute: 0,
+    workEndHour: 18,       // 18h00
+    workEndMinute: 0,
+    lateToleranceMinutes: 15,  // 15 minutes de tolérance
+    dailyWorkHours: 8,     // 8 heures de travail par jour
+  };
+
   constructor(
     private prisma: PrismaService,
     private auditService: AuditService,
   ) {}
 
+  // Récupérer les paramètres d'horaires depuis app_settings
+  private async getWorkSchedule() {
+    const settings = await this.prisma.app_settings.findMany({
+      where: {
+        key: {
+          in: [
+            'work_start_hour',
+            'work_start_minute', 
+            'work_end_hour',
+            'work_end_minute',
+            'late_tolerance_minutes',
+            'daily_work_hours',
+          ],
+        },
+      },
+    });
+
+    const schedule = { ...this.defaultWorkSchedule };
+    
+    for (const setting of settings) {
+      const value = parseInt(setting.value || '0', 10);
+      switch (setting.key) {
+        case 'work_start_hour':
+          schedule.workStartHour = value;
+          break;
+        case 'work_start_minute':
+          schedule.workStartMinute = value;
+          break;
+        case 'work_end_hour':
+          schedule.workEndHour = value;
+          break;
+        case 'work_end_minute':
+          schedule.workEndMinute = value;
+          break;
+        case 'late_tolerance_minutes':
+          schedule.lateToleranceMinutes = value;
+          break;
+        case 'daily_work_hours':
+          schedule.dailyWorkHours = value;
+          break;
+      }
+    }
+
+    return schedule;
+  }
+
   // Check-in pour aujourd'hui
   async checkIn(userId: number, dto: CheckInDto) {
     const now = new Date();
+    const schedule = await this.getWorkSchedule();
     
     // Date du jour à minuit UTC (pour correspondre au format stocké en DB)
     const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
 
-    const workStartHour = 9; // 9h00
-    const isLate = now.getHours() > workStartHour || 
-                   (now.getHours() === workStartHour && now.getMinutes() > 15);
+    // Calculer l'heure limite d'arrivée (avec tolérance)
+    const limitHour = schedule.workStartHour;
+    const limitMinute = schedule.workStartMinute + schedule.lateToleranceMinutes;
+    
+    const isLate = now.getHours() > limitHour || 
+                   (now.getHours() === limitHour && now.getMinutes() > limitMinute);
 
     const status = dto.status || (isLate ? attendance_status.LATE : attendance_status.PRESENT);
 
@@ -295,5 +355,81 @@ export class AttendanceService {
       },
       include: { user: { select: { id: true, full_name: true } } },
     });
+  }
+
+  // Obtenir les horaires de travail configurés (public)
+  async getWorkScheduleSettings() {
+    const schedule = await this.getWorkSchedule();
+    
+    // Formater les heures pour l'affichage
+    const formatTime = (hour: number, minute: number) => {
+      return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    };
+
+    return {
+      workStartTime: formatTime(schedule.workStartHour, schedule.workStartMinute),
+      workEndTime: formatTime(schedule.workEndHour, schedule.workEndMinute),
+      workStartHour: schedule.workStartHour,
+      workStartMinute: schedule.workStartMinute,
+      workEndHour: schedule.workEndHour,
+      workEndMinute: schedule.workEndMinute,
+      lateToleranceMinutes: schedule.lateToleranceMinutes,
+      dailyWorkHours: schedule.dailyWorkHours,
+    };
+  }
+
+  // Admin: Mettre à jour les horaires de travail
+  async updateWorkScheduleSettings(userId: number, settings: {
+    workStartHour?: number;
+    workStartMinute?: number;
+    workEndHour?: number;
+    workEndMinute?: number;
+    lateToleranceMinutes?: number;
+    dailyWorkHours?: number;
+  }) {
+    const settingsToUpdate = [
+      { key: 'work_start_hour', value: settings.workStartHour },
+      { key: 'work_start_minute', value: settings.workStartMinute },
+      { key: 'work_end_hour', value: settings.workEndHour },
+      { key: 'work_end_minute', value: settings.workEndMinute },
+      { key: 'late_tolerance_minutes', value: settings.lateToleranceMinutes },
+      { key: 'daily_work_hours', value: settings.dailyWorkHours },
+    ].filter(s => s.value !== undefined);
+
+    for (const setting of settingsToUpdate) {
+      await this.prisma.app_settings.upsert({
+        where: { key: setting.key },
+        update: { 
+          value: String(setting.value),
+          updated_at: new Date(),
+          updated_by: userId,
+        },
+        create: {
+          key: setting.key,
+          value: String(setting.value),
+          category: 'attendance',
+          label: this.getSettingDescription(setting.key),
+          description: this.getSettingDescription(setting.key),
+          is_public: true,
+          created_at: new Date(),
+          updated_at: new Date(),
+          updated_by: userId,
+        },
+      });
+    }
+
+    return this.getWorkScheduleSettings();
+  }
+
+  private getSettingDescription(key: string): string {
+    const descriptions: Record<string, string> = {
+      'work_start_hour': 'Heure de début de travail',
+      'work_start_minute': 'Minute de début de travail',
+      'work_end_hour': 'Heure de fin de travail',
+      'work_end_minute': 'Minute de fin de travail',
+      'late_tolerance_minutes': 'Tolérance de retard en minutes',
+      'daily_work_hours': 'Heures de travail par jour',
+    };
+    return descriptions[key] || key;
   }
 }

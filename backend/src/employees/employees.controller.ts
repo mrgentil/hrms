@@ -191,6 +191,16 @@ export class EmployeesController {
   }
 
 
+  @Get('my-projects')
+  async getMyProjects(@CurrentUser() currentUser: any) {
+    const projects = await this.employeesService.getMyProjects(currentUser.id);
+    return {
+      success: true,
+      data: projects,
+      message: 'Projets récupérés avec succès',
+    };
+  }
+
   @Get('my-tasks')
   async getMyTasks(@CurrentUser() currentUser: any) {
     const tasks = await this.employeesService.getMyTasks(currentUser.id);

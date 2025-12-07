@@ -18,6 +18,12 @@ const employeeNavigation: NavigationItem[] = [
     description: 'Tableau de bord personnel'
   },
   {
+    title: 'Pointage',
+    href: '/attendance',
+    icon: '⏰',
+    description: 'Pointer arrivée et départ'
+  },
+  {
     title: 'Mon Profil',
     href: '/employees/profile',
     icon: '👤',
@@ -30,10 +36,16 @@ const employeeNavigation: NavigationItem[] = [
     description: 'Contrats et fichiers partagés'
   },
   {
-    title: 'My Tasks',
+    title: 'Mes Projets',
+    href: '/employees/projects',
+    icon: '📂',
+    description: 'Projets auxquels je participe'
+  },
+  {
+    title: 'Mes Tâches',
     href: '/employees/tasks',
-    icon: '[]',
-    description: 'Tasks qui me sont assignees'
+    icon: '✅',
+    description: 'Tâches qui me sont assignées'
   },
   {
     title: 'Mes Annonces',

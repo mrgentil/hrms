@@ -137,4 +137,38 @@ export class AttendanceController {
       message: 'Pointage mis à jour avec succès',
     };
   }
+
+  // ==========================================
+  // ENDPOINTS HORAIRES DE TRAVAIL
+  // ==========================================
+
+  @Get('settings/schedule')
+  async getWorkSchedule() {
+    const schedule = await this.attendanceService.getWorkScheduleSettings();
+    return {
+      success: true,
+      data: schedule,
+    };
+  }
+
+  @Patch('settings/schedule')
+  @RequirePermissions(SYSTEM_PERMISSIONS.SYSTEM_SETTINGS)
+  async updateWorkSchedule(
+    @CurrentUser() user: any,
+    @Body() data: {
+      workStartHour?: number;
+      workStartMinute?: number;
+      workEndHour?: number;
+      workEndMinute?: number;
+      lateToleranceMinutes?: number;
+      dailyWorkHours?: number;
+    },
+  ) {
+    const schedule = await this.attendanceService.updateWorkScheduleSettings(user.id, data);
+    return {
+      success: true,
+      data: schedule,
+      message: 'Horaires de travail mis à jour avec succès',
+    };
+  }
 }

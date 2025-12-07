@@ -201,7 +201,7 @@ export class MessagesService {
 
     const message = await this.prisma.user_message.create({
       data: {
-        content: dto.content,
+        text: dto.content,
         conversation_id: dto.conversation_id,
         sender_user_id: userId,
         created_at: new Date(),

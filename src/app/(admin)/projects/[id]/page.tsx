@@ -19,6 +19,9 @@ import {
   PROJECT_STATUS_COLORS,
 } from "@/services/projects.service";
 import { employeesService, Employee } from "@/services/employees.service";
+import TaskListView from "@/components/tasks/TaskListView";
+import TaskCalendarView from "@/components/tasks/TaskCalendarView";
+import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 
 const PlusIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,6 +51,8 @@ export default function ProjectDetailPage() {
     assignee_ids: [],
   });
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [activeView, setActiveView] = useState<"kanban" | "list" | "calendar">("kanban");
+  const [selectedTaskForModal, setSelectedTaskForModal] = useState<Task | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -212,7 +217,60 @@ export default function ProjectDetailPage() {
           )}
         </div>
 
+        {/* View Tabs */}
+        <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-xl p-2 shadow-sm">
+          <button
+            onClick={() => setActiveView("kanban")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeView === "kanban"
+                ? "bg-primary text-white"
+                : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+            </svg>
+            Kanban
+          </button>
+          <button
+            onClick={() => setActiveView("list")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeView === "list"
+                ? "bg-primary text-white"
+                : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            Liste
+          </button>
+          <button
+            onClick={() => setActiveView("calendar")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeView === "calendar"
+                ? "bg-primary text-white"
+                : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Calendrier
+          </button>
+        </div>
+
+        {/* Views */}
+        {activeView === "list" && (
+          <TaskListView projectId={projectId} onTaskUpdate={loadData} />
+        )}
+
+        {activeView === "calendar" && (
+          <TaskCalendarView projectId={projectId} onTaskUpdate={loadData} />
+        )}
+
         {/* Kanban Board */}
+        {activeView === "kanban" && (
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 min-w-max">
             {board.task_column.map((column) => (
@@ -245,7 +303,8 @@ export default function ProjectDetailPage() {
                       key={task.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, task)}
-                      className={`bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 cursor-move hover:shadow-md transition-shadow ${
+                      onClick={() => setSelectedTaskForModal(task)}
+                      className={`bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md hover:border-primary/50 transition-all ${
                         draggedTask?.id === task.id ? "opacity-50" : ""
                       }`}
                     >
@@ -254,7 +313,7 @@ export default function ProjectDetailPage() {
                           {task.title}
                         </h4>
                         <button
-                          onClick={() => handleDeleteTask(task.id)}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
                           className="p-1 text-gray-400 hover:text-red-500 rounded"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -329,6 +388,7 @@ export default function ProjectDetailPage() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Task Form Modal */}
         {showTaskForm && (
@@ -426,6 +486,18 @@ export default function ProjectDetailPage() {
               </form>
             </div>
           </div>
+        )}
+
+        {/* Task Detail Modal */}
+        {selectedTaskForModal && (
+          <TaskDetailModal
+            taskId={selectedTaskForModal.id}
+            taskTitle={selectedTaskForModal.title}
+            taskDescription={selectedTaskForModal.description}
+            isOpen={!!selectedTaskForModal}
+            onClose={() => setSelectedTaskForModal(null)}
+            onUpdate={loadData}
+          />
         )}
       </div>
     </div>

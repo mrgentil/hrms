@@ -300,11 +300,19 @@ model task {
   project                            project           @relation(fields: [project_id], references: [id], onDelete: Cascade, map: "task_ibfk_551")
   task_assignment                    task_assignment[]
   task_tags                          task_tag[]
+  task_comments                      task_comment[]
+  task_attachments                   task_attachment[]
+  task_checklists                    task_checklist[]
+  task_activities                    task_activity[]
+  subtasks                           task[]            @relation("subtasks")
+  parent_task                        task?             @relation("subtasks", fields: [parent_task_id], references: [id], onDelete: SetNull)
+  parent_task_id                     Int?
 
   @@index([created_by_user_id], map: "created_by_user_id")
   @@index([project_id], map: "project_id")
   @@index([task_column_id], map: "task_column_id")
   @@index([updated_by_user_id], map: "updated_by_user_id")
+  @@index([parent_task_id], map: "parent_task_id")
 }
 
 model task_assignment {
@@ -345,6 +353,94 @@ model task_column {
   task_board    task_board @relation(fields: [task_board_id], references: [id], onDelete: Cascade, map: "task_column_ibfk_1")
 
   @@index([task_board_id], map: "task_board_id")
+}
+
+// ============================================
+// COMMENTAIRES SUR TÂCHES
+// ============================================
+model task_comment {
+  id         Int      @id @default(autoincrement())
+  content    String   @db.Text
+  task_id    Int
+  user_id    Int
+  created_at DateTime @db.DateTime(0)
+  updated_at DateTime @db.DateTime(0)
+  task       task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id], map: "task_comment_task_id")
+  @@index([user_id], map: "task_comment_user_id")
+}
+
+// ============================================
+// PIÈCES JOINTES SUR TÂCHES
+// ============================================
+model task_attachment {
+  id           Int      @id @default(autoincrement())
+  file_name    String   @db.VarChar(255)
+  file_path    String   @db.VarChar(500)
+  file_size    Int?
+  file_type    String?  @db.VarChar(100)
+  task_id      Int
+  uploaded_by  Int
+  created_at   DateTime @db.DateTime(0)
+  task         task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user         user     @relation(fields: [uploaded_by], references: [id], onDelete: Cascade)
+
+  @@index([task_id], map: "task_attachment_task_id")
+  @@index([uploaded_by], map: "task_attachment_uploaded_by")
+}
+
+// ============================================
+// CHECKLISTS SUR TÂCHES
+// ============================================
+model task_checklist {
+  id         Int                   @id @default(autoincrement())
+  title      String                @db.VarChar(255)
+  sort_order Int                   @default(0)
+  task_id    Int
+  created_at DateTime              @db.DateTime(0)
+  updated_at DateTime              @db.DateTime(0)
+  task       task                  @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  items      task_checklist_item[]
+
+  @@index([task_id], map: "task_checklist_task_id")
+}
+
+model task_checklist_item {
+  id           Int            @id @default(autoincrement())
+  title        String         @db.VarChar(255)
+  is_completed Boolean        @default(false)
+  sort_order   Int            @default(0)
+  checklist_id Int
+  completed_by Int?
+  completed_at DateTime?      @db.DateTime(0)
+  created_at   DateTime       @db.DateTime(0)
+  updated_at   DateTime       @db.DateTime(0)
+  checklist    task_checklist @relation(fields: [checklist_id], references: [id], onDelete: Cascade)
+  user         user?          @relation(fields: [completed_by], references: [id], onDelete: SetNull)
+
+  @@index([checklist_id], map: "task_checklist_item_checklist_id")
+  @@index([completed_by], map: "task_checklist_item_completed_by")
+}
+
+// ============================================
+// HISTORIQUE D'ACTIVITÉ SUR TÂCHES
+// ============================================
+model task_activity {
+  id         Int      @id @default(autoincrement())
+  action     String   @db.VarChar(50)  // CREATED, UPDATED, MOVED, COMMENTED, ASSIGNED, etc.
+  field      String?  @db.VarChar(100) // Le champ modifié (status, priority, etc.)
+  old_value  String?  @db.Text
+  new_value  String?  @db.Text
+  task_id    Int
+  user_id    Int
+  created_at DateTime @db.DateTime(0)
+  task       task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id], map: "task_activity_task_id")
+  @@index([user_id], map: "task_activity_user_id")
 }
 
 model user {
@@ -403,6 +499,10 @@ model user {
   app_settings_updated                                  app_settings[]
   audit_logs                                            audit_log[]
   notifications                                         notification[]
+  task_comments                                         task_comment[]
+  task_attachments                                      task_attachment[]
+  task_checklist_items_completed                        task_checklist_item[]
+  task_activities                                       task_activity[]
 
   @@index([department_id], map: "department_id")
   @@index([manager_user_id], map: "manager_user_id")

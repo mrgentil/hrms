@@ -9,6 +9,7 @@ import {
   Attendance,
   AttendanceStats,
   GlobalAttendanceStats,
+  WorkSchedule,
 } from "@/services/attendanceService";
 import { employeesService, Employee } from "@/services/employees.service";
 
@@ -65,6 +66,9 @@ export default function AttendancePage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterDepartment, setFilterDepartment] = useState("");
   
+  // Horaires de travail configurés
+  const [workSchedule, setWorkSchedule] = useState<WorkSchedule | null>(null);
+  
   const isAdmin = userRole?.role === "ROLE_ADMIN" || userRole?.role === "ROLE_SUPER_ADMIN" || userRole?.role === "ROLE_RH";
 
   // Mise à jour de l'horloge
@@ -97,16 +101,18 @@ export default function AttendancePage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [today, stats, historyData, global] = await Promise.all([
+      const [today, stats, historyData, global, schedule] = await Promise.all([
         attendanceService.getTodayAttendance(),
         attendanceService.getMyMonthlyStats(),
         attendanceService.getMyAttendance(),
         attendanceService.getGlobalStats().catch(() => null),
+        attendanceService.getWorkSchedule().catch(() => null),
       ]);
       setTodayAttendance(today);
       setMyStats(stats);
       setHistory(historyData);
       setGlobalStats(global);
+      setWorkSchedule(schedule);
     } catch (error) {
       console.error("Erreur chargement données:", error);
     } finally {
@@ -280,6 +286,15 @@ export default function AttendancePage() {
             </div>
             <div className="text-5xl font-bold mb-2">{formatTime(currentTime)}</div>
             <div className="text-blue-200 capitalize">{formatDate(currentTime)}</div>
+            {/* Horaires de travail */}
+            {workSchedule && (
+              <div className="mt-3 pt-3 border-t border-blue-500/30 text-sm">
+                <div className="flex items-center gap-4 text-blue-200">
+                  <span>🕐 Horaires: <strong className="text-white">{workSchedule.workStartTime}</strong> - <strong className="text-white">{workSchedule.workEndTime}</strong></span>
+                  <span>⏱️ Tolérance: <strong className="text-white">{workSchedule.lateToleranceMinutes} min</strong></span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Boutons Check-in/out */}

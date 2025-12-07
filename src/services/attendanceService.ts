@@ -186,6 +186,45 @@ class AttendanceService {
     const result = await response.json();
     return result.data;
   }
+
+  // Récupérer les horaires de travail configurés
+  async getWorkSchedule(): Promise<WorkSchedule> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/attendance/settings/schedule`);
+
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération des horaires');
+    }
+
+    const result = await response.json();
+    return result.data;
+  }
+
+  // Admin: Mettre à jour les horaires de travail
+  async updateWorkSchedule(data: Partial<WorkSchedule>): Promise<WorkSchedule> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/attendance/settings/schedule`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Erreur lors de la mise à jour des horaires');
+    }
+
+    const result = await response.json();
+    return result.data;
+  }
+}
+
+export interface WorkSchedule {
+  workStartTime: string;
+  workEndTime: string;
+  workStartHour: number;
+  workStartMinute: number;
+  workEndHour: number;
+  workEndMinute: number;
+  lateToleranceMinutes: number;
+  dailyWorkHours: number;
 }
 
 export const attendanceService = new AttendanceService();
