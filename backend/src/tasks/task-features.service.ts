@@ -984,4 +984,394 @@ export class TaskFeaturesService {
       orderBy: { due_date: 'asc' },
     });
   }
+
+  // ============================================
+  // PROGRESSION PAR MEMBRE
+  // ============================================
+
+  async getMembersProgress(projectId: number) {
+    // Récupérer le projet avec ses membres
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        user: { select: { id: true, full_name: true, profile_photo_url: true } },
+        project_member: {
+          include: {
+            user: { select: { id: true, full_name: true, profile_photo_url: true } },
+          },
+        },
+      },
+    });
+
+    if (!project) {
+      throw new NotFoundException('Projet non trouvé');
+    }
+
+    // Collecter tous les membres (owner + membres)
+    const allMembers: { id: number; full_name: string; profile_photo_url: string | null; role: string }[] = [];
+    
+    if (project.user) {
+      allMembers.push({
+        ...project.user,
+        role: 'owner',
+      });
+    }
+    
+    for (const pm of project.project_member) {
+      if (pm.user && !allMembers.find(m => m.id === pm.user.id)) {
+        allMembers.push({
+          ...pm.user,
+          role: pm.role || 'member',
+        });
+      }
+    }
+
+    // Récupérer toutes les tâches du projet
+    const tasks = await this.prisma.task.findMany({
+      where: { project_id: projectId },
+      include: {
+        task_assignment: true,
+      },
+    });
+
+    // Calculer les statistiques par membre
+    const membersProgress = await Promise.all(
+      allMembers.map(async (member) => {
+        // Tâches assignées à ce membre
+        const assignedTaskIds = tasks
+          .filter(t => t.task_assignment.some(a => a.user_id === member.id))
+          .map(t => t.id);
+
+        const assignedTasks = tasks.filter(t => assignedTaskIds.includes(t.id));
+        const total = assignedTasks.length;
+        const done = assignedTasks.filter(t => t.status === 'DONE').length;
+        const inProgress = assignedTasks.filter(t => t.status === 'IN_PROGRESS').length;
+        const todo = assignedTasks.filter(t => t.status === 'TODO').length;
+        const overdue = assignedTasks.filter(t => 
+          t.due_date && new Date(t.due_date) < new Date() && t.status !== 'DONE'
+        ).length;
+
+        // Dernière tâche terminée
+        const lastCompleted = await this.prisma.task.findFirst({
+          where: {
+            id: { in: assignedTaskIds.length > 0 ? assignedTaskIds : [-1] },
+            status: 'DONE',
+          },
+          orderBy: { completed_at: 'desc' },
+          select: { id: true, title: true, completed_at: true },
+        });
+
+        return {
+          user: {
+            id: member.id,
+            full_name: member.full_name,
+            profile_photo_url: member.profile_photo_url,
+            role: member.role,
+          },
+          stats: {
+            total,
+            done,
+            inProgress,
+            todo,
+            overdue,
+            completionRate: total > 0 ? Math.round((done / total) * 100) : 0,
+          },
+          lastCompletedTask: lastCompleted,
+        };
+      })
+    );
+
+    // Trier par nombre de tâches terminées (décroissant)
+    membersProgress.sort((a, b) => b.stats.done - a.stats.done);
+
+    return {
+      projectId,
+      projectName: project.name,
+      totalTasks: tasks.length,
+      members: membersProgress,
+    };
+  }
+
+  async getProjectActivityLog(projectId: number, limit: number = 50) {
+    // Récupérer les activités récentes du projet
+    const activities = await this.prisma.task_activity.findMany({
+      where: {
+        task: { project_id: projectId },
+      },
+      include: {
+        user: { select: { id: true, full_name: true, profile_photo_url: true } },
+        task: { select: { id: true, title: true } },
+      },
+      orderBy: { created_at: 'desc' },
+      take: limit,
+    });
+
+    // Formater les activités
+    return activities.map(activity => ({
+      id: activity.id,
+      action: activity.action,
+      field: activity.field,
+      oldValue: activity.old_value,
+      newValue: activity.new_value,
+      user: activity.user,
+      task: activity.task,
+      createdAt: activity.created_at,
+      message: this.formatActivityMessage(activity),
+    }));
+  }
+
+  private formatActivityMessage(activity: any): string {
+    const userName = activity.user?.full_name || 'Quelqu\'un';
+    const taskTitle = activity.task?.title || 'une tâche';
+
+    switch (activity.action) {
+      case 'COMPLETED':
+        return `${userName} a terminé "${taskTitle}"`;
+      case 'CREATED':
+        return `${userName} a créé "${taskTitle}"`;
+      case 'UPDATED':
+        if (activity.field === 'status') {
+          return `${userName} a changé le statut de "${taskTitle}"`;
+        }
+        return `${userName} a modifié "${taskTitle}"`;
+      case 'MOVED':
+        return `${userName} a déplacé "${taskTitle}"`;
+      case 'COMMENTED':
+        return `${userName} a commenté sur "${taskTitle}"`;
+      case 'ASSIGNED':
+        return `${userName} a été assigné à "${taskTitle}"`;
+      default:
+        return `${userName} a effectué une action sur "${taskTitle}"`;
+    }
+  }
+
+  // ============================================
+  // MES TÂCHES
+  // ============================================
+
+  async getUserTasks(userId: number, filters: { status?: string; priority?: string }) {
+    const where: any = {
+      task_assignment: {
+        some: { user_id: userId },
+      },
+    };
+
+    if (filters.status && filters.status !== 'all') {
+      where.status = filters.status;
+    }
+
+    if (filters.priority && filters.priority !== 'all') {
+      where.priority = filters.priority;
+    }
+
+    return this.prisma.task.findMany({
+      where,
+      include: {
+        project: { select: { id: true, name: true } },
+        task_column: { select: { id: true, name: true } },
+        task_assignment: {
+          include: {
+            user: { select: { id: true, full_name: true, profile_photo_url: true } },
+          },
+        },
+        user_task_created_by_user_idTouser: {
+          select: { id: true, full_name: true },
+        },
+      },
+      orderBy: [
+        { due_date: 'asc' },
+        { priority: 'desc' },
+        { created_at: 'desc' },
+      ],
+    });
+  }
+
+  async getUserTasksStats(userId: number) {
+    const tasks = await this.prisma.task.findMany({
+      where: {
+        task_assignment: {
+          some: { user_id: userId },
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+        priority: true,
+        due_date: true,
+      },
+    });
+
+    const now = new Date();
+    const total = tasks.length;
+    const done = tasks.filter(t => t.status === 'DONE').length;
+    const inProgress = tasks.filter(t => t.status === 'IN_PROGRESS').length;
+    const todo = tasks.filter(t => t.status === 'TODO').length;
+    const blocked = tasks.filter(t => t.status === 'BLOCKED').length;
+    const overdue = tasks.filter(t => 
+      t.due_date && new Date(t.due_date) < now && t.status !== 'DONE'
+    ).length;
+    const dueSoon = tasks.filter(t => {
+      if (!t.due_date || t.status === 'DONE') return false;
+      const dueDate = new Date(t.due_date);
+      const diffDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays >= 0 && diffDays <= 3;
+    }).length;
+
+    return {
+      total,
+      done,
+      inProgress,
+      todo,
+      blocked,
+      overdue,
+      dueSoon,
+      completionRate: total > 0 ? Math.round((done / total) * 100) : 0,
+    };
+  }
+
+  async updateUserTaskStatus(userId: number, taskId: number, status: string) {
+    // Vérifier que l'utilisateur est bien assigné à cette tâche
+    const assignment = await this.prisma.task_assignment.findFirst({
+      where: {
+        task_id: taskId,
+        user_id: userId,
+      },
+    });
+
+    if (!assignment) {
+      throw new ForbiddenException('Vous n\'êtes pas assigné à cette tâche');
+    }
+
+    // Récupérer la tâche actuelle pour obtenir le project_id
+    const currentTask = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        project: {
+          include: {
+            task_board: {
+              include: {
+                task_column: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!currentTask) {
+      throw new NotFoundException('Tâche non trouvée');
+    }
+
+    // Trouver la colonne correspondant au nouveau statut
+    // Mapping des statuts vers les noms de colonnes typiques
+    const statusToColumnName: Record<string, string[]> = {
+      'TODO': ['À faire', 'Todo', 'Backlog', 'A faire', 'To do'],
+      'IN_PROGRESS': ['En cours', 'In Progress', 'Doing', 'Working'],
+      'BLOCKED': ['Bloqué', 'Blocked', 'En attente', 'En revue', 'Review', 'Waiting'],
+      'DONE': ['Terminé', 'Done', 'Fait', 'Completed', 'Fini'],
+      'ARCHIVED': ['Archivé', 'Archived', 'Terminé', 'Done'], // Fallback vers Terminé
+    };
+
+    let newColumnId = currentTask.task_column_id;
+
+    // Chercher une colonne correspondante dans le board du projet
+    if (currentTask.project?.task_board?.length > 0) {
+      const board = currentTask.project.task_board[0];
+      const possibleNames = statusToColumnName[status] || [];
+      
+      for (const column of board.task_column) {
+        if (possibleNames.some(name => 
+          column.name.toLowerCase().includes(name.toLowerCase())
+        )) {
+          newColumnId = column.id;
+          break;
+        }
+      }
+    }
+
+    // Mettre à jour le statut ET la colonne
+    const updatedTask = await this.prisma.task.update({
+      where: { id: taskId },
+      data: {
+        status: status as any,
+        task_column_id: newColumnId,
+        completed_at: status === 'DONE' ? new Date() : null,
+        updated_at: new Date(),
+        updated_by_user_id: userId,
+      },
+      include: {
+        project: { select: { id: true, name: true } },
+        task_column: { select: { id: true, name: true } },
+      },
+    });
+
+    // Enregistrer l'activité
+    await this.prisma.task_activity.create({
+      data: {
+        task_id: taskId,
+        user_id: userId,
+        action: status === 'DONE' ? 'COMPLETED' : 'UPDATED',
+        field: 'status',
+        new_value: status,
+        created_at: new Date(),
+      },
+    });
+
+    // Notifier les autres membres si la tâche est terminée
+    if (status === 'DONE') {
+      await this.notifyTaskCompleted(currentTask, userId);
+    }
+
+    return updatedTask;
+  }
+
+  /**
+   * Notifie les membres du projet qu'une tâche est terminée
+   */
+  private async notifyTaskCompleted(task: any, completedByUserId: number) {
+    try {
+      const completedBy = await this.prisma.user.findUnique({
+        where: { id: completedByUserId },
+        select: { full_name: true },
+      });
+
+      const project = await this.prisma.project.findUnique({
+        where: { id: task.project_id },
+        include: {
+          project_member: { select: { user_id: true } },
+        },
+      });
+
+      if (!project) return;
+
+      const usersToNotify = new Set<number>();
+      if (project.owner_user_id && project.owner_user_id !== completedByUserId) {
+        usersToNotify.add(project.owner_user_id);
+      }
+      for (const member of project.project_member) {
+        if (member.user_id !== completedByUserId) {
+          usersToNotify.add(member.user_id);
+        }
+      }
+
+      const now = new Date();
+      for (const userId of usersToNotify) {
+        await this.prisma.notification.create({
+          data: {
+            user_id: userId,
+            title: '✅ Tâche terminée',
+            message: `${completedBy?.full_name || 'Un membre'} a terminé "${task.title}"`,
+            type: 'TASK_COMPLETED',
+            entity_type: 'task',
+            entity_id: task.id,
+            link: `/projects/${project.id}`,
+            is_read: false,
+            created_at: now,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Erreur notification:', error);
+    }
+  }
 }

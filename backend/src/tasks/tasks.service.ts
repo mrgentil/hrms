@@ -134,7 +134,10 @@ export class TasksService {
   async update(id: number, userId: number, dto: UpdateTaskDto) {
     const task = await this.prisma.task.findUnique({
       where: { id },
-      include: { project: true },
+      include: { 
+        project: true,
+        task_assignment: { include: { user: { select: { id: true, full_name: true } } } },
+      },
     });
 
     if (!task) {
@@ -142,6 +145,9 @@ export class TasksService {
     }
 
     await this.checkProjectAccess(task.project_id, userId);
+
+    // Vérifier si la tâche passe en DONE
+    const isBeingCompleted = dto.status === TaskStatus.DONE && task.status !== 'DONE';
 
     const updatedTask = await this.prisma.task.update({
       where: { id },
@@ -158,6 +164,11 @@ export class TasksService {
         updated_at: new Date(),
       },
     });
+
+    // Notifier tous les membres du projet quand une tâche est terminée
+    if (isBeingCompleted) {
+      await this.notifyTaskCompleted(task, userId);
+    }
 
     // Mettre à jour les assignés si fournis
     if (dto.assignee_ids !== undefined) {
@@ -396,6 +407,78 @@ export class TasksService {
 
     if (!isOwner && !isMember) {
       throw new ForbiddenException('Accès non autorisé à ce projet');
+    }
+  }
+
+  /**
+   * Notifie tous les membres du projet quand une tâche est terminée
+   */
+  private async notifyTaskCompleted(task: any, completedByUserId: number) {
+    try {
+      // Récupérer l'utilisateur qui a terminé la tâche
+      const completedBy = await this.prisma.user.findUnique({
+        where: { id: completedByUserId },
+        select: { full_name: true },
+      });
+
+      // Récupérer tous les membres du projet
+      const project = await this.prisma.project.findUnique({
+        where: { id: task.project_id },
+        include: {
+          project_member: {
+            include: { user: { select: { id: true, full_name: true } } },
+          },
+        },
+      });
+
+      if (!project) return;
+
+      // Liste des personnes à notifier (owner + membres, sauf celui qui a terminé)
+      const usersToNotify = new Set<number>();
+      
+      if (project.owner_user_id && project.owner_user_id !== completedByUserId) {
+        usersToNotify.add(project.owner_user_id);
+      }
+      
+      for (const member of project.project_member) {
+        if (member.user_id !== completedByUserId) {
+          usersToNotify.add(member.user_id);
+        }
+      }
+
+      // Créer les notifications
+      const now = new Date();
+      for (const userId of usersToNotify) {
+        await this.prisma.notification.create({
+          data: {
+            user_id: userId,
+            title: '✅ Tâche terminée',
+            message: `${completedBy?.full_name || 'Un membre'} a terminé la tâche "${task.title}" dans le projet "${project.name}"`,
+            type: 'TASK_COMPLETED',
+            entity_type: 'task',
+            entity_id: task.id,
+            link: `/projects/${project.id}?task=${task.id}`,
+            is_read: false,
+            created_at: now,
+          },
+        });
+      }
+
+      // Enregistrer l'activité
+      await this.prisma.task_activity.create({
+        data: {
+          task_id: task.id,
+          user_id: completedByUserId,
+          action: 'COMPLETED',
+          field: 'status',
+          old_value: task.status,
+          new_value: 'DONE',
+          created_at: now,
+        },
+      });
+
+    } catch (error) {
+      console.error('Erreur notification tâche terminée:', error);
     }
   }
 }

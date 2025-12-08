@@ -233,6 +233,7 @@ model project {
   task           task[]
   task_board     task_board[]
   project_tags   project_tag[]
+  task_templates task_template[]
 
   @@index([owner_user_id], map: "owner_user_id")
 }
@@ -307,6 +308,10 @@ model task {
   subtasks                           task[]            @relation("subtasks")
   parent_task                        task?             @relation("subtasks", fields: [parent_task_id], references: [id], onDelete: SetNull)
   parent_task_id                     Int?
+  
+  // Dépendances
+  dependencies                       task_dependency[] @relation("TaskDependencies")
+  depended_by                        task_dependency[] @relation("TaskDependedBy")
 
   @@index([created_by_user_id], map: "created_by_user_id")
   @@index([project_id], map: "project_id")
@@ -447,6 +452,51 @@ model task_activity {
   @@index([user_id], map: "task_activity_user_id")
 }
 
+// ============================================
+// TEMPLATES DE TÂCHES
+// ============================================
+model task_template {
+  id                Int               @id @default(autoincrement())
+  name              String            @db.VarChar(255)
+  description       String?           @db.Text
+  priority          task_priority     @default(MEDIUM)
+  checklist_json    String?           @db.Text // JSON des checklists à créer
+  subtasks_json     String?           @db.Text // JSON des sous-tâches à créer
+  estimated_hours   Int?
+  is_global         Boolean           @default(false) // Template accessible à tous
+  project_id        Int?              // Si lié à un projet spécifique
+  created_by        Int
+  created_at        DateTime          @db.DateTime(0)
+  updated_at        DateTime          @db.DateTime(0)
+  
+  project           project?          @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  creator           user              @relation(fields: [created_by], references: [id], onDelete: Cascade)
+
+  @@index([project_id], map: "task_template_project_id")
+  @@index([created_by], map: "task_template_created_by")
+}
+
+// ============================================
+// DÉPENDANCES ENTRE TÂCHES
+// ============================================
+model task_dependency {
+  id                Int      @id @default(autoincrement())
+  task_id           Int      // La tâche qui dépend d'une autre
+  depends_on_id     Int      // La tâche dont elle dépend
+  dependency_type   String   @default("BLOCKS") @db.VarChar(50) // BLOCKS, REQUIRED_BY, RELATED
+  created_at        DateTime @db.DateTime(0)
+  created_by        Int?
+  
+  task              task     @relation("TaskDependencies", fields: [task_id], references: [id], onDelete: Cascade)
+  depends_on        task     @relation("TaskDependedBy", fields: [depends_on_id], references: [id], onDelete: Cascade)
+  creator           user?    @relation(fields: [created_by], references: [id], onDelete: SetNull)
+
+  @@unique([task_id, depends_on_id])
+  @@index([task_id], map: "task_dependency_task_id")
+  @@index([depends_on_id], map: "task_dependency_depends_on_id")
+  @@index([created_by], map: "task_dependency_created_by")
+}
+
 model user {
   id                                                    Int                        @id @default(autoincrement())
   username                                              String                     @unique(map: "user_username_unique") @db.VarChar(255)
@@ -507,6 +557,8 @@ model user {
   task_attachments                                      task_attachment[]
   task_checklist_items_completed                        task_checklist_item[]
   task_activities                                       task_activity[]
+  task_dependencies_created                             task_dependency[]
+  task_templates_created                                task_template[]
 
   @@index([department_id], map: "department_id")
   @@index([manager_user_id], map: "manager_user_id")
@@ -1043,6 +1095,7 @@ enum notification_type {
   TASK_UPDATED       // Tâche mise à jour
   TASK_COMPLETED     // Tâche terminée
   TASK_COMMENT       // Commentaire sur une tâche
+  TASK_DUE           // Rappel d'échéance de tâche
   LEAVE_APPROVED     // Congé approuvé
   LEAVE_REJECTED     // Congé refusé
   LEAVE_PENDING      // Nouvelle demande de congé (pour manager)

@@ -411,7 +411,7 @@ const mainNavItems: NavItem[] = [
 
         name: "Mes Tâches",
 
-        path: "/employees/tasks",
+        path: "/my-tasks",
 
         pro: false,
 

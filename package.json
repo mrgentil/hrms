@@ -9,7 +9,15 @@
     "url": "https://github.com/mrgentil/hrms.git"
   },
   "homepage": "https://github.com/mrgentil/hrms",
-  "keywords": ["hrms", "nextjs", "react", "mysql", "prisma", "rbac", "dashboard"],
+  "keywords": [
+    "hrms",
+    "nextjs",
+    "react",
+    "mysql",
+    "prisma",
+    "rbac",
+    "dashboard"
+  ],
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:prisma\"",
@@ -36,6 +44,9 @@
     "prisma:studio": "cd backend && npx prisma studio"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@fullcalendar/core": "^6.1.15",
     "@fullcalendar/daygrid": "^6.1.15",
     "@fullcalendar/interaction": "^6.1.15",

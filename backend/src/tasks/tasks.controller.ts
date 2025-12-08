@@ -10,8 +10,12 @@ import {
   ParseIntPipe,
   ValidationPipe,
   Query,
+  Res,
+  Header,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { TasksService } from './tasks.service';
+import { TaskExportService } from './task-export.service';
 import {
   CreateTaskDto,
   UpdateTaskDto,
@@ -25,7 +29,10 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @Controller('tasks')
 @UseGuards(JwtAuthGuard)
 export class TasksController {
-  constructor(private readonly tasksService: TasksService) {}
+  constructor(
+    private readonly tasksService: TasksService,
+    private readonly taskExportService: TaskExportService,
+  ) {}
 
   @Post()
   async create(
@@ -154,5 +161,25 @@ export class TasksController {
       success: true,
       ...result,
     };
+  }
+
+  // ============================================
+  // EXPORT
+  // ============================================
+
+  @Get('project/:projectId/export/excel')
+  @Header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  async exportProjectToExcel(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.taskExportService.exportProjectTasksToExcel(projectId);
+    
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=taches-projet-${projectId}-${new Date().toISOString().split('T')[0]}.xlsx`,
+    );
+    
+    res.send(buffer);
   }
 }

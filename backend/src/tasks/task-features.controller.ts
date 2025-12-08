@@ -281,4 +281,56 @@ export class TaskFeaturesController {
     const tasks = await this.taskFeaturesService.getTasksForDateRange(projectId, startDate, endDate);
     return { success: true, data: tasks };
   }
+
+  // ============================================
+  // TABLEAU DE BORD - PROGRESSION PAR MEMBRE
+  // ============================================
+
+  @Get('project/:projectId/members-progress')
+  async getMembersProgress(@Param('projectId', ParseIntPipe) projectId: number) {
+    const progress = await this.taskFeaturesService.getMembersProgress(projectId);
+    return { success: true, data: progress };
+  }
+
+  @Get('project/:projectId/activity-log')
+  async getProjectActivityLog(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @Query('limit') limit?: string,
+  ) {
+    const activities = await this.taskFeaturesService.getProjectActivityLog(
+      projectId,
+      limit ? parseInt(limit) : 50,
+    );
+    return { success: true, data: activities };
+  }
+
+  // ============================================
+  // MES TÂCHES - Pour l'utilisateur connecté
+  // ============================================
+
+  @Get('my-tasks')
+  async getMyTasks(
+    @CurrentUser() user: any,
+    @Query('status') status?: string,
+    @Query('priority') priority?: string,
+  ) {
+    const tasks = await this.taskFeaturesService.getUserTasks(user.id, { status, priority });
+    return { success: true, data: tasks };
+  }
+
+  @Get('my-tasks/stats')
+  async getMyTasksStats(@CurrentUser() user: any) {
+    const stats = await this.taskFeaturesService.getUserTasksStats(user.id);
+    return { success: true, data: stats };
+  }
+
+  @Patch('my-tasks/:taskId/status')
+  async updateMyTaskStatus(
+    @CurrentUser() user: any,
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @Body('status') status: string,
+  ) {
+    const task = await this.taskFeaturesService.updateUserTaskStatus(user.id, taskId, status);
+    return { success: true, data: task, message: 'Statut mis à jour' };
+  }
 }

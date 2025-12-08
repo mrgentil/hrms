@@ -509,10 +509,18 @@ class EmployeesService {
   }
 
   async updateMyTask(taskId: number, data: UpdateMyTaskPayload) {
-    const payload: Record<string, unknown> = {};
+    // Utiliser le nouvel endpoint qui met aussi à jour la colonne Kanban
     if (data.status !== undefined) {
-      payload.status = data.status;
+      const response = await axios.patch(
+        `${API_BASE_URL}/tasks/my-tasks/${taskId}/status`,
+        { status: data.status },
+        { headers: this.getAuthHeaders() }
+      );
+      return response.data;
     }
+
+    // Fallback pour les autres mises à jour
+    const payload: Record<string, unknown> = {};
     if (data.completed_at !== undefined) {
       payload.completed_at = data.completed_at;
     }

@@ -188,8 +188,13 @@ export default function EmployeeTasksPage() {
         throw new Error(response?.message || 'Impossible de mettre a jour la tache.');
       }
 
+      // Mettre à jour localement le statut de la tâche
       setTasks((previous) =>
-        previous.map((item) => (item.id === task.id ? response.data : item)),
+        previous.map((item) => 
+          item.id === task.id 
+            ? { ...item, status: nextStatus, completed_at: nextStatus === 'DONE' ? new Date().toISOString() : null }
+            : item
+        ),
       );
       toast.success('Tache mise a jour avec succes.');
     } catch (error: any) {
@@ -454,10 +459,10 @@ export default function EmployeeTasksPage() {
                           <div>
                             <span className="font-medium text-gray-600 dark:text-gray-300">Assignee:</span>{' '}
                             <span className="text-black dark:text-white">
-                              {task.task_assignment[0]?.role
-                                ? `${task.task_assignment[0].role} `
+                              {task.task_assignment?.[0]?.role
+                                ? `${task.task_assignment?.[0]?.role} `
                                 : ''}
-                              (depuis {formatDate(task.task_assignment[0]?.assigned_at)})
+                              (depuis {formatDate(task.task_assignment?.[0]?.assigned_at)})
                             </span>
                           </div>
                           <div>

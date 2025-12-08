@@ -22,6 +22,8 @@ import { employeesService, Employee } from "@/services/employees.service";
 import TaskListView from "@/components/tasks/TaskListView";
 import TaskCalendarView from "@/components/tasks/TaskCalendarView";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
+import KanbanBoard from "@/components/tasks/KanbanBoard";
+import TeamProgressBoard from "@/components/tasks/TeamProgressBoard";
 
 const PlusIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,8 +53,18 @@ export default function ProjectDetailPage() {
     assignee_ids: [],
   });
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
-  const [activeView, setActiveView] = useState<"kanban" | "list" | "calendar">("kanban");
+  const [activeView, setActiveView] = useState<"kanban" | "list" | "calendar" | "team">("kanban");
   const [selectedTaskForModal, setSelectedTaskForModal] = useState<Task | null>(null);
+  
+  // Filtres et recherche
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterPriority, setFilterPriority] = useState<string>("ALL");
+  const [filterAssignee, setFilterAssignee] = useState<number | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Création de colonne
+  const [showColumnForm, setShowColumnForm] = useState(false);
+  const [newColumnName, setNewColumnName] = useState("");
 
   const loadData = useCallback(async () => {
     try {
@@ -147,6 +159,67 @@ export default function ProjectDetailPage() {
     }
   };
 
+  // Fonction pour déplacer une tâche (utilisé par KanbanBoard)
+  const handleTaskMove = async (taskId: number, newColumnId: number) => {
+    try {
+      await projectsService.moveTask(taskId, newColumnId);
+      toast.success("Tâche déplacée");
+      loadData();
+    } catch (error) {
+      toast.error("Erreur lors du déplacement");
+    }
+  };
+
+  // Fonction pour créer une nouvelle colonne
+  const handleCreateColumn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newColumnName.trim() || !board) return;
+    
+    try {
+      await projectsService.createColumn(board.id, newColumnName.trim());
+      toast.success("Colonne créée");
+      setNewColumnName("");
+      setShowColumnForm(false);
+      loadData();
+    } catch (error) {
+      toast.error("Erreur lors de la création");
+    }
+  };
+
+  // Filtrer les tâches selon les critères
+  const getFilteredColumns = () => {
+    if (!board) return [];
+    
+    return board.task_column.map(column => ({
+      ...column,
+      task: (column.task || []).filter(task => {
+        // Filtre recherche
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase();
+          const matchTitle = task.title.toLowerCase().includes(query);
+          const matchDesc = task.description?.toLowerCase().includes(query);
+          if (!matchTitle && !matchDesc) return false;
+        }
+        
+        // Filtre priorité
+        if (filterPriority !== "ALL" && task.priority !== filterPriority) {
+          return false;
+        }
+        
+        // Filtre assigné
+        if (filterAssignee !== null) {
+          const isAssigned = task.task_assignment?.some(a => a.user?.id === filterAssignee);
+          if (!isAssigned) return false;
+        }
+        
+        return true;
+      }),
+    }));
+  };
+
+  const filteredColumns = getFilteredColumns();
+  const hasActiveFilters = searchQuery || filterPriority !== "ALL" || filterAssignee !== null;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -217,10 +290,11 @@ export default function ProjectDetailPage() {
           )}
         </div>
 
-        {/* View Tabs */}
-        <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-xl p-2 shadow-sm">
-          <button
-            onClick={() => setActiveView("kanban")}
+        {/* View Tabs + Export */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-xl p-2 shadow-sm">
+            <button
+              onClick={() => setActiveView("kanban")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
               activeView === "kanban"
                 ? "bg-primary text-white"
@@ -257,7 +331,136 @@ export default function ProjectDetailPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             Calendrier
-          </button>
+            </button>
+            <button
+              onClick={() => setActiveView("team")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeView === "team"
+                  ? "bg-primary text-white"
+                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              Équipe
+            </button>
+          </div>
+
+          {/* Bouton Export */}
+          <a
+            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/tasks/project/${projectId}/export/excel`}
+            target="_blank"
+            className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors shadow-sm"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Exporter Excel
+          </a>
+        </div>
+
+        {/* Barre de recherche et filtres */}
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-wrap gap-4 items-center">
+            {/* Recherche */}
+            <div className="relative flex-1 min-w-[250px] max-w-md">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher une tâche..."
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Bouton filtres */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all ${
+                showFilters || hasActiveFilters
+                  ? "bg-primary/10 border-primary text-primary"
+                  : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filtres
+              {hasActiveFilters && (
+                <span className="w-2 h-2 bg-primary rounded-full"></span>
+              )}
+            </button>
+
+            {/* Réinitialiser les filtres */}
+            {hasActiveFilters && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilterPriority("ALL");
+                  setFilterAssignee(null);
+                }}
+                className="text-sm text-gray-500 hover:text-primary"
+              >
+                Réinitialiser
+              </button>
+            )}
+          </div>
+
+          {/* Panneau de filtres */}
+          {showFilters && (
+            <div className="flex flex-wrap gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+              {/* Filtre Priorité */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  Priorité
+                </label>
+                <select
+                  value={filterPriority}
+                  onChange={(e) => setFilterPriority(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-primary/30"
+                >
+                  <option value="ALL">Toutes</option>
+                  <option value="LOW">Basse</option>
+                  <option value="MEDIUM">Moyenne</option>
+                  <option value="HIGH">Haute</option>
+                  <option value="URGENT">Urgente</option>
+                </select>
+              </div>
+
+              {/* Filtre Assigné */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  Assigné à
+                </label>
+                <select
+                  value={filterAssignee ?? ""}
+                  onChange={(e) => setFilterAssignee(e.target.value ? Number(e.target.value) : null)}
+                  className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-primary/30 min-w-[180px]"
+                >
+                  <option value="">Tous les membres</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Views */}
@@ -269,125 +472,67 @@ export default function ProjectDetailPage() {
           <TaskCalendarView projectId={projectId} onTaskUpdate={loadData} />
         )}
 
-        {/* Kanban Board */}
+        {/* Kanban Board avec Drag & Drop */}
         {activeView === "kanban" && (
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-max">
-            {board.task_column.map((column) => (
-              <div
-                key={column.id}
-                className="w-80 bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4"
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, column.id)}
-              >
-                {/* Column Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    {column.name}
-                    <span className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded-full text-xs">
-                      {column.task?.length || 0}
-                    </span>
-                  </h3>
-                  <button
-                    onClick={() => openTaskForm(column.id)}
-                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                  >
-                    <PlusIcon />
-                  </button>
-                </div>
-
-                {/* Tasks */}
-                <div className="space-y-3 min-h-[200px]">
-                  {column.task?.map((task) => (
-                    <div
-                      key={task.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, task)}
-                      onClick={() => setSelectedTaskForModal(task)}
-                      className={`bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md hover:border-primary/50 transition-all ${
-                        draggedTask?.id === task.id ? "opacity-50" : ""
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h4 className="font-medium text-gray-900 dark:text-white text-sm">
-                          {task.title}
-                        </h4>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
-                          className="p-1 text-gray-400 hover:text-red-500 rounded"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-
-                      {task.description && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">
-                          {task.description}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-between">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${TASK_PRIORITY_COLORS[task.priority]}`}>
-                          {TASK_PRIORITY_LABELS[task.priority]}
-                        </span>
-
-                        {task.task_assignment && task.task_assignment.length > 0 && (
-                          <div className="flex -space-x-1">
-                            {task.task_assignment.slice(0, 3).map((a, idx) => {
-                              const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500'];
-                              return (
-                                <div
-                                  key={a.id}
-                                  className={`w-6 h-6 rounded-full ${colors[idx % colors.length]} border-2 border-white dark:border-gray-800 flex items-center justify-center text-[10px] font-semibold text-white overflow-hidden`}
-                                  title={a.user?.full_name || 'Membre'}
-                                >
-                                  {a.user?.profile_photo_url ? (
-                                    <img
-                                      src={a.user.profile_photo_url}
-                                      alt={a.user.full_name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    (a.user?.full_name || 'M').charAt(0).toUpperCase()
-                                  )}
-                                </div>
-                              );
-                            })}
-                            {task.task_assignment.length > 3 && (
-                              <div className="w-6 h-6 rounded-full bg-gray-400 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[10px] font-semibold text-white">
-                                +{task.task_assignment.length - 3}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {task.due_date && (
-                        <div className="mt-2 text-xs text-gray-400 flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          {new Date(task.due_date).toLocaleDateString("fr-FR")}
-                        </div>
-                      )}
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <KanbanBoard
+                columns={filteredColumns}
+                onTaskMove={handleTaskMove}
+                onTaskClick={(task) => setSelectedTaskForModal(task)}
+                onTaskDelete={handleDeleteTask}
+                onAddTask={openTaskForm}
+              />
+            </div>
+            
+            {/* Bouton Ajouter Colonne */}
+            <div className="flex-shrink-0">
+              {showColumnForm ? (
+                <div className="w-72 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg">
+                  <form onSubmit={handleCreateColumn}>
+                    <input
+                      type="text"
+                      value={newColumnName}
+                      onChange={(e) => setNewColumnName(e.target.value)}
+                      placeholder="Nom de la colonne..."
+                      className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white mb-3"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        className="flex-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+                      >
+                        Créer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setShowColumnForm(false); setNewColumnName(""); }}
+                        className="px-3 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-white rounded-lg"
+                      >
+                        Annuler
+                      </button>
                     </div>
-                  ))}
+                  </form>
                 </div>
-
-                {/* Add Task Button */}
+              ) : (
                 <button
-                  onClick={() => openTaskForm(column.id)}
-                  className="w-full mt-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center gap-1"
+                  onClick={() => setShowColumnForm(true)}
+                  className="w-72 h-24 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500 transition-colors"
                 >
-                  <PlusIcon />
-                  Ajouter une tâche
+                  <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Ajouter une colonne
                 </button>
-              </div>
-            ))}
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Vue Équipe - Progression par membre */}
+        {activeView === "team" && (
+          <TeamProgressBoard projectId={projectId} />
         )}
 
         {/* Task Form Modal */}

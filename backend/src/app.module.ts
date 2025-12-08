@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { resolve } from 'path';
 import { AppController } from './app.controller';
@@ -38,6 +39,7 @@ import { NotificationsModule } from './notifications/notifications.module';
         '.env',
       ],
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
     UsersModule,
