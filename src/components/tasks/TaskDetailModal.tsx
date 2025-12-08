@@ -111,6 +111,7 @@ export default function TaskDetailModal({
 
   // Form states
   const [newComment, setNewComment] = useState("");
+  const [replyToComment, setReplyToComment] = useState<TaskComment | null>(null);
   const [newChecklistTitle, setNewChecklistTitle] = useState("");
   const [newItemTitles, setNewItemTitles] = useState<Record<number, string>>({});
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
@@ -181,13 +182,30 @@ export default function TaskDetailModal({
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
     try {
-      const comment = await taskFeaturesService.addComment(taskId, newComment);
-      setComments([comment, ...comments]);
+      const comment = await taskFeaturesService.addComment(
+        taskId, 
+        newComment,
+        replyToComment?.id,
+      );
+      // Les commentaires sont maintenant triés par date ascendante (asc)
+      setComments([...comments, comment]);
       setNewComment("");
-      toast.success("Commentaire ajouté");
+      setReplyToComment(null);
+      toast.success(replyToComment ? "Réponse ajoutée" : "Commentaire ajouté");
     } catch (error) {
       toast.error("Erreur lors de l'ajout");
     }
+  };
+
+  const handleReplyToComment = (comment: TaskComment) => {
+    setReplyToComment(comment);
+    // Focus sur le textarea
+    const textarea = document.querySelector('textarea[placeholder*="commentaire"]') as HTMLTextAreaElement;
+    if (textarea) textarea.focus();
+  };
+
+  const cancelReply = () => {
+    setReplyToComment(null);
   };
 
   const handleDeleteComment = async (commentId: number) => {
@@ -575,40 +593,61 @@ export default function TaskDetailModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-        <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose} />
+    <div className="fixed inset-0 z-50 overflow-y-auto animate-in fade-in duration-200">
+      <div className="flex items-center justify-center min-h-screen px-4 py-6">
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+          onClick={onClose} 
+        />
 
-        <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-          {/* Header */}
-          <div className="flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex-1 pr-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{taskTitle}</h2>
-              {taskDescription && (
-                <p className="mt-2 text-gray-600 dark:text-gray-400">{taskDescription}</p>
-              )}
+        <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+          {/* Header avec gradient */}
+          <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-transparent dark:from-primary/20 dark:via-primary/10 dark:to-transparent">
+            <div className="flex items-start justify-between p-6">
+              <div className="flex-1 pr-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">
+                      {taskTitle}
+                    </h2>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Tâche #{taskId}
+                    </span>
+                  </div>
+                </div>
+                {taskDescription && (
+                  <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                    {taskDescription}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-xl hover:bg-white/50 dark:hover:bg-gray-800 transition-all"
+              >
+                <XIcon />
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <XIcon />
-            </button>
           </div>
 
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200 dark:border-gray-700 px-6 overflow-x-auto">
+          {/* Tabs améliorés */}
+          <div className="flex border-b border-gray-200 dark:border-gray-700/50 px-4 bg-gray-50/50 dark:bg-gray-800/50 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-3.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
                   activeTab === tab.id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    ? "border-primary text-primary bg-white dark:bg-gray-900 rounded-t-lg -mb-[1px]"
+                    : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-800/50"
                 }`}
               >
-                {tab.icon}
+                <span className={activeTab === tab.id ? "scale-110" : ""}>{tab.icon}</span>
                 {tab.label}
                 {tab.count !== undefined && tab.count > 0 && (
                   <span className="ml-1 px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded-full">
@@ -620,31 +659,54 @@ export default function TaskDetailModal({
           </div>
 
           {/* Content */}
-          <div className="p-6 overflow-y-auto max-h-[60vh]">
+          <div className="p-6 overflow-y-auto max-h-[60vh] bg-gray-50/30 dark:bg-gray-800/30">
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="relative">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20 border-t-primary"></div>
+                </div>
+                <p className="mt-4 text-sm text-gray-500">Chargement...</p>
               </div>
             ) : (
               <>
                 {/* COMMENTAIRES */}
                 {activeTab === "comments" && (
-                  <div className="space-y-4">
-                    {/* Nouveau commentaire */}
-                    <div className="flex gap-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium">
-                        {user?.full_name?.charAt(0) || "U"}
-                      </div>
-                      <div className="flex-1 relative">
-                        <textarea
-                          ref={commentInputRef}
-                          value={newComment}
-                          onChange={handleCommentChange}
-                          onKeyDown={handleKeyDown}
-                          placeholder="Ajouter un commentaire... (tapez @ pour mentionner)"
-                          className="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-primary/50"
-                          rows={3}
-                        />
+                  <div className="space-y-6">
+                    {/* Nouveau commentaire - Design amélioré */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+                      <div className="flex gap-4">
+                        <div className="w-11 h-11 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white font-semibold shadow-lg shadow-primary/25">
+                          {user?.full_name?.charAt(0) || "U"}
+                        </div>
+                        <div className="flex-1 relative">
+                          {/* Affichage du commentaire parent si réponse */}
+                          {replyToComment && (
+                            <div className="mb-3 p-3 bg-gradient-to-r from-primary/5 to-transparent dark:from-primary/10 rounded-xl border-l-4 border-primary">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                  ↩️ Réponse à <strong className="text-primary">{replyToComment.user.full_name}</strong>
+                                </span>
+                                <button
+                                  onClick={cancelReply}
+                                  className="p-1 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                >
+                                  <XIcon />
+                                </button>
+                              </div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1 italic">
+                                "{replyToComment.content.substring(0, 80)}{replyToComment.content.length > 80 ? '...' : ''}"
+                              </p>
+                            </div>
+                          )}
+                          <textarea
+                            ref={commentInputRef}
+                            value={newComment}
+                            onChange={handleCommentChange}
+                            onKeyDown={handleKeyDown}
+                            placeholder={replyToComment ? `Répondre à ${replyToComment.user.full_name}...` : "Écrivez votre commentaire... (tapez @ pour mentionner)"}
+                            className="w-full p-4 border-2 border-gray-100 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                            rows={3}
+                          />
                         
                         {/* Dropdown des mentions */}
                         {showMentions && filteredMentionUsers.length > 0 && (
@@ -675,51 +737,89 @@ export default function TaskDetailModal({
                         )}
                         
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-gray-400">
-                            💡 Tapez @ pour mentionner quelqu'un
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <span className="text-primary">@</span> pour mentionner
                           </span>
                           <button
                             onClick={handleAddComment}
                             disabled={!newComment.trim()}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-primary/80 text-white rounded-xl hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50 disabled:shadow-none transition-all font-medium"
                           >
                             <SendIcon />
-                            Envoyer
+                            {replyToComment ? "Répondre" : "Envoyer"}
                           </button>
                         </div>
+                      </div>
                       </div>
                     </div>
 
                     {/* Liste des commentaires */}
-                    <div className="space-y-4 mt-6">
+                    <div className="space-y-4">
                       {comments.length === 0 ? (
-                        <p className="text-center text-gray-500 py-8">Aucun commentaire</p>
+                        <div className="text-center py-12">
+                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                            <ChatIcon />
+                          </div>
+                          <p className="text-gray-500 dark:text-gray-400">Aucun commentaire pour le moment</p>
+                          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Soyez le premier à commenter !</p>
+                        </div>
                       ) : (
                         comments.map((comment) => (
-                          <div key={comment.id} className="flex gap-3">
-                            <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 font-medium">
-                              {comment.user?.full_name?.charAt(0) || "?"}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-gray-900 dark:text-white">
-                                  {comment.user?.full_name}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {formatDate(comment.created_at)}
-                                </span>
+                          <div key={comment.id} className="group bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
+                            <div className="flex gap-4">
+                              <div className="w-10 h-10 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-200 font-semibold flex-shrink-0">
+                                {comment.user?.full_name?.charAt(0) || "?"}
                               </div>
-                              <p className="mt-1 text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                                {renderCommentContent(comment.content)}
-                              </p>
-                              {comment.user_id === user?.id && (
-                                <button
-                                  onClick={() => handleDeleteComment(comment.id)}
-                                  className="mt-2 text-xs text-red-500 hover:text-red-700"
-                                >
-                                  Supprimer
-                                </button>
-                              )}
+                              <div className="flex-1 min-w-0">
+                                {/* Afficher le contexte si c'est une réponse */}
+                                {comment.parent_comment && (
+                                  <div className="mb-3 p-2.5 bg-gradient-to-r from-gray-50 to-transparent dark:from-gray-700/50 rounded-lg border-l-3 border-gray-300 dark:border-gray-500">
+                                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                      </svg>
+                                      Réponse à <strong className="text-gray-700 dark:text-gray-300">{comment.parent_comment.user?.full_name}</strong>
+                                    </span>
+                                    <p className="text-xs text-gray-400 truncate mt-0.5 italic">
+                                      "{comment.parent_comment.content.substring(0, 60)}..."
+                                    </p>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-semibold text-gray-900 dark:text-white">
+                                    {comment.user?.full_name}
+                                  </span>
+                                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                                    •
+                                  </span>
+                                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                                    {formatDate(comment.created_at)}
+                                  </span>
+                                </div>
+                                <p className="mt-2 text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                                  {renderCommentContent(comment.content)}
+                                </p>
+                                <div className="flex items-center gap-4 mt-3 pt-2 border-t border-gray-100 dark:border-gray-700/50">
+                                  <button
+                                    onClick={() => handleReplyToComment(comment)}
+                                    className="text-xs text-gray-500 hover:text-primary flex items-center gap-1.5 transition-colors"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                    </svg>
+                                    Répondre
+                                  </button>
+                                  {comment.user_id === user?.id && (
+                                    <button
+                                      onClick={() => handleDeleteComment(comment.id)}
+                                      className="text-xs text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1"
+                                    >
+                                      <TrashIcon />
+                                      Supprimer
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         ))

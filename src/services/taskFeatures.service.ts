@@ -11,12 +11,21 @@ export interface TaskComment {
   content: string;
   task_id: number;
   user_id: number;
+  parent_comment_id?: number;
   created_at: string;
   updated_at: string;
   user: {
     id: number;
     full_name: string;
     profile_photo_url?: string;
+  };
+  parent_comment?: {
+    id: number;
+    content: string;
+    user: {
+      id: number;
+      full_name: string;
+    };
   };
 }
 
@@ -111,12 +120,15 @@ class TaskFeaturesService {
     return result.data;
   }
 
-  async addComment(taskId: number, content: string): Promise<TaskComment> {
+  async addComment(taskId: number, content: string, parentCommentId?: number): Promise<TaskComment> {
     const response = await authService.authenticatedFetch(
       `${API_BASE_URL}/tasks/${taskId}/comments`,
       {
         method: 'POST',
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ 
+          content,
+          parent_comment_id: parentCommentId,
+        }),
       }
     );
     if (!response.ok) throw new Error('Erreur lors de l\'ajout du commentaire');

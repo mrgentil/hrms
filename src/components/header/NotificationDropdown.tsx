@@ -197,10 +197,7 @@ export default function NotificationDropdown() {
         const sysUnread = sysNotifs.filter(n => !n.is_read).length;
         setUnreadSystemCount(sysUnread);
       } catch (error: any) {
-        // Silently ignore errors
-        if (error?.response?.status !== 403 && error?.response?.status !== 404) {
-          console.error("Failed to load system notifications", error);
-        }
+        // Silently ignore errors for non-critical notifications
       }
     } finally {
       setLoading(false);

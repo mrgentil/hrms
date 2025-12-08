@@ -20,29 +20,60 @@ export class TaskFeaturesService {
         user: {
           select: { id: true, full_name: true, profile_photo_url: true },
         },
+        parent_comment: {
+          include: {
+            user: {
+              select: { id: true, full_name: true },
+            },
+          },
+        },
       },
-      orderBy: { created_at: 'desc' },
+      orderBy: { created_at: 'asc' },
     });
   }
 
-  async addComment(taskId: number, userId: number, content: string) {
+  async addComment(taskId: number, userId: number, content: string, parentCommentId?: number) {
     // Récupérer la tâche pour les notifications
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
-      include: { project: true },
+      include: { 
+        project: true,
+        task_assignment: true,
+      },
     });
+
+    if (!task) {
+      throw new NotFoundException('Tâche non trouvée');
+    }
+
+    // Récupérer le commentaire parent si c'est une réponse
+    let parentComment: any = null;
+    if (parentCommentId) {
+      parentComment = await this.prisma.task_comment.findUnique({
+        where: { id: parentCommentId },
+        include: { user: true },
+      });
+    }
 
     const comment = await this.prisma.task_comment.create({
       data: {
         task_id: taskId,
         user_id: userId,
         content,
+        parent_comment_id: parentCommentId || null,
         created_at: new Date(),
         updated_at: new Date(),
       },
       include: {
         user: {
           select: { id: true, full_name: true, profile_photo_url: true },
+        },
+        parent_comment: {
+          include: {
+            user: {
+              select: { id: true, full_name: true },
+            },
+          },
         },
       },
     });
@@ -53,7 +84,124 @@ export class TaskFeaturesService {
     // Détecter et notifier les mentions
     await this.processMentions(content, taskId, userId, task, comment.user.full_name);
 
+    // Notifier créateur + assignés + auteur du commentaire parent
+    await this.notifyCommentSubscribers(
+      task,
+      userId,
+      comment.user.full_name || 'Quelqu\'un',
+      content,
+      parentComment,
+    );
+
     return comment;
+  }
+
+  // Notifier les personnes concernées par un commentaire
+  private async notifyCommentSubscribers(
+    task: any,
+    authorId: number,
+    authorName: string,
+    commentContent: string,
+    parentComment: any,
+  ) {
+    const usersToNotify = new Set<number>();
+
+    // Ajouter le créateur de la tâche
+    if (task.created_by_user_id && task.created_by_user_id !== authorId) {
+      usersToNotify.add(task.created_by_user_id);
+    }
+
+    // Ajouter tous les assignés de la tâche
+    for (const assignment of task.task_assignment || []) {
+      if (assignment.user_id !== authorId) {
+        usersToNotify.add(assignment.user_id);
+      }
+    }
+
+    // Si c'est une réponse, ajouter l'auteur du commentaire parent
+    if (parentComment && parentComment.user_id !== authorId) {
+      usersToNotify.add(parentComment.user_id);
+    }
+
+    // Ajouter le chef de projet et les membres du projet avec rôle de gestion
+    if (task.project_id) {
+      const projectMembers = await this.prisma.project_member.findMany({
+        where: { 
+          project_id: task.project_id,
+          user_id: { not: authorId },
+          role: { in: ['OWNER', 'ADMIN', 'MANAGER'] },
+        },
+      });
+      for (const member of projectMembers) {
+        usersToNotify.add(member.user_id);
+      }
+    }
+
+    // Créer les notifications
+    const isReply = !!parentComment;
+    const title = isReply 
+      ? `${authorName} a répondu à un commentaire`
+      : `Nouveau commentaire sur une tâche`;
+    
+    const message = isReply
+      ? `${authorName} a répondu à ${parentComment.user?.full_name || 'un commentaire'} sur la tâche "${task.title}"`
+      : `${authorName} a commenté la tâche "${task.title}" dans le projet "${task.project?.name || 'Projet'}"`;
+
+    for (const userId of usersToNotify) {
+      try {
+        await this.prisma.notification.create({
+          data: {
+            user_id: userId,
+            title,
+            message,
+            type: 'TASK_COMMENT',
+            entity_type: 'task',
+            entity_id: task.id,
+            link: `/projects?task=${task.id}`,
+            is_read: false,
+            created_at: new Date(),
+          },
+        });
+      } catch (error) {
+        console.error('Erreur création notification commentaire:', error);
+      }
+    }
+
+    // Envoyer des emails aux utilisateurs
+    for (const userId of usersToNotify) {
+      try {
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { work_email: true, full_name: true },
+        });
+
+        if (user?.work_email) {
+          await this.mailService.sendMail({
+            to: user.work_email,
+            subject: title,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #465fff;">💬 ${title}</h2>
+                <p>Bonjour <strong>${user.full_name}</strong>,</p>
+                <p>${message}</p>
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <p style="margin: 0;"><strong>Commentaire :</strong></p>
+                  <p style="background-color: white; padding: 10px; border-radius: 4px; margin-top: 5px;">
+                    ${commentContent.substring(0, 200)}${commentContent.length > 200 ? '...' : ''}
+                  </p>
+                </div>
+                <p>Connectez-vous pour voir ou répondre.</p>
+                <p style="color: #888; font-size: 12px; margin-top: 30px;">
+                  — L'équipe HRMS
+                </p>
+              </div>
+            `,
+          });
+        }
+      } catch (error) {
+        console.error('Erreur envoi email commentaire:', error);
+      }
+    }
   }
 
   // ============================================
