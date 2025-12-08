@@ -30,7 +30,7 @@ export const NOTIFICATION_TYPE_ICONS: Record<string, string> = {
   LEAVE_PENDING: '⏳',
   ANNOUNCEMENT: '📢',
   MESSAGE: '💬',
-  MENTION: '@',
+  MENTION: '🔔',
   SYSTEM: '⚙️',
 };
 

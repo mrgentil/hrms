@@ -114,8 +114,11 @@ export default function TaskDetailModal({
   const [newChecklistTitle, setNewChecklistTitle] = useState("");
   const [newItemTitles, setNewItemTitles] = useState<Record<number, string>>({});
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [newSubtaskAssignees, setNewSubtaskAssignees] = useState<number[]>([]);
   const [showNewChecklist, setShowNewChecklist] = useState(false);
   const [showNewSubtask, setShowNewSubtask] = useState(false);
+  const [editingSubtask, setEditingSubtask] = useState<any>(null);
+  const [editSubtaskAssignees, setEditSubtaskAssignees] = useState<number[]>([]);
 
   useEffect(() => {
     if (isOpen && taskId) {
@@ -422,14 +425,81 @@ export default function TaskDetailModal({
     try {
       const subtask = await taskFeaturesService.createSubtask(taskId, {
         title: newSubtaskTitle,
+        assignee_ids: newSubtaskAssignees.length > 0 ? newSubtaskAssignees : undefined,
       });
       setSubtasks([...subtasks, subtask]);
       setNewSubtaskTitle("");
+      setNewSubtaskAssignees([]);
       setShowNewSubtask(false);
       toast.success("Sous-tâche créée");
       onUpdate?.();
     } catch (error) {
       toast.error("Erreur lors de la création");
+    }
+  };
+
+  const toggleSubtaskAssignee = (userId: number) => {
+    if (newSubtaskAssignees.includes(userId)) {
+      setNewSubtaskAssignees(newSubtaskAssignees.filter(id => id !== userId));
+    } else {
+      setNewSubtaskAssignees([...newSubtaskAssignees, userId]);
+    }
+  };
+
+  const toggleEditSubtaskAssignee = (userId: number) => {
+    if (editSubtaskAssignees.includes(userId)) {
+      setEditSubtaskAssignees(editSubtaskAssignees.filter(id => id !== userId));
+    } else {
+      setEditSubtaskAssignees([...editSubtaskAssignees, userId]);
+    }
+  };
+
+  const handleEditSubtask = (subtask: any) => {
+    setEditingSubtask({ ...subtask });
+    const currentAssignees = subtask.task_assignment?.map((a: any) => a.user?.id) || [];
+    setEditSubtaskAssignees(currentAssignees);
+  };
+
+  const handleUpdateSubtask = async () => {
+    if (!editingSubtask) return;
+    try {
+      const updated = await taskFeaturesService.updateSubtask(editingSubtask.id, {
+        title: editingSubtask.title,
+        status: editingSubtask.status,
+        priority: editingSubtask.priority,
+        assignee_ids: editSubtaskAssignees,
+      });
+      setSubtasks(subtasks.map(s => s.id === updated.id ? updated : s));
+      setEditingSubtask(null);
+      setEditSubtaskAssignees([]);
+      toast.success("Sous-tâche mise à jour");
+      onUpdate?.();
+    } catch (error) {
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  const handleDeleteSubtask = async (subtaskId: number) => {
+    if (!confirm("Supprimer cette sous-tâche ?")) return;
+    try {
+      await taskFeaturesService.deleteSubtask(subtaskId);
+      setSubtasks(subtasks.filter(s => s.id !== subtaskId));
+      toast.success("Sous-tâche supprimée");
+      onUpdate?.();
+    } catch (error) {
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  const handleToggleSubtaskStatus = async (subtask: any) => {
+    const newStatus = subtask.status === "DONE" ? "TODO" : "DONE";
+    try {
+      const updated = await taskFeaturesService.updateSubtask(subtask.id, {
+        status: newStatus,
+      });
+      setSubtasks(subtasks.map(s => s.id === updated.id ? updated : s));
+    } catch (error) {
+      toast.error("Erreur lors de la mise à jour");
     }
   };
 
@@ -850,68 +920,211 @@ export default function TaskDetailModal({
                 {/* SOUS-TÂCHES */}
                 {activeTab === "subtasks" && (
                   <div className="space-y-4">
-                    {subtasks.map((subtask) => (
+                    {subtasks.map((subtask: any) => (
                       <div
                         key={subtask.id}
-                        className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                        className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg group"
                       >
-                        <input
-                          type="checkbox"
-                          checked={subtask.status === "DONE"}
-                          readOnly
-                          className="w-4 h-4 rounded border-gray-300"
-                        />
-                        <div className="flex-1">
-                          <span
-                            className={
-                              subtask.status === "DONE"
-                                ? "line-through text-gray-400"
-                                : "text-gray-900 dark:text-white"
-                            }
-                          >
-                            {subtask.title}
-                          </span>
-                        </div>
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full ${
-                            subtask.priority === "HIGH" || subtask.priority === "CRITICAL"
-                              ? "bg-red-100 text-red-700"
-                              : subtask.priority === "LOW"
-                              ? "bg-gray-100 text-gray-700"
-                              : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {subtask.priority}
-                        </span>
+                        {editingSubtask?.id === subtask.id ? (
+                          // Mode édition
+                          <div className="space-y-3">
+                            <input
+                              type="text"
+                              value={editingSubtask.title}
+                              onChange={(e) => setEditingSubtask({ ...editingSubtask, title: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                            />
+                            <div className="flex gap-2">
+                              <select
+                                value={editingSubtask.status}
+                                onChange={(e) => setEditingSubtask({ ...editingSubtask, status: e.target.value })}
+                                className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm"
+                              >
+                                <option value="TODO">À faire</option>
+                                <option value="IN_PROGRESS">En cours</option>
+                                <option value="DONE">Terminé</option>
+                              </select>
+                              <select
+                                value={editingSubtask.priority}
+                                onChange={(e) => setEditingSubtask({ ...editingSubtask, priority: e.target.value })}
+                                className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm"
+                              >
+                                <option value="LOW">Basse</option>
+                                <option value="MEDIUM">Moyenne</option>
+                                <option value="HIGH">Haute</option>
+                                <option value="CRITICAL">Critique</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Réassigner à :
+                              </label>
+                              <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+                                {users.map((emp) => (
+                                  <button
+                                    key={emp.id}
+                                    type="button"
+                                    onClick={() => toggleEditSubtaskAssignee(emp.id)}
+                                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-colors ${
+                                      editSubtaskAssignees.includes(emp.id)
+                                        ? "bg-primary text-white"
+                                        : "bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300"
+                                    }`}
+                                  >
+                                    {emp.full_name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleUpdateSubtask}
+                                className="px-3 py-1.5 bg-primary text-white rounded-lg text-sm"
+                              >
+                                Sauvegarder
+                              </button>
+                              <button
+                                onClick={() => { setEditingSubtask(null); setEditSubtaskAssignees([]); }}
+                                className="px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm"
+                              >
+                                Annuler
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          // Mode affichage
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={subtask.status === "DONE"}
+                              onChange={() => handleToggleSubtaskStatus(subtask)}
+                              className="w-4 h-4 rounded border-gray-300 mt-1 cursor-pointer"
+                            />
+                            <div className="flex-1">
+                              <span
+                                className={
+                                  subtask.status === "DONE"
+                                    ? "line-through text-gray-400"
+                                    : "text-gray-900 dark:text-white"
+                                }
+                              >
+                                {subtask.title}
+                              </span>
+                              {subtask.task_assignment?.length > 0 && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <span className="text-xs text-gray-500">Assigné à :</span>
+                                  <div className="flex -space-x-2">
+                                    {subtask.task_assignment.map((assignment: any) => (
+                                      <div
+                                        key={assignment.user?.id}
+                                        className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs text-primary font-medium border-2 border-white dark:border-gray-700"
+                                        title={assignment.user?.full_name}
+                                      >
+                                        {assignment.user?.full_name?.charAt(0) || "?"}
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <span className="text-xs text-gray-600 dark:text-gray-400 ml-1">
+                                    {subtask.task_assignment.map((a: any) => a.user?.full_name).join(", ")}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2 py-1 text-xs rounded-full ${
+                                  subtask.priority === "HIGH" || subtask.priority === "CRITICAL"
+                                    ? "bg-red-100 text-red-700"
+                                    : subtask.priority === "LOW"
+                                    ? "bg-gray-100 text-gray-700"
+                                    : "bg-blue-100 text-blue-700"
+                                }`}
+                              >
+                                {subtask.priority}
+                              </span>
+                              <button
+                                onClick={() => handleEditSubtask(subtask)}
+                                className="p-1 text-gray-400 hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Modifier"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSubtask(subtask.id)}
+                                className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Supprimer"
+                              >
+                                <TrashIcon />
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
 
                     {showNewSubtask ? (
-                      <div className="flex gap-2">
+                      <div className="space-y-3 p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
                         <input
                           type="text"
                           value={newSubtaskTitle}
                           onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleCreateSubtask();
-                            if (e.key === "Escape") setShowNewSubtask(false);
-                          }}
                           placeholder="Titre de la sous-tâche..."
-                          className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                          className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
                           autoFocus
                         />
-                        <button
-                          onClick={handleCreateSubtask}
-                          className="px-4 py-2 bg-primary text-white rounded-lg"
-                        >
-                          Créer
-                        </button>
-                        <button
-                          onClick={() => setShowNewSubtask(false)}
-                          className="px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg"
-                        >
-                          Annuler
-                        </button>
+                        
+                        {/* Sélection des assignés */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Assigner à :
+                          </label>
+                          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                            {users.map((emp) => (
+                              <button
+                                key={emp.id}
+                                type="button"
+                                onClick={() => toggleSubtaskAssignee(emp.id)}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-colors ${
+                                  newSubtaskAssignees.includes(emp.id)
+                                    ? "bg-primary text-white"
+                                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                                }`}
+                              >
+                                <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                                  {emp.full_name?.charAt(0) || "?"}
+                                </span>
+                                {emp.full_name}
+                              </button>
+                            ))}
+                          </div>
+                          {newSubtaskAssignees.length > 0 && (
+                            <p className="text-xs text-primary mt-2">
+                              {newSubtaskAssignees.length} personne(s) sélectionnée(s)
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            onClick={handleCreateSubtask}
+                            disabled={!newSubtaskTitle.trim()}
+                            className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50"
+                          >
+                            Créer la sous-tâche
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowNewSubtask(false);
+                              setNewSubtaskTitle("");
+                              setNewSubtaskAssignees([]);
+                            }}
+                            className="px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg"
+                          >
+                            Annuler
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <button

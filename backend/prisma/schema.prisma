@@ -359,17 +359,21 @@ model task_column {
 // COMMENTAIRES SUR TÂCHES
 // ============================================
 model task_comment {
-  id         Int      @id @default(autoincrement())
-  content    String   @db.Text
-  task_id    Int
-  user_id    Int
-  created_at DateTime @db.DateTime(0)
-  updated_at DateTime @db.DateTime(0)
-  task       task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  id                Int            @id @default(autoincrement())
+  content           String         @db.Text
+  task_id           Int
+  user_id           Int
+  parent_comment_id Int?
+  created_at        DateTime       @db.DateTime(0)
+  updated_at        DateTime       @db.DateTime(0)
+  task              task           @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user              user           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  parent_comment    task_comment?  @relation("CommentReplies", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  replies           task_comment[] @relation("CommentReplies")
 
   @@index([task_id], map: "task_comment_task_id")
   @@index([user_id], map: "task_comment_user_id")
+  @@index([parent_comment_id], map: "task_comment_parent_id")
 }
 
 // ============================================

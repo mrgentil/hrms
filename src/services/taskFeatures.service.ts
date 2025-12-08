@@ -293,6 +293,35 @@ class TaskFeaturesService {
     return result.data;
   }
 
+  async updateSubtask(subtaskId: number, data: {
+    title?: string;
+    description?: string;
+    priority?: string;
+    status?: string;
+    assignee_ids?: number[];
+  }): Promise<TaskWithDetails> {
+    const response = await authService.authenticatedFetch(
+      `${API_BASE_URL}/tasks/subtasks/${subtaskId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }
+    );
+    if (!response.ok) throw new Error('Erreur lors de la mise à jour');
+    const result = await response.json();
+    return result.data;
+  }
+
+  async deleteSubtask(subtaskId: number): Promise<void> {
+    const response = await authService.authenticatedFetch(
+      `${API_BASE_URL}/tasks/subtasks/${subtaskId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+    if (!response.ok) throw new Error('Erreur lors de la suppression');
+  }
+
   // ============================================
   // HISTORIQUE D'ACTIVITÉ
   // ============================================

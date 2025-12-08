@@ -238,6 +238,22 @@ export default function NotificationDropdown() {
     }
   }, [authLoading, roleLoading, refreshNotifications]);
 
+  // Polling automatique toutes les 30 secondes pour les nouvelles notifications
+  useEffect(() => {
+    if (authLoading || roleLoading) return;
+    
+    const interval = setInterval(() => {
+      // Rafraîchir seulement les notifications système (silencieux)
+      notificationsService.getNotifications(10).then((sysNotifs) => {
+        setSystemNotifications(sysNotifs);
+        const sysUnread = sysNotifs.filter(n => !n.is_read).length;
+        setUnreadSystemCount(sysUnread);
+      }).catch(() => {});
+    }, 30000); // 30 secondes
+
+    return () => clearInterval(interval);
+  }, [authLoading, roleLoading]);
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -570,6 +586,7 @@ export default function NotificationDropdown() {
         <div className="mt-3 flex-1 space-y-4 overflow-y-auto custom-scrollbar">
           {renderPendingSection()}
           {renderUpdatesSection()}
+          {renderSystemNotifications()}
         </div>
 
         <div className="mt-3 flex flex-col gap-2">

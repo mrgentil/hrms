@@ -183,6 +183,65 @@ export class TaskFeaturesService {
     }
   }
 
+  // ============================================
+  // NOTIFICATION D'ASSIGNATION
+  // ============================================
+
+  private async notifyAssignment(
+    userId: number,
+    assignerName: string,
+    taskId: number,
+    taskTitle: string,
+    projectName: string,
+  ) {
+    try {
+      // Notification in-app
+      await this.prisma.notification.create({
+        data: {
+          user_id: userId,
+          title: `Nouvelle tâche assignée`,
+          message: `${assignerName} vous a assigné à la tâche "${taskTitle}" dans le projet "${projectName}"`,
+          type: 'TASK_ASSIGNED',
+          entity_type: 'task',
+          entity_id: taskId,
+          link: `/projects?task=${taskId}`,
+          is_read: false,
+          created_at: new Date(),
+        },
+      });
+
+      // Email
+      const assignee = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { work_email: true, full_name: true },
+      });
+
+      if (assignee?.work_email) {
+        await this.mailService.sendMail({
+          to: assignee.work_email,
+          subject: `Nouvelle tâche assignée : ${taskTitle}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #465fff;">Nouvelle tâche assignée 📋</h2>
+              <p>Bonjour <strong>${assignee.full_name}</strong>,</p>
+              <p><strong>${assignerName}</strong> vous a assigné à une nouvelle tâche :</p>
+              <div style="background-color: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 0 0 10px 0;"><strong>Projet :</strong> ${projectName}</p>
+                <p style="margin: 0;"><strong>Tâche :</strong> ${taskTitle}</p>
+              </div>
+              <p>Connectez-vous pour voir les détails et commencer à travailler dessus.</p>
+              <p style="color: #888; font-size: 12px; margin-top: 30px;">
+                — L'équipe HRMS
+              </p>
+            </div>
+          `,
+        });
+      }
+    } catch (error) {
+      console.error('Erreur notification assignation:', error);
+    }
+  }
+
   async updateComment(commentId: number, userId: number, content: string) {
     const comment = await this.prisma.task_comment.findUnique({
       where: { id: commentId },
@@ -427,6 +486,7 @@ export class TaskFeaturesService {
   }) {
     const parentTask = await this.prisma.task.findUnique({
       where: { id: parentTaskId },
+      include: { project: true },
     });
 
     if (!parentTask) {
@@ -448,7 +508,7 @@ export class TaskFeaturesService {
       },
     });
 
-    // Assigner les membres
+    // Assigner les membres et envoyer des notifications
     if (data.assignee_ids?.length) {
       await this.prisma.task_assignment.createMany({
         data: data.assignee_ids.map(assigneeId => ({
@@ -459,6 +519,24 @@ export class TaskFeaturesService {
           updated_at: new Date(),
         })),
       });
+
+      // Envoyer des notifications aux assignés
+      const assigner = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { full_name: true },
+      });
+
+      for (const assigneeId of data.assignee_ids) {
+        if (assigneeId !== userId) {
+          await this.notifyAssignment(
+            assigneeId,
+            assigner?.full_name || 'Quelqu\'un',
+            subtask.id,
+            data.title,
+            parentTask.project?.name || 'Projet',
+          );
+        }
+      }
     }
 
     await this.logActivity(parentTaskId, userId, 'SUBTASK_ADDED', null, null, data.title);
@@ -475,6 +553,132 @@ export class TaskFeaturesService {
         },
       },
     });
+  }
+
+  async updateSubtask(
+    subtaskId: number,
+    userId: number,
+    data: {
+      title?: string;
+      description?: string;
+      priority?: string;
+      status?: string;
+      assignee_ids?: number[];
+    },
+  ) {
+    const subtask = await this.prisma.task.findUnique({
+      where: { id: subtaskId },
+      include: { 
+        project: true,
+        task_assignment: true,
+      },
+    });
+
+    if (!subtask) {
+      throw new NotFoundException('Sous-tâche non trouvée');
+    }
+
+    // Récupérer les anciens assignés
+    const oldAssigneeIds = subtask.task_assignment.map(a => a.user_id);
+
+    // Mettre à jour la sous-tâche
+    await this.prisma.task.update({
+      where: { id: subtaskId },
+      data: {
+        title: data.title,
+        description: data.description,
+        priority: data.priority as any,
+        status: data.status as any,
+        updated_at: new Date(),
+        updated_by_user_id: userId,
+      },
+    });
+
+    // Mettre à jour les assignations si fourni
+    if (data.assignee_ids !== undefined) {
+      // Supprimer les anciennes assignations
+      await this.prisma.task_assignment.deleteMany({
+        where: { task_id: subtaskId },
+      });
+
+      // Créer les nouvelles assignations
+      if (data.assignee_ids.length > 0) {
+        await this.prisma.task_assignment.createMany({
+          data: data.assignee_ids.map(assigneeId => ({
+            task_id: subtaskId,
+            user_id: assigneeId,
+            assigned_at: new Date(),
+            created_at: new Date(),
+            updated_at: new Date(),
+          })),
+        });
+
+        // Notifier les NOUVEAUX assignés uniquement
+        const newAssigneeIds = data.assignee_ids.filter(id => !oldAssigneeIds.includes(id));
+        
+        if (newAssigneeIds.length > 0) {
+          const assigner = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { full_name: true },
+          });
+
+          for (const assigneeId of newAssigneeIds) {
+            if (assigneeId !== userId) {
+              await this.notifyAssignment(
+                assigneeId,
+                assigner?.full_name || 'Quelqu\'un',
+                subtaskId,
+                data.title || subtask.title,
+                subtask.project?.name || 'Projet',
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // Log activité sur la tâche parent
+    if (subtask.parent_task_id) {
+      await this.logActivity(subtask.parent_task_id, userId, 'SUBTASK_UPDATED', null, null, data.title || subtask.title);
+    }
+
+    return this.prisma.task.findUnique({
+      where: { id: subtaskId },
+      include: {
+        task_assignment: {
+          include: {
+            user: {
+              select: { id: true, full_name: true, profile_photo_url: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async deleteSubtask(subtaskId: number, userId: number) {
+    const subtask = await this.prisma.task.findUnique({
+      where: { id: subtaskId },
+    });
+
+    if (!subtask) {
+      throw new NotFoundException('Sous-tâche non trouvée');
+    }
+
+    // Supprimer les assignations
+    await this.prisma.task_assignment.deleteMany({
+      where: { task_id: subtaskId },
+    });
+
+    // Supprimer la sous-tâche
+    await this.prisma.task.delete({
+      where: { id: subtaskId },
+    });
+
+    // Log activité sur la tâche parent
+    if (subtask.parent_task_id) {
+      await this.logActivity(subtask.parent_task_id, userId, 'SUBTASK_DELETED', null, null, subtask.title);
+    }
   }
 
   // ============================================

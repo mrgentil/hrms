@@ -38,9 +38,14 @@ export class TaskFeaturesController {
   async addComment(
     @Param('taskId', ParseIntPipe) taskId: number,
     @CurrentUser() user: any,
-    @Body('content') content: string,
+    @Body() body: { content: string; parent_comment_id?: number },
   ) {
-    const comment = await this.taskFeaturesService.addComment(taskId, user.id, content);
+    const comment = await this.taskFeaturesService.addComment(
+      taskId, 
+      user.id, 
+      body.content,
+      body.parent_comment_id,
+    );
     return { success: true, data: comment, message: 'Commentaire ajouté' };
   }
 
@@ -191,6 +196,31 @@ export class TaskFeaturesController {
   ) {
     const subtask = await this.taskFeaturesService.createSubtask(taskId, user.id, data);
     return { success: true, data: subtask, message: 'Sous-tâche créée' };
+  }
+
+  @Patch('subtasks/:subtaskId')
+  async updateSubtask(
+    @Param('subtaskId', ParseIntPipe) subtaskId: number,
+    @CurrentUser() user: any,
+    @Body() data: { 
+      title?: string; 
+      description?: string; 
+      priority?: string; 
+      status?: string;
+      assignee_ids?: number[];
+    },
+  ) {
+    const subtask = await this.taskFeaturesService.updateSubtask(subtaskId, user.id, data);
+    return { success: true, data: subtask, message: 'Sous-tâche mise à jour' };
+  }
+
+  @Delete('subtasks/:subtaskId')
+  async deleteSubtask(
+    @Param('subtaskId', ParseIntPipe) subtaskId: number,
+    @CurrentUser() user: any,
+  ) {
+    await this.taskFeaturesService.deleteSubtask(subtaskId, user.id);
+    return { success: true, message: 'Sous-tâche supprimée' };
   }
 
   // ============================================
