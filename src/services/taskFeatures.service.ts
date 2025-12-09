@@ -27,6 +27,14 @@ export interface TaskComment {
       full_name: string;
     };
   };
+  attachments?: {
+    id: number;
+    file_name: string;
+    file_size: number;
+    file_type: string;
+    file_path: string;
+    created_at: string;
+  }[];
 }
 
 export interface TaskAttachment {
@@ -136,6 +144,29 @@ class TaskFeaturesService {
     return result.data;
   }
 
+  // Ajouter un commentaire avec les chemins des fichiers pour l'email
+  async addCommentWithFiles(
+    taskId: number, 
+    content: string, 
+    parentCommentId?: number,
+    attachmentPaths: string[] = []
+  ): Promise<TaskComment> {
+    const response = await authService.authenticatedFetch(
+      `${API_BASE_URL}/tasks/${taskId}/comments`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ 
+          content,
+          parent_comment_id: parentCommentId,
+          attachment_paths: attachmentPaths,
+        }),
+      }
+    );
+    if (!response.ok) throw new Error('Erreur lors de l\'ajout du commentaire');
+    const result = await response.json();
+    return result.data;
+  }
+
   async updateComment(commentId: number, content: string): Promise<TaskComment> {
     const response = await authService.authenticatedFetch(
       `${API_BASE_URL}/tasks/comments/${commentId}`,
@@ -174,16 +205,21 @@ class TaskFeaturesService {
     const formData = new FormData();
     formData.append('file', file);
 
-    const token = localStorage.getItem('accessToken');
-    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/attachments`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    });
+    // Utiliser authService pour le token (comme les autres méthodes)
+    const response = await authService.authenticatedFetch(
+      `${API_BASE_URL}/tasks/${taskId}/attachments`,
+      {
+        method: 'POST',
+        body: formData,
+        // Ne pas mettre Content-Type, fetch le gère automatiquement pour FormData
+      }
+    );
 
-    if (!response.ok) throw new Error('Erreur lors de l\'upload');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Upload error:', response.status, errorText);
+      throw new Error(`Erreur lors de l'upload: ${response.status}`);
+    }
     const result = await response.json();
     return result.data;
   }
@@ -397,6 +433,158 @@ class TaskFeaturesService {
     const result = await response.json();
     return result.data;
   }
+
+  // ============================================
+  // SUIVI DU TEMPS
+  // ============================================
+
+  async getTimeEntries(taskId: number): Promise<TimeEntry[]> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tasks/${taskId}/time-entries`);
+    if (!response.ok) throw new Error('Erreur lors du chargement');
+    const result = await response.json();
+    return result.data;
+  }
+
+  async getTimeStats(taskId: number): Promise<TimeStats> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tasks/${taskId}/time-stats`);
+    if (!response.ok) throw new Error('Erreur lors du chargement');
+    const result = await response.json();
+    return result.data;
+  }
+
+  async addTimeEntry(taskId: number, data: { hours: number; date: string; description?: string }): Promise<TimeEntry> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tasks/${taskId}/time-entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Erreur lors de l\'ajout');
+    const result = await response.json();
+    return result.data;
+  }
+
+  async deleteTimeEntry(entryId: number): Promise<void> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tasks/time-entries/${entryId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Erreur lors de la suppression');
+  }
+
+  // ============================================
+  // DÉPENDANCES
+  // ============================================
+
+  async getTaskDependencies(taskId: number): Promise<TaskDependencies> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tasks/${taskId}/dependencies`);
+    if (!response.ok) throw new Error('Erreur lors du chargement');
+    const result = await response.json();
+    return result.data;
+  }
+
+  async addTaskDependency(taskId: number, dependsOnTaskId: number): Promise<TaskDependency> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tasks/${taskId}/dependencies`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ depends_on_task_id: dependsOnTaskId }),
+    });
+    if (!response.ok) throw new Error('Erreur lors de l\'ajout');
+    const result = await response.json();
+    return result.data;
+  }
+
+  async removeTaskDependency(taskId: number, dependsOnTaskId: number): Promise<void> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tasks/${taskId}/dependencies/${dependsOnTaskId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Erreur lors de la suppression');
+  }
+
+  // ============================================
+  // TEMPLATES
+  // ============================================
+
+  async getTemplates(projectId?: number): Promise<TaskTemplate[]> {
+    const url = projectId 
+      ? `${API_BASE_URL}/tasks/templates/list?project_id=${projectId}`
+      : `${API_BASE_URL}/tasks/templates/list`;
+    const response = await authService.authenticatedFetch(url);
+    if (!response.ok) throw new Error('Erreur lors du chargement');
+    const result = await response.json();
+    return result.data;
+  }
+
+  async createTemplate(data: { name: string; description?: string; priority?: string; project_id?: number; is_global?: boolean }): Promise<TaskTemplate> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tasks/templates`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Erreur lors de la création');
+    const result = await response.json();
+    return result.data;
+  }
+
+  async createTaskFromTemplate(templateId: number, columnId: number, projectId: number): Promise<TaskWithDetails> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tasks/templates/${templateId}/create-task`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ column_id: columnId, project_id: projectId }),
+    });
+    if (!response.ok) throw new Error('Erreur lors de la création');
+    const result = await response.json();
+    return result.data;
+  }
+
+  async deleteTemplate(templateId: number): Promise<void> {
+    const response = await authService.authenticatedFetch(`${API_BASE_URL}/tasks/templates/${templateId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Erreur lors de la suppression');
+  }
+}
+
+// Types additionnels
+export interface TimeEntry {
+  id: number;
+  task_id: number;
+  user_id: number;
+  hours: number;
+  date: string;
+  description?: string;
+  is_billable: boolean;
+  user: { id: number; full_name: string; profile_photo_url?: string };
+}
+
+export interface TimeStats {
+  estimated_hours: number | null;
+  total_hours: number;
+  remaining_hours: number | null;
+  entries_count: number;
+}
+
+export interface TaskDependency {
+  id: number;
+  task_id: number;
+  depends_on_task_id: number;
+  dependency_type: string;
+  depends_on_task: { id: number; title: string; status: string; priority: string };
+}
+
+export interface TaskDependencies {
+  dependencies: TaskDependency[];
+  depended_by: { id: number; task: { id: number; title: string; status: string; priority: string } }[];
+}
+
+export interface TaskTemplate {
+  id: number;
+  name: string;
+  description?: string;
+  priority: string;
+  estimated_hours?: number;
+  is_global: boolean;
+  project_id?: number;
+  user: { id: number; full_name: string };
+  project?: { id: number; name: string };
 }
 
 export const taskFeaturesService = new TaskFeaturesService();

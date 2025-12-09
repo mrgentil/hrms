@@ -12,6 +12,8 @@ import {
 import { employeesService, Employee } from "@/services/employees.service";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
+import RichCommentEditor from "./RichCommentEditor";
+import CommentAttachments from "./CommentAttachments";
 
 // Icons
 const XIcon = () => (
@@ -179,21 +181,60 @@ export default function TaskDetailModal({
   // COMMENTAIRES
   // ============================================
 
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
+  const handleAddComment = async (content?: string, commentAttachments?: File[]) => {
+    const commentContent = content || newComment;
+    if (!commentContent.trim() && (!commentAttachments || commentAttachments.length === 0)) return;
+    
     try {
-      const comment = await taskFeaturesService.addComment(
+      // Construire le contenu avec les noms des PJ
+      let finalContent = commentContent;
+      const uploadedFilePaths: string[] = [];
+      
+      // Upload des pièces jointes si présentes
+      if (commentAttachments && commentAttachments.length > 0) {
+        const attachmentNames: string[] = [];
+        for (const file of commentAttachments) {
+          try {
+            const uploadedAttachment = await taskFeaturesService.uploadAttachment(taskId, file);
+            uploadedFilePaths.push(uploadedAttachment.file_path);
+            attachmentNames.push(`📎 ${file.name}`);
+          } catch (uploadError) {
+            console.error("Erreur upload fichier:", file.name, uploadError);
+            // Continuer même si un fichier échoue
+            attachmentNames.push(`❌ ${file.name} (échec)`);
+          }
+        }
+        if (attachmentNames.length > 0) {
+          finalContent = `${commentContent}\n\n${attachmentNames.join("\n")}`;
+        }
+      }
+      
+      // Créer le commentaire (avec les chemins des fichiers si disponibles)
+      const comment = await taskFeaturesService.addCommentWithFiles(
         taskId, 
-        newComment,
+        finalContent,
         replyToComment?.id,
+        uploadedFilePaths,
       );
-      // Les commentaires sont maintenant triés par date ascendante (asc)
-      setComments([...comments, comment]);
+      
+      if (commentAttachments && commentAttachments.length > 0) {
+        toast.success(`Commentaire ajouté avec ${uploadedFilePaths.length}/${commentAttachments.length} fichier(s)`);
+      } else {
+        toast.success(replyToComment ? "Réponse ajoutée ✓" : "Commentaire ajouté ✓");
+      }
+      
+      // Refresh des commentaires
+      const updatedComments = await taskFeaturesService.getComments(taskId);
+      console.log('📝 Commentaires reçus:', updatedComments);
+      console.log('📎 Attachments par commentaire:', updatedComments.map(c => ({ id: c.id, attachments: c.attachments })));
+      setComments(updatedComments);
+      
       setNewComment("");
       setReplyToComment(null);
-      toast.success(replyToComment ? "Réponse ajoutée" : "Commentaire ajouté");
     } catch (error) {
-      toast.error("Erreur lors de l'ajout");
+      console.error("Erreur lors de l'ajout du commentaire:", error);
+      toast.error("Erreur lors de l'ajout du commentaire");
+      throw error;
     }
   };
 
@@ -678,78 +719,24 @@ export default function TaskDetailModal({
                         <div className="w-11 h-11 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-white font-semibold shadow-lg shadow-primary/25">
                           {user?.full_name?.charAt(0) || "U"}
                         </div>
-                        <div className="flex-1 relative">
-                          {/* Affichage du commentaire parent si réponse */}
-                          {replyToComment && (
-                            <div className="mb-3 p-3 bg-gradient-to-r from-primary/5 to-transparent dark:from-primary/10 rounded-xl border-l-4 border-primary">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                                  ↩️ Réponse à <strong className="text-primary">{replyToComment.user.full_name}</strong>
-                                </span>
-                                <button
-                                  onClick={cancelReply}
-                                  className="p-1 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                                >
-                                  <XIcon />
-                                </button>
-                              </div>
-                              <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1 italic">
-                                "{replyToComment.content.substring(0, 80)}{replyToComment.content.length > 80 ? '...' : ''}"
-                              </p>
-                            </div>
-                          )}
-                          <textarea
-                            ref={commentInputRef}
+                        <div className="flex-1">
+                          <RichCommentEditor
                             value={newComment}
-                            onChange={handleCommentChange}
-                            onKeyDown={handleKeyDown}
-                            placeholder={replyToComment ? `Répondre à ${replyToComment.user.full_name}...` : "Écrivez votre commentaire... (tapez @ pour mentionner)"}
-                            className="w-full p-4 border-2 border-gray-100 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                            rows={3}
+                            onChange={setNewComment}
+                            onSubmit={handleAddComment}
+                            onCancel={replyToComment ? cancelReply : undefined}
+                            placeholder={replyToComment ? `Répondre à ${replyToComment.user.full_name}...` : "Écrivez votre commentaire..."}
+                            submitLabel={replyToComment ? "Répondre" : "Envoyer"}
+                            isReply={!!replyToComment}
+                            replyToName={replyToComment?.user.full_name}
+                            mentionUsers={users.map(emp => ({
+                              id: emp.id,
+                              name: emp.full_name || "",
+                              avatar: emp.avatar_url
+                            }))}
+                            autoFocus={!!replyToComment}
                           />
-                        
-                        {/* Dropdown des mentions */}
-                        {showMentions && filteredMentionUsers.length > 0 && (
-                          <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                            {filteredMentionUsers.map((emp, index) => (
-                              <button
-                                key={emp.id}
-                                type="button"
-                                onClick={() => insertMention(emp)}
-                                className={`w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                                  index === mentionIndex ? "bg-primary/10" : ""
-                                }`}
-                              >
-                                <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary text-sm font-medium">
-                                  {emp.full_name?.charAt(0) || "?"}
-                                </div>
-                                <div>
-                                  <div className="font-medium text-gray-900 dark:text-white">
-                                    {emp.full_name}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {emp.position?.title || "Employé"}
-                                  </div>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-gray-400 flex items-center gap-1">
-                            <span className="text-primary">@</span> pour mentionner
-                          </span>
-                          <button
-                            onClick={handleAddComment}
-                            disabled={!newComment.trim()}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-primary/80 text-white rounded-xl hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50 disabled:shadow-none transition-all font-medium"
-                          >
-                            <SendIcon />
-                            {replyToComment ? "Répondre" : "Envoyer"}
-                          </button>
                         </div>
-                      </div>
                       </div>
                     </div>
 
@@ -799,6 +786,14 @@ export default function TaskDetailModal({
                                 <p className="mt-2 text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
                                   {renderCommentContent(comment.content)}
                                 </p>
+                                
+                                {/* Pièces jointes du commentaire */}
+                                {comment.attachments && comment.attachments.length > 0 && (
+                                  <div className="mt-3">
+                                    <CommentAttachments attachments={comment.attachments} />
+                                  </div>
+                                )}
+                                
                                 <div className="flex items-center gap-4 mt-3 pt-2 border-t border-gray-100 dark:border-gray-700/50">
                                   <button
                                     onClick={() => handleReplyToComment(comment)}

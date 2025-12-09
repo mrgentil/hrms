@@ -16,13 +16,17 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { TaskFeaturesService } from './task-features.service';
+import { TaskRecurrenceService } from './task-recurrence.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('tasks')
 @UseGuards(JwtAuthGuard)
 export class TaskFeaturesController {
-  constructor(private readonly taskFeaturesService: TaskFeaturesService) {}
+  constructor(
+    private readonly taskFeaturesService: TaskFeaturesService,
+    private readonly taskRecurrenceService: TaskRecurrenceService,
+  ) {}
 
   // ============================================
   // COMMENTAIRES
@@ -38,15 +42,47 @@ export class TaskFeaturesController {
   async addComment(
     @Param('taskId', ParseIntPipe) taskId: number,
     @CurrentUser() user: any,
-    @Body() body: { content: string; parent_comment_id?: number },
+    @Body() body: { content: string; parent_comment_id?: number; attachment_paths?: string[] },
   ) {
     const comment = await this.taskFeaturesService.addComment(
       taskId, 
       user.id, 
       body.content,
       body.parent_comment_id,
+      body.attachment_paths || [],
     );
     return { success: true, data: comment, message: 'Commentaire ajouté' };
+  }
+
+  @Post(':taskId/comments-with-attachments')
+  @UseInterceptors(
+    FileInterceptor('files', {
+      storage: diskStorage({
+        destination: './uploads/tasks/attachments',
+        filename: (req, file, cb) => {
+          const randomName = Date.now() + '-' + Math.round(Math.random() * 1E9);
+          cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB max per file
+      },
+    }),
+  )
+  async addCommentWithAttachments(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @CurrentUser() user: any,
+    @Body() body: { content: string; parent_comment_id?: number },
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const comment = await this.taskFeaturesService.addCommentWithAttachment(
+      taskId, 
+      user.id, 
+      body.content,
+      body.parent_comment_id,
+      file,
+    );
+    return { success: true, data: comment };
   }
 
   @Patch('comments/:commentId')
@@ -88,7 +124,7 @@ export class TaskFeaturesController {
           cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
         },
       }),
-      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+      limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
     }),
   )
   async addAttachment(
@@ -332,5 +368,198 @@ export class TaskFeaturesController {
   ) {
     const task = await this.taskFeaturesService.updateUserTaskStatus(user.id, taskId, status);
     return { success: true, data: task, message: 'Statut mis à jour' };
+  }
+
+  // ============================================
+  // SUIVI DU TEMPS
+  // ============================================
+
+  @Get(':taskId/time-entries')
+  async getTimeEntries(@Param('taskId', ParseIntPipe) taskId: number) {
+    const entries = await this.taskFeaturesService.getTimeEntries(taskId);
+    return { success: true, data: entries };
+  }
+
+  @Get(':taskId/time-stats')
+  async getTimeStats(@Param('taskId', ParseIntPipe) taskId: number) {
+    const stats = await this.taskFeaturesService.getTaskTimeStats(taskId);
+    return { success: true, data: stats };
+  }
+
+  @Post(':taskId/time-entries')
+  async addTimeEntry(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @CurrentUser() user: any,
+    @Body() body: { hours: number; date: string; description?: string; started_at?: string; ended_at?: string; is_billable?: boolean },
+  ) {
+    const entry = await this.taskFeaturesService.addTimeEntry(taskId, user.id, {
+      hours: body.hours,
+      date: body.date,
+      description: body.description,
+      startedAt: body.started_at,
+      endedAt: body.ended_at,
+      isBillable: body.is_billable,
+    });
+    return { success: true, data: entry, message: 'Temps enregistré' };
+  }
+
+  @Patch('time-entries/:entryId')
+  async updateTimeEntry(
+    @Param('entryId', ParseIntPipe) entryId: number,
+    @CurrentUser() user: any,
+    @Body() body: { hours?: number; date?: string; description?: string; is_billable?: boolean },
+  ) {
+    const entry = await this.taskFeaturesService.updateTimeEntry(entryId, user.id, {
+      hours: body.hours,
+      date: body.date,
+      description: body.description,
+      isBillable: body.is_billable,
+    });
+    return { success: true, data: entry, message: 'Temps mis à jour' };
+  }
+
+  @Delete('time-entries/:entryId')
+  async deleteTimeEntry(
+    @Param('entryId', ParseIntPipe) entryId: number,
+    @CurrentUser() user: any,
+  ) {
+    await this.taskFeaturesService.deleteTimeEntry(entryId, user.id);
+    return { success: true, message: 'Entrée supprimée' };
+  }
+
+  // ============================================
+  // DÉPENDANCES
+  // ============================================
+
+  @Get(':taskId/dependencies')
+  async getTaskDependencies(@Param('taskId', ParseIntPipe) taskId: number) {
+    const data = await this.taskFeaturesService.getTaskDependencies(taskId);
+    return { success: true, data };
+  }
+
+  @Post(':taskId/dependencies')
+  async addTaskDependency(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @CurrentUser() user: any,
+    @Body() body: { depends_on_task_id: number; dependency_type?: string },
+  ) {
+    const dependency = await this.taskFeaturesService.addTaskDependency(
+      taskId,
+      body.depends_on_task_id,
+      user.id,
+      body.dependency_type,
+    );
+    return { success: true, data: dependency, message: 'Dépendance ajoutée' };
+  }
+
+  @Delete(':taskId/dependencies/:dependsOnTaskId')
+  async removeTaskDependency(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @Param('dependsOnTaskId', ParseIntPipe) dependsOnTaskId: number,
+  ) {
+    await this.taskFeaturesService.removeTaskDependency(taskId, dependsOnTaskId);
+    return { success: true, message: 'Dépendance supprimée' };
+  }
+
+  // ============================================
+  // TEMPLATES
+  // ============================================
+
+  @Get('templates/list')
+  async getTemplates(@Query('project_id') projectId?: string) {
+    const templates = await this.taskFeaturesService.getTemplates(projectId ? parseInt(projectId) : undefined);
+    return { success: true, data: templates };
+  }
+
+  @Post('templates')
+  async createTemplate(
+    @CurrentUser() user: any,
+    @Body() body: {
+      name: string;
+      description?: string;
+      priority?: string;
+      estimated_hours?: number;
+      checklist_json?: string;
+      subtasks_json?: string;
+      is_global?: boolean;
+      project_id?: number;
+    },
+  ) {
+    const template = await this.taskFeaturesService.createTemplate(user.id, {
+      name: body.name,
+      description: body.description,
+      priority: body.priority,
+      estimatedHours: body.estimated_hours,
+      checklistJson: body.checklist_json,
+      subtasksJson: body.subtasks_json,
+      isGlobal: body.is_global,
+      projectId: body.project_id,
+    });
+    return { success: true, data: template, message: 'Template créé' };
+  }
+
+  @Post('templates/:templateId/create-task')
+  async createTaskFromTemplate(
+    @Param('templateId', ParseIntPipe) templateId: number,
+    @CurrentUser() user: any,
+    @Body() body: { column_id: number; project_id: number },
+  ) {
+    const task = await this.taskFeaturesService.createTaskFromTemplate(
+      templateId,
+      user.id,
+      body.column_id,
+      body.project_id,
+    );
+    return { success: true, data: task, message: 'Tâche créée depuis le template' };
+  }
+
+  @Delete('templates/:templateId')
+  async deleteTemplate(
+    @Param('templateId', ParseIntPipe) templateId: number,
+    @CurrentUser() user: any,
+  ) {
+    await this.taskFeaturesService.deleteTemplate(templateId, user.id);
+    return { success: true, message: 'Template supprimé' };
+  }
+
+  // ============================================
+  // RÉCURRENCE
+  // ============================================
+
+  @Get(':taskId/recurrence')
+  async getRecurrence(@Param('taskId', ParseIntPipe) taskId: number) {
+    const info = await this.taskRecurrenceService.getRecurrenceInfo(taskId);
+    return { success: true, data: info };
+  }
+
+  @Post(':taskId/recurrence')
+  async setRecurrence(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @CurrentUser() user: any,
+    @Body() body: {
+      frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+      interval: number;
+      by_day?: string[];
+      by_month_day?: number;
+      end_date?: string;
+    },
+  ) {
+    const task = await this.taskRecurrenceService.setRecurrence(taskId, user.id, {
+      frequency: body.frequency,
+      interval: body.interval,
+      byDay: body.by_day,
+      byMonthDay: body.by_month_day,
+      endDate: body.end_date,
+    });
+    return { success: true, data: task, message: 'Récurrence configurée' };
+  }
+
+  @Delete(':taskId/recurrence')
+  async removeRecurrence(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @CurrentUser() user: any,
+  ) {
+    await this.taskRecurrenceService.removeRecurrence(taskId, user.id);
+    return { success: true, message: 'Récurrence supprimée' };
   }
 }

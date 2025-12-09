@@ -232,8 +232,12 @@ class AuthService {
       }
     }
 
+    // Déterminer si c'est un FormData (pour les uploads de fichiers)
+    const isFormData = options.body instanceof FormData;
+    
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      // Ne pas mettre Content-Type pour FormData - le browser le gère automatiquement
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(options.headers as Record<string, string>),
     };
 

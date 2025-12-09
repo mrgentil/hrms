@@ -12,6 +12,7 @@ import {
   DragStartEvent,
   DragEndEvent,
   DragOverEvent,
+  useDroppable,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -187,14 +188,22 @@ function DroppableColumn({ column, tasks, onTaskClick, onTaskDelete, onAddTask, 
   const [editName, setEditName] = useState(column.name);
   const [showMenu, setShowMenu] = useState(false);
 
+  // Rendre la colonne droppable
+  const { setNodeRef, isOver } = useDroppable({
+    id: column.id,
+  });
+
   const columnColors: Record<string, string> = {
     "À faire": "from-gray-500 to-gray-600",
     "En cours": "from-blue-500 to-blue-600",
     "En révision": "from-yellow-500 to-yellow-600",
     "En revue": "from-yellow-500 to-yellow-600",
     "Terminé": "from-green-500 to-green-600",
+    "Terminée": "from-green-500 to-green-600",
     "Bloqué": "from-red-500 to-red-600",
+    "Bloquée": "from-red-500 to-red-600",
     "Archivé": "from-purple-500 to-purple-600",
+    "Archivée": "from-purple-500 to-purple-600",
   };
 
   const bgColor = columnColors[column.name] || "from-gray-500 to-gray-600";
@@ -294,7 +303,14 @@ function DroppableColumn({ column, tasks, onTaskClick, onTaskDelete, onAddTask, 
       </div>
 
       {/* Tasks Container */}
-      <div className="bg-gray-100/80 dark:bg-gray-800/50 rounded-b-xl p-3 min-h-[400px] max-h-[70vh] overflow-y-auto">
+      <div 
+        ref={setNodeRef}
+        className={`rounded-b-xl p-3 min-h-[400px] max-h-[70vh] overflow-y-auto transition-colors ${
+          isOver 
+            ? "bg-primary/20 ring-2 ring-primary ring-inset" 
+            : "bg-gray-100/80 dark:bg-gray-800/50"
+        }`}
+      >
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-3">
             {tasks.length === 0 ? (
@@ -337,6 +353,8 @@ export default function KanbanBoard({
   onTaskClick,
   onTaskDelete,
   onAddTask,
+  onColumnEdit,
+  onColumnDelete,
 }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -421,6 +439,8 @@ export default function KanbanBoard({
               onTaskClick={onTaskClick}
               onTaskDelete={onTaskDelete}
               onAddTask={() => onAddTask(column.id)}
+              onColumnEdit={onColumnEdit}
+              onColumnDelete={onColumnDelete}
             />
           ))}
         </div>

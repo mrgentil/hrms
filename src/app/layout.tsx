@@ -8,6 +8,7 @@ import { AppSettingsProvider } from '@/contexts/AppSettingsContext';
 import Toaster from '@/components/common/Toaster';
 import DynamicHead from '@/components/common/DynamicHead';
 import QueryProvider from '@/providers/QueryProvider';
+import CommandSearchWrapper from '@/components/ui/CommandSearchWrapper';
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -30,6 +31,7 @@ export default function RootLayout({
                   {children}
                 </SidebarProvider>
                 <Toaster />
+                <CommandSearchWrapper />
               </ThemeProvider>
             </AuthProvider>
           </AppSettingsProvider>

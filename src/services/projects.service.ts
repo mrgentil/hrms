@@ -132,11 +132,11 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
 };
 
 export const PROJECT_STATUS_COLORS: Record<ProjectStatus, string> = {
-  PLANNED: 'bg-slate-100 text-slate-700',
-  IN_PROGRESS: 'bg-blue-100 text-blue-700',
-  ON_HOLD: 'bg-amber-100 text-amber-700',
-  COMPLETED: 'bg-green-100 text-green-700',
-  CANCELLED: 'bg-red-100 text-red-700',
+  PLANNED: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+  IN_PROGRESS: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
+  ON_HOLD: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
+  COMPLETED: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
+  CANCELLED: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
 };
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
@@ -155,10 +155,10 @@ export const TASK_PRIORITY_LABELS: Record<TaskPriority, string> = {
 };
 
 export const TASK_PRIORITY_COLORS: Record<TaskPriority, string> = {
-  LOW: 'bg-slate-100 text-slate-600',
-  MEDIUM: 'bg-blue-100 text-blue-600',
-  HIGH: 'bg-amber-100 text-amber-600',
-  CRITICAL: 'bg-red-100 text-red-600',
+  LOW: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+  MEDIUM: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
+  HIGH: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
+  CRITICAL: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
 };
 
 class ProjectsService {

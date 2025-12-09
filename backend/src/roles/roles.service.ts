@@ -333,15 +333,47 @@ export class RolesService {
       }
     }
 
+    // Extraire les permissions du DTO
+    const { permissions, ...roleData } = updateRoleDto;
+
+    // Mettre à jour le rôle
     const updatedRole = await this.prisma.role.update({
       where: { id },
       data: {
-        ...updateRoleDto,
+        ...roleData,
         updated_at: new Date(),
       },
     });
 
-    return updatedRole;
+    // Si des permissions sont fournies, les mettre à jour
+    if (permissions && Array.isArray(permissions)) {
+      // Supprimer les anciennes permissions
+      await this.prisma.role_permission.deleteMany({
+        where: { role_id: id },
+      });
+
+      // Récupérer les IDs des permissions par leurs noms
+      const permissionRecords = await this.prisma.permission.findMany({
+        where: {
+          name: { in: permissions },
+        },
+      });
+
+      // Ajouter les nouvelles permissions
+      if (permissionRecords.length > 0) {
+        await this.prisma.role_permission.createMany({
+          data: permissionRecords.map((perm) => ({
+            role_id: id,
+            permission_id: perm.id,
+            created_at: new Date(),
+            updated_at: new Date(),
+          })),
+        });
+      }
+    }
+
+    // Retourner le rôle avec ses permissions
+    return this.findOne(id);
   }
 
   async remove(id: number) {

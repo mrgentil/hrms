@@ -1,20 +1,38 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { generateCommentNotificationEmail } from '../mail/email-templates.helper';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TaskFeaturesService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
+    private configService: ConfigService,
   ) {}
+
+  // Récupérer le nom de l'app depuis les settings ou la config
+  private async getAppSettings() {
+    const settings = await this.prisma.app_settings.findMany({
+      where: { key: { in: ['app_name', 'primary_color', 'logo_light'] } },
+    });
+    
+    const appName = settings.find(s => s.key === 'app_name')?.value || 
+                    this.configService.get('APP_NAME') || 'HRMS';
+    const primaryColor = settings.find(s => s.key === 'primary_color')?.value || '#465fff';
+    const logoUrl = settings.find(s => s.key === 'logo_light')?.value || undefined;
+    const appUrl = this.configService.get('APP_URL') || 'http://localhost:3000';
+    
+    return { appName, primaryColor, logoUrl, appUrl };
+  }
 
   // ============================================
   // COMMENTAIRES
   // ============================================
 
   async getComments(taskId: number) {
-    return this.prisma.task_comment.findMany({
+    const comments = await this.prisma.task_comment.findMany({
       where: { task_id: taskId },
       include: {
         user: {
@@ -27,12 +45,35 @@ export class TaskFeaturesService {
             },
           },
         },
+        attachments: {
+          select: {
+            id: true,
+            file_name: true,
+            file_path: true,
+            file_size: true,
+            file_type: true,
+          },
+        },
       },
       orderBy: { created_at: 'asc' },
     });
+    
+    // DEBUG: Log des commentaires avec leurs pièces jointes
+    console.log('📝 getComments - taskId:', taskId);
+    comments.forEach(c => {
+      console.log(`  Comment ${c.id}: ${c.attachments?.length || 0} attachments`);
+    });
+    
+    return comments;
   }
 
-  async addComment(taskId: number, userId: number, content: string, parentCommentId?: number) {
+  async addComment(
+    taskId: number, 
+    userId: number, 
+    content: string, 
+    parentCommentId?: number,
+    attachmentPaths: string[] = [],
+  ) {
     // Récupérer la tâche pour les notifications
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
@@ -78,6 +119,34 @@ export class TaskFeaturesService {
       },
     });
 
+    // Lier les pièces jointes au commentaire et récupérer leurs infos
+    const attachmentInfos: { filename: string; path: string; contentType?: string }[] = [];
+    console.log('📎 addComment - attachmentPaths reçus:', attachmentPaths);
+    
+    if (attachmentPaths.length > 0) {
+      // Mettre à jour les attachments pour les lier au commentaire
+      const updateResult = await this.prisma.task_attachment.updateMany({
+        where: { file_path: { in: attachmentPaths } },
+        data: { comment_id: comment.id },
+      });
+      console.log('📎 Mise à jour attachments - count:', updateResult.count);
+      
+      // Récupérer les infos des attachments pour l'email
+      const attachments = await this.prisma.task_attachment.findMany({
+        where: { comment_id: comment.id },
+        select: { id: true, file_name: true, file_path: true, file_type: true },
+      });
+      console.log('📎 Attachments liés au commentaire:', attachments);
+      
+      for (const att of attachments) {
+        attachmentInfos.push({
+          filename: att.file_name,
+          path: att.file_path,
+          contentType: att.file_type || undefined,
+        });
+      }
+    }
+
     // Enregistrer l'activité
     await this.logActivity(taskId, userId, 'COMMENTED', null, null, content);
 
@@ -85,12 +154,137 @@ export class TaskFeaturesService {
     await this.processMentions(content, taskId, userId, task, comment.user.full_name);
 
     // Notifier créateur + assignés + auteur du commentaire parent
+    // Passer les fichiers pour les joindre à l'email
     await this.notifyCommentSubscribers(
       task,
       userId,
       comment.user.full_name || 'Quelqu\'un',
       content,
       parentComment,
+      attachmentInfos.map(a => a.filename),
+      attachmentInfos,
+    );
+
+    // Retourner le commentaire avec ses pièces jointes
+    return this.prisma.task_comment.findUnique({
+      where: { id: comment.id },
+      include: {
+        user: {
+          select: { id: true, full_name: true, profile_photo_url: true },
+        },
+        parent_comment: {
+          include: {
+            user: {
+              select: { id: true, full_name: true },
+            },
+          },
+        },
+        attachments: {
+          select: {
+            id: true,
+            file_name: true,
+            file_path: true,
+            file_size: true,
+            file_type: true,
+          },
+        },
+      },
+    });
+  }
+
+  // Ajouter un commentaire avec pièce jointe
+  async addCommentWithAttachment(
+    taskId: number,
+    userId: number,
+    content: string,
+    parentCommentId?: number,
+    file?: Express.Multer.File,
+  ) {
+    // Récupérer la tâche pour les notifications
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      include: { 
+        project: true,
+        task_assignment: true,
+      },
+    });
+
+    if (!task) {
+      throw new NotFoundException('Tâche non trouvée');
+    }
+
+    // Récupérer le commentaire parent si c'est une réponse
+    let parentComment: any = null;
+    if (parentCommentId) {
+      parentComment = await this.prisma.task_comment.findUnique({
+        where: { id: parentCommentId },
+        include: { user: true },
+      });
+    }
+
+    // Créer le commentaire
+    const comment = await this.prisma.task_comment.create({
+      data: {
+        task_id: taskId,
+        user_id: userId,
+        content,
+        parent_comment_id: parentCommentId || null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+      include: {
+        user: {
+          select: { id: true, full_name: true, profile_photo_url: true },
+        },
+        parent_comment: {
+          include: {
+            user: {
+              select: { id: true, full_name: true },
+            },
+          },
+        },
+      },
+    });
+
+    // Si un fichier est joint, l'ajouter comme pièce jointe
+    let attachment: any = null;
+    if (file) {
+      // Note: comment_id sera ajouté après la migration
+      attachment = await this.prisma.task_attachment.create({
+        data: {
+          task_id: taskId,
+          // comment_id: comment.id, // Sera ajouté après migration
+          uploaded_by: userId,
+          file_name: file.originalname,
+          file_path: file.path,
+          file_size: file.size,
+          file_type: file.mimetype,
+          created_at: new Date(),
+        },
+      });
+    }
+
+    // Enregistrer l'activité
+    await this.logActivity(taskId, userId, 'COMMENTED', null, null, content);
+
+    // Détecter et notifier les mentions
+    await this.processMentions(content, taskId, userId, task, comment.user.full_name);
+
+    // Notifier créateur + assignés + auteur du commentaire parent
+    const attachmentInfos = file ? [{
+      filename: file.originalname,
+      path: file.path,
+      contentType: file.mimetype,
+    }] : [];
+    
+    await this.notifyCommentSubscribers(
+      task,
+      userId,
+      comment.user.full_name || 'Quelqu\'un',
+      content,
+      parentComment,
+      attachment ? [file!.originalname] : [],
+      attachmentInfos,
     );
 
     return comment;
@@ -103,6 +297,8 @@ export class TaskFeaturesService {
     authorName: string,
     commentContent: string,
     parentComment: any,
+    attachmentNames: string[] = [],
+    attachmentInfos: { filename: string; path: string; contentType?: string }[] = [],
   ) {
     const usersToNotify = new Set<number>();
 
@@ -137,6 +333,23 @@ export class TaskFeaturesService {
       }
     }
 
+    // Récupérer les paramètres de l'app
+    const appSettings = await this.getAppSettings();
+    
+    // Si aucun attachmentNames n'est fourni, extraire du contenu
+    const finalAttachmentNames = attachmentNames.length > 0 
+      ? attachmentNames 
+      : (() => {
+          const names: string[] = [];
+          const lines = commentContent.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('📎')) {
+              names.push(line.replace('📎 ', '').trim());
+            }
+          }
+          return names;
+        })();
+
     // Créer les notifications
     const isReply = !!parentComment;
     const title = isReply 
@@ -167,7 +380,7 @@ export class TaskFeaturesService {
       }
     }
 
-    // Envoyer des emails aux utilisateurs
+    // Envoyer des emails aux utilisateurs avec le nouveau template
     for (const userId of usersToNotify) {
       try {
         const user = await this.prisma.user.findUnique({
@@ -176,26 +389,54 @@ export class TaskFeaturesService {
         });
 
         if (user?.work_email) {
+          const emailHtml = generateCommentNotificationEmail({
+            appName: appSettings.appName,
+            appUrl: appSettings.appUrl,
+            primaryColor: appSettings.primaryColor,
+            logoUrl: appSettings.logoUrl,
+            recipientName: user.full_name || 'Utilisateur',
+            authorName,
+            taskTitle: task.title,
+            projectName: task.project?.name || '',
+            commentContent,
+            isReply,
+            replyToName: parentComment?.user?.full_name,
+            attachmentNames: finalAttachmentNames,
+            taskUrl: `${appSettings.appUrl}/projects/${task.project_id}?task=${task.id}`,
+          });
+
+          // Préparer les pièces jointes pour l'email (avec les vrais fichiers)
+          // Convertir le chemin relatif en chemin absolu
+          const fs = require('fs');
+          const path = require('path');
+          
+          const emailAttachments = attachmentInfos.map(info => {
+            // Le chemin en BD peut être: ./uploads/tasks/file.png ou uploads/tasks/file.png
+            let cleanPath = info.path.replace(/\\/g, '/');
+            if (cleanPath.startsWith('./')) {
+              cleanPath = cleanPath.substring(2);
+            }
+            
+            const absolutePath = path.join(process.cwd(), cleanPath);
+            const fileExists = fs.existsSync(absolutePath);
+            
+            console.log('📧 Email attachment:');
+            console.log('   - Chemin BD:', info.path);
+            console.log('   - Chemin absolu:', absolutePath);
+            console.log('   - Fichier existe:', fileExists);
+            
+            return {
+              filename: info.filename,
+              path: absolutePath,
+              contentType: info.contentType,
+            };
+          });
+
           await this.mailService.sendMail({
             to: user.work_email,
-            subject: title,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #465fff;">💬 ${title}</h2>
-                <p>Bonjour <strong>${user.full_name}</strong>,</p>
-                <p>${message}</p>
-                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <p style="margin: 0;"><strong>Commentaire :</strong></p>
-                  <p style="background-color: white; padding: 10px; border-radius: 4px; margin-top: 5px;">
-                    ${commentContent.substring(0, 200)}${commentContent.length > 200 ? '...' : ''}
-                  </p>
-                </div>
-                <p>Connectez-vous pour voir ou répondre.</p>
-                <p style="color: #888; font-size: 12px; margin-top: 30px;">
-                  — L'équipe HRMS
-                </p>
-              </div>
-            `,
+            subject: `[${appSettings.appName}] ${title}`,
+            html: emailHtml,
+            attachments: emailAttachments.length > 0 ? emailAttachments : undefined,
           });
         }
       } catch (error) {
@@ -1263,13 +1504,13 @@ export class TaskFeaturesService {
     }
 
     // Trouver la colonne correspondant au nouveau statut
-    // Mapping des statuts vers les noms de colonnes typiques
-    const statusToColumnName: Record<string, string[]> = {
-      'TODO': ['À faire', 'Todo', 'Backlog', 'A faire', 'To do'],
-      'IN_PROGRESS': ['En cours', 'In Progress', 'Doing', 'Working'],
-      'BLOCKED': ['Bloqué', 'Blocked', 'En attente', 'En revue', 'Review', 'Waiting'],
-      'DONE': ['Terminé', 'Done', 'Fait', 'Completed', 'Fini'],
-      'ARCHIVED': ['Archivé', 'Archived', 'Terminé', 'Done'], // Fallback vers Terminé
+    // Mapping des statuts vers les noms de colonnes typiques (ordre de priorité)
+    const statusToColumnName: Record<string, string[][]> = {
+      'TODO': [['À faire', 'A faire', 'Todo', 'Backlog', 'To do']],
+      'IN_PROGRESS': [['En cours', 'In Progress', 'Doing', 'Working']],
+      'BLOCKED': [['Bloqué', 'Bloquée', 'Blocked', 'En attente'], ['En revue', 'Review', 'Waiting']],
+      'DONE': [['Terminé', 'Terminée', 'Done', 'Fait', 'Completed', 'Fini']],
+      'ARCHIVED': [['Archivé', 'Archivée', 'Archived'], ['Terminé', 'Terminée', 'Done', 'Fait']], // Fallback vers Terminé
     };
 
     let newColumnId = currentTask.task_column_id;
@@ -1277,14 +1518,17 @@ export class TaskFeaturesService {
     // Chercher une colonne correspondante dans le board du projet
     if (currentTask.project?.task_board?.length > 0) {
       const board = currentTask.project.task_board[0];
-      const possibleNames = statusToColumnName[status] || [];
+      const priorityGroups = statusToColumnName[status] || [];
       
-      for (const column of board.task_column) {
-        if (possibleNames.some(name => 
-          column.name.toLowerCase().includes(name.toLowerCase())
-        )) {
-          newColumnId = column.id;
-          break;
+      // Parcourir les groupes de priorité (premier groupe = priorité haute)
+      outerLoop:
+      for (const possibleNames of priorityGroups) {
+        for (const column of board.task_column) {
+          const columnNameLower = column.name.toLowerCase();
+          if (possibleNames.some(name => columnNameLower.includes(name.toLowerCase()))) {
+            newColumnId = column.id;
+            break outerLoop;
+          }
         }
       }
     }
@@ -1373,5 +1617,291 @@ export class TaskFeaturesService {
     } catch (error) {
       console.error('Erreur notification:', error);
     }
+  }
+
+  // ============================================
+  // SUIVI DU TEMPS
+  // ============================================
+
+  async getTimeEntries(taskId: number) {
+    return this.prisma.task_time_entry.findMany({
+      where: { task_id: taskId },
+      include: {
+        user: {
+          select: { id: true, full_name: true, profile_photo_url: true },
+        },
+      },
+      orderBy: { date: 'desc' },
+    });
+  }
+
+  async addTimeEntry(taskId: number, userId: number, data: {
+    hours: number;
+    date: string;
+    description?: string;
+    startedAt?: string;
+    endedAt?: string;
+    isBillable?: boolean;
+  }) {
+    const task = await this.prisma.task.findUnique({ where: { id: taskId } });
+    if (!task) throw new NotFoundException('Tâche non trouvée');
+
+    const now = new Date();
+    return this.prisma.task_time_entry.create({
+      data: {
+        task_id: taskId,
+        user_id: userId,
+        hours: data.hours,
+        date: new Date(data.date),
+        description: data.description,
+        started_at: data.startedAt ? new Date(data.startedAt) : null,
+        ended_at: data.endedAt ? new Date(data.endedAt) : null,
+        is_billable: data.isBillable || false,
+        created_at: now,
+        updated_at: now,
+      },
+      include: {
+        user: {
+          select: { id: true, full_name: true, profile_photo_url: true },
+        },
+      },
+    });
+  }
+
+  async updateTimeEntry(entryId: number, userId: number, data: {
+    hours?: number;
+    date?: string;
+    description?: string;
+    isBillable?: boolean;
+  }) {
+    const entry = await this.prisma.task_time_entry.findUnique({ where: { id: entryId } });
+    if (!entry) throw new NotFoundException('Entrée non trouvée');
+    if (entry.user_id !== userId) throw new ForbiddenException('Non autorisé');
+
+    return this.prisma.task_time_entry.update({
+      where: { id: entryId },
+      data: {
+        hours: data.hours,
+        date: data.date ? new Date(data.date) : undefined,
+        description: data.description,
+        is_billable: data.isBillable,
+        updated_at: new Date(),
+      },
+    });
+  }
+
+  async deleteTimeEntry(entryId: number, userId: number) {
+    const entry = await this.prisma.task_time_entry.findUnique({ where: { id: entryId } });
+    if (!entry) throw new NotFoundException('Entrée non trouvée');
+    if (entry.user_id !== userId) throw new ForbiddenException('Non autorisé');
+
+    return this.prisma.task_time_entry.delete({ where: { id: entryId } });
+  }
+
+  async getTaskTimeStats(taskId: number) {
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      select: { estimated_hours: true },
+    });
+
+    const entries = await this.prisma.task_time_entry.findMany({
+      where: { task_id: taskId },
+      select: { hours: true },
+    });
+
+    const totalHours = entries.reduce((sum, e) => sum + Number(e.hours), 0);
+
+    return {
+      estimated_hours: task?.estimated_hours ? Number(task.estimated_hours) : null,
+      total_hours: totalHours,
+      remaining_hours: task?.estimated_hours 
+        ? Math.max(0, Number(task.estimated_hours) - totalHours) 
+        : null,
+      entries_count: entries.length,
+    };
+  }
+
+  // ============================================
+  // DÉPENDANCES
+  // ============================================
+
+  async getTaskDependencies(taskId: number) {
+    const dependencies = await this.prisma.task_dependency.findMany({
+      where: { task_id: taskId },
+      include: {
+        depends_on: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            priority: true,
+          },
+        },
+      },
+    });
+
+    const dependedBy = await this.prisma.task_dependency.findMany({
+      where: { depends_on_id: taskId },
+      include: {
+        task: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            priority: true,
+          },
+        },
+      },
+    });
+
+    return { dependencies, depended_by: dependedBy };
+  }
+
+  async addTaskDependency(taskId: number, dependsOnTaskId: number, userId: number, dependencyType: string = 'FINISH_TO_START') {
+    // Vérifier que les tâches existent
+    const task = await this.prisma.task.findUnique({ where: { id: taskId } });
+    const dependsOnTask = await this.prisma.task.findUnique({ where: { id: dependsOnTaskId } });
+
+    if (!task || !dependsOnTask) throw new NotFoundException('Tâche non trouvée');
+    if (taskId === dependsOnTaskId) throw new ForbiddenException('Une tâche ne peut pas dépendre d\'elle-même');
+
+    // Vérifier qu'il n'y a pas de dépendance circulaire
+    const existingReverse = await this.prisma.task_dependency.findFirst({
+      where: { task_id: dependsOnTaskId, depends_on_id: taskId },
+    });
+    if (existingReverse) throw new ForbiddenException('Dépendance circulaire détectée');
+
+    const now = new Date();
+    return this.prisma.task_dependency.create({
+      data: {
+        task_id: taskId,
+        depends_on_id: dependsOnTaskId,
+        dependency_type: dependencyType,
+        created_by: userId,
+        created_at: now,
+      },
+      include: {
+        depends_on: {
+          select: { id: true, title: true, status: true },
+        },
+      },
+    });
+  }
+
+  async removeTaskDependency(taskId: number, dependsOnTaskId: number) {
+    return this.prisma.task_dependency.deleteMany({
+      where: { task_id: taskId, depends_on_id: dependsOnTaskId },
+    });
+  }
+
+  // ============================================
+  // TEMPLATES
+  // ============================================
+
+  async getTemplates(projectId?: number) {
+    return this.prisma.task_template.findMany({
+      where: {
+        OR: [
+          { is_global: true },
+          { project_id: projectId },
+        ],
+      },
+      include: {
+        creator: { select: { id: true, full_name: true } },
+        project: { select: { id: true, name: true } },
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async createTemplate(userId: number, data: {
+    name: string;
+    description?: string;
+    priority?: string;
+    estimatedHours?: number;
+    checklistJson?: string;
+    subtasksJson?: string;
+    isGlobal?: boolean;
+    projectId?: number;
+  }) {
+    const now = new Date();
+    return this.prisma.task_template.create({
+      data: {
+        name: data.name,
+        description: data.description,
+        priority: (data.priority as any) || 'MEDIUM',
+        estimated_hours: data.estimatedHours,
+        checklist_json: data.checklistJson,
+        subtasks_json: data.subtasksJson,
+        is_global: data.isGlobal || false,
+        project_id: data.projectId,
+        created_by: userId,
+        created_at: now,
+        updated_at: now,
+      },
+    });
+  }
+
+  async createTaskFromTemplate(templateId: number, userId: number, columnId: number, projectId: number) {
+    const template = await this.prisma.task_template.findUnique({ where: { id: templateId } });
+    if (!template) throw new NotFoundException('Template non trouvé');
+
+    const now = new Date();
+    const task = await this.prisma.task.create({
+      data: {
+        title: template.name,
+        description: template.description,
+        priority: template.priority,
+        status: 'TODO',
+        estimated_hours: template.estimated_hours,
+        task_column_id: columnId,
+        project_id: projectId,
+        created_by_user_id: userId,
+        created_at: now,
+        updated_at: now,
+      },
+    });
+
+    // Créer les checklists si définies
+    if (template.checklist_json) {
+      try {
+        const checklists = JSON.parse(template.checklist_json);
+        for (const cl of checklists) {
+          const checklist = await this.prisma.task_checklist.create({
+            data: {
+              title: cl.title,
+              task_id: task.id,
+              created_at: now,
+              updated_at: now,
+            },
+          });
+          if (cl.items) {
+            for (let i = 0; i < cl.items.length; i++) {
+              await this.prisma.task_checklist_item.create({
+                data: {
+                  title: cl.items[i],
+                  checklist_id: checklist.id,
+                  sort_order: i,
+                  created_at: now,
+                  updated_at: now,
+                },
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Erreur parsing checklist_json:', e);
+      }
+    }
+
+    return task;
+  }
+
+  async deleteTemplate(templateId: number, userId: number) {
+    const template = await this.prisma.task_template.findUnique({ where: { id: templateId } });
+    if (!template) throw new NotFoundException('Template non trouvé');
+    if (template.created_by !== userId) throw new ForbiddenException('Non autorisé');
+
+    return this.prisma.task_template.delete({ where: { id: templateId } });
   }
 }

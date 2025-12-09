@@ -31,13 +31,13 @@ model application {
 }
 
 model leave_message {
-  id               Int          @id @default(autoincrement())
-  application_id   Int
-  author_user_id   Int
-  message          String       @db.Text
-  created_at       DateTime     @default(now()) @db.DateTime(0)
-  application      application  @relation(fields: [application_id], references: [id], onDelete: Cascade, map: "leave_message_ibfk_application")
-  author           user         @relation("user_leave_messages", fields: [author_user_id], references: [id], onDelete: Cascade, map: "leave_message_ibfk_author")
+  id             Int         @id @default(autoincrement())
+  application_id Int
+  author_user_id Int
+  message        String      @db.Text
+  created_at     DateTime    @default(now()) @db.DateTime(0)
+  application    application @relation(fields: [application_id], references: [id], onDelete: Cascade, map: "leave_message_ibfk_application")
+  author         user        @relation("user_leave_messages", fields: [author_user_id], references: [id], onDelete: Cascade, map: "leave_message_ibfk_author")
 
   @@index([application_id], map: "leave_message_application_id")
   @@index([author_user_id], map: "leave_message_author_user_id")
@@ -80,6 +80,7 @@ model department {
   organization_id                       Int?
   created_at                            DateTime                  @db.DateTime(0)
   updated_at                            DateTime                  @db.DateTime(0)
+  announcements                         announcement[]
   user_department_manager_user_idTouser user?                     @relation("department_manager_user_idTouser", fields: [manager_user_id], references: [id], map: "department_ibfk_321")
   department                            department?               @relation("departmentTodepartment", fields: [parent_department_id], references: [id], map: "department_ibfk_322")
   other_department                      department[]              @relation("departmentTodepartment")
@@ -87,7 +88,6 @@ model department {
   expense                               expense[]
   position                              position[]
   user_user_department_idTodepartment   user[]                    @relation("user_department_idTodepartment")
-  announcements                         announcement[]
 
   @@index([manager_user_id], map: "manager_user_id")
   @@index([parent_department_id], map: "parent_department_id")
@@ -230,9 +230,9 @@ model project {
   updated_at     DateTime         @db.DateTime(0)
   user           user?            @relation(fields: [owner_user_id], references: [id], map: "project_ibfk_1")
   project_member project_member[]
+  project_tags   project_tag[]
   task           task[]
   task_board     task_board[]
-  project_tags   project_tag[]
   task_templates task_template[]
 
   @@index([owner_user_id], map: "owner_user_id")
@@ -256,15 +256,15 @@ model role {
   id              Int               @id @default(autoincrement())
   name            String            @unique(map: "name") @db.VarChar(255)
   description     String?           @db.Text
-  permissions     Json?             // Stockage des permissions en JSON
-  color           String?           @db.VarChar(7) // Code couleur hex
-  icon            String?           @db.VarChar(10) // Emoji ou icône
-  is_system       Boolean           @default(false) // Rôle système non modifiable
+  permissions     Json?
+  color           String?           @db.VarChar(7)
+  icon            String?           @db.VarChar(10)
+  is_system       Boolean           @default(false)
   created_at      DateTime          @db.DateTime(0)
   updated_at      DateTime          @db.DateTime(0)
   role_permission role_permission[]
+  users           user[]
   user_role       user_role[]
-  users           user[]            // Relation avec les utilisateurs
 }
 
 model role_permission {
@@ -295,29 +295,36 @@ model task {
   updated_at                         DateTime          @db.DateTime(0)
   task_column_id                     Int
   project_id                         Int
+  parent_task_id                     Int?
+  estimated_hours                    Decimal?          @db.Decimal(8, 2)
+  is_recurring                       Boolean           @default(false)
+  recurrence_rule                    String?           @db.VarChar(255)
+  recurrence_end_date                DateTime?         @db.DateTime(0)
+  recurring_parent_id                Int?
   user_task_created_by_user_idTouser user              @relation("task_created_by_user_idTouser", fields: [created_by_user_id], references: [id], onDelete: Cascade, map: "task_ibfk_548")
   user_task_updated_by_user_idTouser user?             @relation("task_updated_by_user_idTouser", fields: [updated_by_user_id], references: [id], map: "task_ibfk_549")
   task_column                        task_column       @relation(fields: [task_column_id], references: [id], onDelete: Cascade, map: "task_ibfk_550")
   project                            project           @relation(fields: [project_id], references: [id], onDelete: Cascade, map: "task_ibfk_551")
+  parent_task                        task?             @relation("subtasks", fields: [parent_task_id], references: [id])
+  subtasks                           task[]            @relation("subtasks")
+  recurring_parent                   task?             @relation("RecurringTasks", fields: [recurring_parent_id], references: [id])
+  recurring_instances                task[]            @relation("RecurringTasks")
+  task_activities                    task_activity[]
   task_assignment                    task_assignment[]
-  task_tags                          task_tag[]
-  task_comments                      task_comment[]
   task_attachments                   task_attachment[]
   task_checklists                    task_checklist[]
-  task_activities                    task_activity[]
-  subtasks                           task[]            @relation("subtasks")
-  parent_task                        task?             @relation("subtasks", fields: [parent_task_id], references: [id], onDelete: SetNull)
-  parent_task_id                     Int?
-  
-  // Dépendances
-  dependencies                       task_dependency[] @relation("TaskDependencies")
+  task_comments                      task_comment[]
   depended_by                        task_dependency[] @relation("TaskDependedBy")
+  dependencies                       task_dependency[] @relation("TaskDependencies")
+  task_tags                          task_tag[]
+  time_entries                       task_time_entry[]
 
   @@index([created_by_user_id], map: "created_by_user_id")
   @@index([project_id], map: "project_id")
   @@index([task_column_id], map: "task_column_id")
   @@index([updated_by_user_id], map: "updated_by_user_id")
   @@index([parent_task_id], map: "parent_task_id")
+  @@index([recurring_parent_id], map: "task_recurring_parent_id_fkey")
 }
 
 model task_assignment {
@@ -360,49 +367,44 @@ model task_column {
   @@index([task_board_id], map: "task_board_id")
 }
 
-// ============================================
-// COMMENTAIRES SUR TÂCHES
-// ============================================
 model task_comment {
-  id                Int            @id @default(autoincrement())
-  content           String         @db.Text
+  id                Int               @id @default(autoincrement())
+  content           String            @db.Text
   task_id           Int
   user_id           Int
   parent_comment_id Int?
-  created_at        DateTime       @db.DateTime(0)
-  updated_at        DateTime       @db.DateTime(0)
-  task              task           @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  user              user           @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  parent_comment    task_comment?  @relation("CommentReplies", fields: [parent_comment_id], references: [id], onDelete: Cascade)
-  replies           task_comment[] @relation("CommentReplies")
+  created_at        DateTime          @db.DateTime(0)
+  updated_at        DateTime          @db.DateTime(0)
+  attachments       task_attachment[] @relation("CommentAttachments")
+  parent_comment    task_comment?     @relation("CommentReplies", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  replies           task_comment[]    @relation("CommentReplies")
+  task              task              @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user              user              @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([task_id], map: "task_comment_task_id")
   @@index([user_id], map: "task_comment_user_id")
   @@index([parent_comment_id], map: "task_comment_parent_id")
 }
 
-// ============================================
-// PIÈCES JOINTES SUR TÂCHES
-// ============================================
 model task_attachment {
-  id           Int      @id @default(autoincrement())
-  file_name    String   @db.VarChar(255)
-  file_path    String   @db.VarChar(500)
-  file_size    Int?
-  file_type    String?  @db.VarChar(100)
-  task_id      Int
-  uploaded_by  Int
-  created_at   DateTime @db.DateTime(0)
-  task         task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  user         user     @relation(fields: [uploaded_by], references: [id], onDelete: Cascade)
+  id          Int           @id @default(autoincrement())
+  file_name   String        @db.VarChar(255)
+  file_path   String        @db.VarChar(500)
+  file_size   Int?
+  file_type   String?       @db.VarChar(100)
+  task_id     Int
+  uploaded_by Int
+  comment_id  Int?
+  created_at  DateTime      @db.DateTime(0)
+  comment     task_comment? @relation("CommentAttachments", fields: [comment_id], references: [id], onDelete: Cascade)
+  task        task          @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user        user          @relation(fields: [uploaded_by], references: [id], onDelete: Cascade)
 
   @@index([task_id], map: "task_attachment_task_id")
   @@index([uploaded_by], map: "task_attachment_uploaded_by")
+  @@index([comment_id], map: "task_attachment_comment_id")
 }
 
-// ============================================
-// CHECKLISTS SUR TÂCHES
-// ============================================
 model task_checklist {
   id         Int                   @id @default(autoincrement())
   title      String                @db.VarChar(255)
@@ -427,19 +429,16 @@ model task_checklist_item {
   created_at   DateTime       @db.DateTime(0)
   updated_at   DateTime       @db.DateTime(0)
   checklist    task_checklist @relation(fields: [checklist_id], references: [id], onDelete: Cascade)
-  user         user?          @relation(fields: [completed_by], references: [id], onDelete: SetNull)
+  user         user?          @relation(fields: [completed_by], references: [id])
 
   @@index([checklist_id], map: "task_checklist_item_checklist_id")
   @@index([completed_by], map: "task_checklist_item_completed_by")
 }
 
-// ============================================
-// HISTORIQUE D'ACTIVITÉ SUR TÂCHES
-// ============================================
 model task_activity {
   id         Int      @id @default(autoincrement())
-  action     String   @db.VarChar(50)  // CREATED, UPDATED, MOVED, COMMENTED, ASSIGNED, etc.
-  field      String?  @db.VarChar(100) // Le champ modifié (status, priority, etc.)
+  action     String   @db.VarChar(50)
+  field      String?  @db.VarChar(100)
   old_value  String?  @db.Text
   new_value  String?  @db.Text
   task_id    Int
@@ -452,44 +451,56 @@ model task_activity {
   @@index([user_id], map: "task_activity_user_id")
 }
 
-// ============================================
-// TEMPLATES DE TÂCHES
-// ============================================
+model task_time_entry {
+  id          Int       @id @default(autoincrement())
+  task_id     Int
+  user_id     Int
+  description String?   @db.VarChar(500)
+  hours       Decimal   @db.Decimal(8, 2)
+  date        DateTime  @db.Date
+  started_at  DateTime? @db.DateTime(0)
+  ended_at    DateTime? @db.DateTime(0)
+  is_billable Boolean   @default(false)
+  created_at  DateTime  @db.DateTime(0)
+  updated_at  DateTime  @db.DateTime(0)
+  task        task      @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user        user      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id], map: "task_time_entry_task_id")
+  @@index([user_id], map: "task_time_entry_user_id")
+  @@index([date], map: "task_time_entry_date")
+}
+
 model task_template {
-  id                Int               @id @default(autoincrement())
-  name              String            @db.VarChar(255)
-  description       String?           @db.Text
-  priority          task_priority     @default(MEDIUM)
-  checklist_json    String?           @db.Text // JSON des checklists à créer
-  subtasks_json     String?           @db.Text // JSON des sous-tâches à créer
-  estimated_hours   Int?
-  is_global         Boolean           @default(false) // Template accessible à tous
-  project_id        Int?              // Si lié à un projet spécifique
-  created_by        Int
-  created_at        DateTime          @db.DateTime(0)
-  updated_at        DateTime          @db.DateTime(0)
-  
-  project           project?          @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  creator           user              @relation(fields: [created_by], references: [id], onDelete: Cascade)
+  id              Int           @id @default(autoincrement())
+  name            String        @db.VarChar(255)
+  description     String?       @db.Text
+  priority        task_priority @default(MEDIUM)
+  checklist_json  String?       @db.Text
+  subtasks_json   String?       @db.Text
+  estimated_hours Int?
+  is_global       Boolean       @default(false)
+  project_id      Int?
+  created_by      Int
+  created_at      DateTime      @db.DateTime(0)
+  updated_at      DateTime      @db.DateTime(0)
+  creator         user          @relation(fields: [created_by], references: [id], onDelete: Cascade)
+  project         project?      @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
   @@index([project_id], map: "task_template_project_id")
   @@index([created_by], map: "task_template_created_by")
 }
 
-// ============================================
-// DÉPENDANCES ENTRE TÂCHES
-// ============================================
 model task_dependency {
-  id                Int      @id @default(autoincrement())
-  task_id           Int      // La tâche qui dépend d'une autre
-  depends_on_id     Int      // La tâche dont elle dépend
-  dependency_type   String   @default("BLOCKS") @db.VarChar(50) // BLOCKS, REQUIRED_BY, RELATED
-  created_at        DateTime @db.DateTime(0)
-  created_by        Int?
-  
-  task              task     @relation("TaskDependencies", fields: [task_id], references: [id], onDelete: Cascade)
-  depends_on        task     @relation("TaskDependedBy", fields: [depends_on_id], references: [id], onDelete: Cascade)
-  creator           user?    @relation(fields: [created_by], references: [id], onDelete: SetNull)
+  id              Int      @id @default(autoincrement())
+  task_id         Int
+  depends_on_id   Int
+  dependency_type String   @default("BLOCKS") @db.VarChar(50)
+  created_at      DateTime @db.DateTime(0)
+  created_by      Int?
+  creator         user?    @relation(fields: [created_by], references: [id])
+  depends_on      task     @relation("TaskDependedBy", fields: [depends_on_id], references: [id], onDelete: Cascade)
+  task            task     @relation("TaskDependencies", fields: [task_id], references: [id], onDelete: Cascade)
 
   @@unique([task_id, depends_on_id])
   @@index([task_id], map: "task_dependency_task_id")
@@ -502,8 +513,8 @@ model user {
   username                                              String                     @unique(map: "user_username_unique") @db.VarChar(255)
   password                                              String                     @db.VarChar(255)
   full_name                                             String                     @db.VarChar(255)
-  role                                                  UserRole                   // ⚠️ DEPRECATED - À supprimer après migration
-  role_id                                               Int?                       // Nouveau système de rôles
+  role                                                  UserRole
+  role_id                                               Int?
   active                                                Boolean                    @default(true)
   department_id                                         Int?
   work_email                                            String?                    @db.VarChar(255)
@@ -514,21 +525,38 @@ model user {
   position_id                                           Int?
   created_at                                            DateTime                   @db.DateTime(0)
   updated_at                                            DateTime                   @db.DateTime(0)
+  announcements                                         announcement[]
+  announcement_reads                                    announcement_read[]
+  app_settings_updated                                  app_settings[]
   application                                           application[]
+  attendance                                            attendance[]
+  audit_logs                                            audit_log[]
+  contracts_created                                     contract[]                 @relation("contract_creator")
+  contracts                                             contract[]
   conversation                                          conversation[]
   conversation_participant                              conversation_participant[]
   department_department_manager_user_idTouser           department[]               @relation("department_manager_user_idTouser")
   department_announcement                               department_announcement[]
   employment_contract                                   employment_contract[]
   expense                                               expense[]
+  expense_report_approver                               expense_report[]           @relation("expense_report_approver")
+  expense_report_user                                   expense_report[]           @relation("expense_report_user")
   job                                                   job[]
   leave_balance                                         leave_balance[]
-  leave_messages                                        leave_message[]          @relation("user_leave_messages")
+  leave_messages                                        leave_message[]            @relation("user_leave_messages")
+  notifications                                         notification[]
   project                                               project[]
   project_member                                        project_member[]
   task_task_created_by_user_idTouser                    task[]                     @relation("task_created_by_user_idTouser")
   task_task_updated_by_user_idTouser                    task[]                     @relation("task_updated_by_user_idTouser")
+  task_activities                                       task_activity[]
   task_assignment                                       task_assignment[]
+  task_attachments                                      task_attachment[]
+  task_checklist_items_completed                        task_checklist_item[]
+  task_comments                                         task_comment[]
+  task_dependencies_created                             task_dependency[]
+  task_templates_created                                task_template[]
+  task_time_entries                                     task_time_entry[]
   department_user_department_idTodepartment             department?                @relation("user_department_idTodepartment", fields: [department_id], references: [id], map: "user_ibfk_517")
   user                                                  user?                      @relation("userTouser", fields: [manager_user_id], references: [id], map: "user_ibfk_518")
   other_user                                            user[]                     @relation("userTouser")
@@ -543,22 +571,6 @@ model user {
   user_personal_event                                   user_personal_event[]
   user_personal_info                                    user_personal_info[]
   user_role                                             user_role[]
-  attendance                                            attendance[]
-  expense_report_user                                   expense_report[]       @relation("expense_report_user")
-  expense_report_approver                               expense_report[]       @relation("expense_report_approver")
-  contracts                                             contract[]
-  contracts_created                                     contract[]             @relation("contract_creator")
-  announcements                                         announcement[]
-  announcement_reads                                    announcement_read[]
-  app_settings_updated                                  app_settings[]
-  audit_logs                                            audit_log[]
-  notifications                                         notification[]
-  task_comments                                         task_comment[]
-  task_attachments                                      task_attachment[]
-  task_checklist_items_completed                        task_checklist_item[]
-  task_activities                                       task_activity[]
-  task_dependencies_created                             task_dependency[]
-  task_templates_created                                task_template[]
 
   @@index([department_id], map: "department_id")
   @@index([manager_user_id], map: "manager_user_id")
@@ -657,27 +669,27 @@ model user_personal_event {
 }
 
 model user_personal_info {
-  id             Int                                @id @default(autoincrement())
-  date_of_birth  DateTime?                          @db.DateTime(0)
-  gender         user_personal_info_gender?
-  marital_status user_personal_info_marital_status?
-  father_name    String?                            @db.VarChar(255)
-  id_number      String?                            @db.VarChar(255)
-  address        String?                            @db.VarChar(255)
-  city           String?                            @db.VarChar(255)
-  country        String?                            @db.VarChar(255)
-  mobile         String?                            @db.VarChar(255)
-  phone          String?                            @db.VarChar(255)
-  email_address  String?                            @db.VarChar(255)
-  spouse_name    String?                            @db.VarChar(255)
-  emergency_contact_primary_name     String?        @db.VarChar(255)
-  emergency_contact_primary_phone    String?        @db.VarChar(100)
-  emergency_contact_primary_relation String?        @db.VarChar(255)
-  emergency_contact_secondary_name     String?      @db.VarChar(255)
-  emergency_contact_secondary_phone    String?      @db.VarChar(100)
-  emergency_contact_secondary_relation String?      @db.VarChar(255)
-  user_id        Int
-  user           user                               @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_personal_info_ibfk_1")
+  id                                   Int                                @id @default(autoincrement())
+  date_of_birth                        DateTime?                          @db.DateTime(0)
+  gender                               user_personal_info_gender?
+  marital_status                       user_personal_info_marital_status?
+  father_name                          String?                            @db.VarChar(255)
+  id_number                            String?                            @db.VarChar(255)
+  address                              String?                            @db.VarChar(255)
+  city                                 String?                            @db.VarChar(255)
+  country                              String?                            @db.VarChar(255)
+  mobile                               String?                            @db.VarChar(255)
+  phone                                String?                            @db.VarChar(255)
+  email_address                        String?                            @db.VarChar(255)
+  spouse_name                          String?                            @db.VarChar(255)
+  emergency_contact_primary_name       String?                            @db.VarChar(255)
+  emergency_contact_primary_phone      String?                            @db.VarChar(100)
+  emergency_contact_primary_relation   String?                            @db.VarChar(255)
+  emergency_contact_secondary_name     String?                            @db.VarChar(255)
+  emergency_contact_secondary_phone    String?                            @db.VarChar(100)
+  emergency_contact_secondary_relation String?                            @db.VarChar(255)
+  user_id                              Int
+  user                                 user                               @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_personal_info_ibfk_1")
 
   @@index([user_id], map: "user_id")
 }
@@ -693,6 +705,210 @@ model user_role {
 
   @@unique([user_id, role_id], map: "user_role_role_id_user_id_unique")
   @@index([role_id], map: "role_id")
+}
+
+model attendance {
+  id                 Int               @id @default(autoincrement())
+  user_id            Int
+  date               DateTime          @db.Date
+  check_in           DateTime?         @db.DateTime(0)
+  check_out          DateTime?         @db.DateTime(0)
+  check_in_location  String?           @db.VarChar(255)
+  check_out_location String?           @db.VarChar(255)
+  status             attendance_status @default(PRESENT)
+  notes              String?           @db.Text
+  worked_hours       Float?            @db.Float
+  overtime_hours     Float?            @db.Float
+  created_at         DateTime          @default(now()) @db.DateTime(0)
+  updated_at         DateTime          @updatedAt @db.DateTime(0)
+  user               user              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, date], map: "attendance_user_date_unique")
+  @@index([user_id], map: "attendance_user_id")
+  @@index([date], map: "attendance_date")
+}
+
+model expense_report {
+  id              Int                     @id @default(autoincrement())
+  user_id         Int
+  title           String                  @db.VarChar(255)
+  description     String?                 @db.Text
+  amount          Decimal                 @db.Decimal(10, 2)
+  currency        String                  @default("EUR") @db.VarChar(3)
+  category        expense_report_category
+  expense_date    DateTime                @db.Date
+  receipt_url     String?                 @db.VarChar(500)
+  status          expense_report_status   @default(DRAFT)
+  submitted_at    DateTime?               @db.DateTime(0)
+  approved_by     Int?
+  approved_at     DateTime?               @db.DateTime(0)
+  rejected_reason String?                 @db.Text
+  payment_date    DateTime?               @db.Date
+  payment_ref     String?                 @db.VarChar(100)
+  created_at      DateTime                @default(now()) @db.DateTime(0)
+  updated_at      DateTime                @updatedAt @db.DateTime(0)
+  approver        user?                   @relation("expense_report_approver", fields: [approved_by], references: [id])
+  user            user                    @relation("expense_report_user", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "expense_report_user_id")
+  @@index([status], map: "expense_report_status")
+  @@index([expense_date], map: "expense_report_date")
+  @@index([approved_by], map: "expense_report_approved_by_fkey")
+}
+
+model contract {
+  id              Int             @id @default(autoincrement())
+  user_id         Int
+  contract_type   contract_type
+  start_date      DateTime        @db.Date
+  end_date        DateTime?       @db.Date
+  salary          Decimal?        @db.Decimal(12, 2)
+  salary_currency String          @default("EUR") @db.VarChar(3)
+  working_hours   Float?          @db.Float
+  probation_end   DateTime?       @db.Date
+  status          contract_status @default(ACTIVE)
+  document_url    String?         @db.VarChar(500)
+  notes           String?         @db.Text
+  created_by      Int?
+  created_at      DateTime        @default(now()) @db.DateTime(0)
+  updated_at      DateTime        @updatedAt @db.DateTime(0)
+  creator         user?           @relation("contract_creator", fields: [created_by], references: [id])
+  user            user            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "contract_user_id")
+  @@index([status], map: "contract_status")
+  @@index([end_date], map: "contract_end_date")
+  @@index([created_by], map: "contract_created_by_fkey")
+}
+
+model announcement {
+  id            Int                   @id @default(autoincrement())
+  title         String                @db.VarChar(255)
+  content       String                @db.Text
+  type          announcement_type     @default(INFO)
+  priority      announcement_priority @default(NORMAL)
+  is_published  Boolean               @default(false)
+  publish_date  DateTime?             @db.DateTime(0)
+  expire_date   DateTime?             @db.DateTime(0)
+  target_all    Boolean               @default(true)
+  author_id     Int
+  department_id Int?
+  created_at    DateTime              @default(now()) @db.DateTime(0)
+  updated_at    DateTime              @updatedAt @db.DateTime(0)
+  author        user                  @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  department    department?           @relation(fields: [department_id], references: [id])
+  reads         announcement_read[]
+
+  @@index([author_id], map: "announcement_author_id")
+  @@index([department_id], map: "announcement_department_id")
+  @@index([is_published], map: "announcement_published")
+  @@index([publish_date], map: "announcement_publish_date")
+}
+
+model announcement_read {
+  id              Int          @id @default(autoincrement())
+  announcement_id Int
+  user_id         Int
+  read_at         DateTime     @default(now()) @db.DateTime(0)
+  announcement    announcement @relation(fields: [announcement_id], references: [id], onDelete: Cascade)
+  user            user         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([announcement_id, user_id])
+  @@index([user_id], map: "announcement_read_user_id")
+}
+
+model tag {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique(map: "tag_name_unique") @db.VarChar(50)
+  color        String        @default("#6B7280") @db.VarChar(7)
+  created_at   DateTime      @default(now()) @db.DateTime(0)
+  updated_at   DateTime      @updatedAt @db.DateTime(0)
+  project_tags project_tag[]
+  task_tags    task_tag[]
+}
+
+model project_tag {
+  id         Int      @id @default(autoincrement())
+  project_id Int
+  tag_id     Int
+  created_at DateTime @default(now()) @db.DateTime(0)
+  project    project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  tag        tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, tag_id], map: "project_tag_unique")
+  @@index([project_id], map: "project_tag_project_id")
+  @@index([tag_id], map: "project_tag_tag_id")
+}
+
+model task_tag {
+  id         Int      @id @default(autoincrement())
+  task_id    Int
+  tag_id     Int
+  created_at DateTime @default(now()) @db.DateTime(0)
+  tag        tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  task       task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@unique([task_id, tag_id], map: "task_tag_unique")
+  @@index([task_id], map: "task_tag_task_id")
+  @@index([tag_id], map: "task_tag_tag_id")
+}
+
+model app_settings {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique @db.VarChar(100)
+  value       String?  @db.Text
+  type        String   @default("string") @db.VarChar(50)
+  category    String   @default("general") @db.VarChar(50)
+  label       String   @db.VarChar(255)
+  description String?  @db.Text
+  is_public   Boolean  @default(false)
+  updated_by  Int?
+  created_at  DateTime @default(now()) @db.DateTime(0)
+  updated_at  DateTime @updatedAt @db.DateTime(0)
+  updater     user?    @relation(fields: [updated_by], references: [id])
+
+  @@index([category], map: "app_settings_category")
+  @@index([is_public], map: "app_settings_public")
+  @@index([updated_by], map: "app_settings_updated_by_fkey")
+}
+
+model audit_log {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  action      String   @db.VarChar(50)
+  entity_type String   @db.VarChar(100)
+  entity_id   Int?
+  old_values  String?  @db.Text
+  new_values  String?  @db.Text
+  ip_address  String?  @db.VarChar(45)
+  user_agent  String?  @db.VarChar(500)
+  created_at  DateTime @default(now()) @db.DateTime(0)
+  user        user?    @relation(fields: [user_id], references: [id])
+
+  @@index([user_id], map: "audit_log_user_id")
+  @@index([action], map: "audit_log_action")
+  @@index([entity_type], map: "audit_log_entity_type")
+  @@index([created_at], map: "audit_log_created_at")
+}
+
+model notification {
+  id          Int               @id @default(autoincrement())
+  user_id     Int
+  type        notification_type
+  title       String            @db.VarChar(255)
+  message     String            @db.Text
+  link        String?           @db.VarChar(500)
+  entity_type String?           @db.VarChar(50)
+  entity_id   Int?
+  is_read     Boolean           @default(false)
+  read_at     DateTime?         @db.DateTime(0)
+  created_at  DateTime          @default(now()) @db.DateTime(0)
+  user        user              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "notification_user_id")
+  @@index([is_read], map: "notification_is_read")
+  @@index([created_at], map: "notification_created_at")
+  @@index([type], map: "notification_type")
 }
 
 enum employment_contract_contract_type {
@@ -763,14 +979,14 @@ enum UserRole {
 }
 
 enum application_type {
-  CongePaye @map("Congé Payé")
+  CongePaye    @map("Congé Payé")
   Maladie
-  TeleTravail @map("TéléTravail")
+  TeleTravail  @map("TéléTravail")
   Marriage
   Permission
   Abscence
   Demenagement @map("Déménagement")
-  Deces @map("Décès")
+  Deces        @map("Décès")
 }
 
 enum employment_contract_status {
@@ -780,32 +996,6 @@ enum employment_contract_status {
   TERMINATED
 }
 
-// ============================================
-// POINTAGE / ATTENDANCE
-// ============================================
-
-model attendance {
-  id              Int               @id @default(autoincrement())
-  user_id         Int
-  date            DateTime          @db.Date
-  check_in        DateTime?         @db.DateTime(0)
-  check_out       DateTime?         @db.DateTime(0)
-  check_in_location  String?        @db.VarChar(255)
-  check_out_location String?        @db.VarChar(255)
-  status          attendance_status @default(PRESENT)
-  notes           String?           @db.Text
-  worked_hours    Float?            @db.Float
-  overtime_hours  Float?            @db.Float
-  created_at      DateTime          @default(now()) @db.DateTime(0)
-  updated_at      DateTime          @updatedAt @db.DateTime(0)
-  
-  user            user              @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@unique([user_id, date], map: "attendance_user_date_unique")
-  @@index([user_id], map: "attendance_user_id")
-  @@index([date], map: "attendance_date")
-}
-
 enum attendance_status {
   PRESENT
   ABSENT
@@ -813,38 +1003,6 @@ enum attendance_status {
   HALF_DAY
   REMOTE
   ON_LEAVE
-}
-
-// ============================================
-// NOTES DE FRAIS / EXPENSE REPORTS
-// ============================================
-
-model expense_report {
-  id              Int                    @id @default(autoincrement())
-  user_id         Int
-  title           String                 @db.VarChar(255)
-  description     String?                @db.Text
-  amount          Decimal                @db.Decimal(10, 2)
-  currency        String                 @default("EUR") @db.VarChar(3)
-  category        expense_report_category
-  expense_date    DateTime               @db.Date
-  receipt_url     String?                @db.VarChar(500)
-  status          expense_report_status  @default(DRAFT)
-  submitted_at    DateTime?              @db.DateTime(0)
-  approved_by     Int?
-  approved_at     DateTime?              @db.DateTime(0)
-  rejected_reason String?                @db.Text
-  payment_date    DateTime?              @db.Date
-  payment_ref     String?                @db.VarChar(100)
-  created_at      DateTime               @default(now()) @db.DateTime(0)
-  updated_at      DateTime               @updatedAt @db.DateTime(0)
-
-  user            user                   @relation("expense_report_user", fields: [user_id], references: [id], onDelete: Cascade)
-  approver        user?                  @relation("expense_report_approver", fields: [approved_by], references: [id])
-
-  @@index([user_id], map: "expense_report_user_id")
-  @@index([status], map: "expense_report_status")
-  @@index([expense_date], map: "expense_report_date")
 }
 
 enum expense_report_category {
@@ -869,102 +1027,31 @@ enum expense_report_status {
   CANCELLED
 }
 
-// ============================================
-// CONTRATS DE TRAVAIL
-// ============================================
-
-model contract {
-  id               Int             @id @default(autoincrement())
-  user_id          Int
-  contract_type    contract_type
-  start_date       DateTime        @db.Date
-  end_date         DateTime?       @db.Date
-  salary           Decimal?        @db.Decimal(12, 2)
-  salary_currency  String          @default("EUR") @db.VarChar(3)
-  working_hours    Float?          @db.Float
-  probation_end    DateTime?       @db.Date
-  status           contract_status @default(ACTIVE)
-  document_url     String?         @db.VarChar(500)
-  notes            String?         @db.Text
-  created_by       Int?
-  created_at       DateTime        @default(now()) @db.DateTime(0)
-  updated_at       DateTime        @updatedAt @db.DateTime(0)
-  
-  user             user            @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  creator          user?           @relation("contract_creator", fields: [created_by], references: [id])
-
-  @@index([user_id], map: "contract_user_id")
-  @@index([status], map: "contract_status")
-  @@index([end_date], map: "contract_end_date")
-}
-
 enum contract_type {
-  CDI           // Contrat à durée indéterminée
-  CDD           // Contrat à durée déterminée
-  INTERIM       // Intérim
-  STAGE         // Stage
-  APPRENTISSAGE // Apprentissage
-  FREELANCE     // Freelance/Consultant
-  OTHER         // Autre
+  CDI
+  CDD
+  INTERIM
+  STAGE
+  APPRENTISSAGE
+  FREELANCE
+  OTHER
 }
 
 enum contract_status {
-  DRAFT         // Brouillon
-  ACTIVE        // Actif
-  SUSPENDED     // Suspendu
-  TERMINATED    // Terminé
-  EXPIRED       // Expiré
-}
-
-// ============================================
-// ANNONCES D'ENTREPRISE
-// ============================================
-
-model announcement {
-  id             Int                   @id @default(autoincrement())
-  title          String                @db.VarChar(255)
-  content        String                @db.Text
-  type           announcement_type     @default(INFO)
-  priority       announcement_priority @default(NORMAL)
-  is_published   Boolean               @default(false)
-  publish_date   DateTime?             @db.DateTime(0)
-  expire_date    DateTime?             @db.DateTime(0)
-  target_all     Boolean               @default(true)
-  author_id      Int
-  department_id  Int?
-  created_at     DateTime              @default(now()) @db.DateTime(0)
-  updated_at     DateTime              @updatedAt @db.DateTime(0)
-  
-  author         user                  @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  department     department?           @relation(fields: [department_id], references: [id])
-  reads          announcement_read[]
-
-  @@index([author_id], map: "announcement_author_id")
-  @@index([department_id], map: "announcement_department_id")
-  @@index([is_published], map: "announcement_published")
-  @@index([publish_date], map: "announcement_publish_date")
-}
-
-model announcement_read {
-  id              Int          @id @default(autoincrement())
-  announcement_id Int
-  user_id         Int
-  read_at         DateTime     @default(now()) @db.DateTime(0)
-  
-  announcement    announcement @relation(fields: [announcement_id], references: [id], onDelete: Cascade)
-  user            user         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@unique([announcement_id, user_id])
-  @@index([user_id], map: "announcement_read_user_id")
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+  EXPIRED
 }
 
 enum announcement_type {
-  INFO          // Information générale
-  EVENT         // Événement
-  POLICY        // Politique/Règlement
-  CELEBRATION   // Célébration
-  URGENT        // Urgent
-  MAINTENANCE   // Maintenance
+  INFO
+  EVENT
+  POLICY
+  CELEBRATION
+  URGENT
+  MAINTENANCE
 }
 
 enum announcement_priority {
@@ -974,133 +1061,20 @@ enum announcement_priority {
   CRITICAL
 }
 
-// ============================================
-// SYSTÈME DE TAGS
-// ============================================
-
-model tag {
-  id          Int           @id @default(autoincrement())
-  name        String        @db.VarChar(50)
-  color       String        @default("#6B7280") @db.VarChar(7)
-  created_at  DateTime      @default(now()) @db.DateTime(0)
-  updated_at  DateTime      @updatedAt @db.DateTime(0)
-  
-  project_tags project_tag[]
-  task_tags    task_tag[]
-
-  @@unique([name], map: "tag_name_unique")
-}
-
-model project_tag {
-  id          Int      @id @default(autoincrement())
-  project_id  Int
-  tag_id      Int
-  created_at  DateTime @default(now()) @db.DateTime(0)
-  
-  project     project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  tag         tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
-
-  @@unique([project_id, tag_id], map: "project_tag_unique")
-  @@index([project_id], map: "project_tag_project_id")
-  @@index([tag_id], map: "project_tag_tag_id")
-}
-
-model task_tag {
-  id          Int      @id @default(autoincrement())
-  task_id     Int
-  tag_id      Int
-  created_at  DateTime @default(now()) @db.DateTime(0)
-  
-  task        task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  tag         tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
-
-  @@unique([task_id, tag_id], map: "task_tag_unique")
-  @@index([task_id], map: "task_tag_task_id")
-  @@index([tag_id], map: "task_tag_tag_id")
-}
-
-// ============================================
-// PARAMÈTRES DE L'APPLICATION
-// ============================================
-
-model app_settings {
-  id          Int      @id @default(autoincrement())
-  key         String   @unique @db.VarChar(100)
-  value       String?  @db.Text
-  type        String   @default("string") @db.VarChar(50) // string, number, boolean, json, image
-  category    String   @default("general") @db.VarChar(50)
-  label       String   @db.VarChar(255)
-  description String?  @db.Text
-  is_public   Boolean  @default(false) // Visible côté client sans auth
-  updated_by  Int?
-  created_at  DateTime @default(now()) @db.DateTime(0)
-  updated_at  DateTime @updatedAt @db.DateTime(0)
-  
-  updater     user?    @relation(fields: [updated_by], references: [id])
-
-  @@index([category], map: "app_settings_category")
-  @@index([is_public], map: "app_settings_public")
-}
-
-model audit_log {
-  id          Int      @id @default(autoincrement())
-  user_id     Int?
-  action      String   @db.VarChar(50) // LOGIN, LOGOUT, CREATE, UPDATE, DELETE, VIEW
-  entity_type String   @db.VarChar(100) // user, leave, attendance, etc.
-  entity_id   Int?
-  old_values  String?  @db.Text // JSON des anciennes valeurs
-  new_values  String?  @db.Text // JSON des nouvelles valeurs
-  ip_address  String?  @db.VarChar(45)
-  user_agent  String?  @db.VarChar(500)
-  created_at  DateTime @default(now()) @db.DateTime(0)
-
-  user        user?    @relation(fields: [user_id], references: [id])
-
-  @@index([user_id], map: "audit_log_user_id")
-  @@index([action], map: "audit_log_action")
-  @@index([entity_type], map: "audit_log_entity_type")
-  @@index([created_at], map: "audit_log_created_at")
-}
-
-// ============================================
-// SYSTÈME DE NOTIFICATIONS
-// ============================================
-
-model notification {
-  id            Int               @id @default(autoincrement())
-  user_id       Int
-  type          notification_type
-  title         String            @db.VarChar(255)
-  message       String            @db.Text
-  link          String?           @db.VarChar(500)
-  entity_type   String?           @db.VarChar(50) // project, task, leave, etc.
-  entity_id     Int?
-  is_read       Boolean           @default(false)
-  read_at       DateTime?         @db.DateTime(0)
-  created_at    DateTime          @default(now()) @db.DateTime(0)
-  
-  user          user              @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@index([user_id], map: "notification_user_id")
-  @@index([is_read], map: "notification_is_read")
-  @@index([created_at], map: "notification_created_at")
-  @@index([type], map: "notification_type")
-}
-
 enum notification_type {
-  PROJECT_ADDED      // Ajouté à un projet
-  PROJECT_REMOVED    // Retiré d'un projet
-  TASK_ASSIGNED      // Assigné à une tâche
-  TASK_UNASSIGNED    // Désassigné d'une tâche
-  TASK_UPDATED       // Tâche mise à jour
-  TASK_COMPLETED     // Tâche terminée
-  TASK_COMMENT       // Commentaire sur une tâche
-  TASK_DUE           // Rappel d'échéance de tâche
-  LEAVE_APPROVED     // Congé approuvé
-  LEAVE_REJECTED     // Congé refusé
-  LEAVE_PENDING      // Nouvelle demande de congé (pour manager)
-  ANNOUNCEMENT       // Nouvelle annonce
-  MESSAGE            // Nouveau message
-  MENTION            // Mentionné dans un commentaire
-  SYSTEM             // Notification système
+  PROJECT_ADDED
+  PROJECT_REMOVED
+  TASK_ASSIGNED
+  TASK_UNASSIGNED
+  TASK_UPDATED
+  TASK_COMPLETED
+  TASK_COMMENT
+  TASK_DUE
+  LEAVE_APPROVED
+  LEAVE_REJECTED
+  LEAVE_PENDING
+  ANNOUNCEMENT
+  MESSAGE
+  MENTION
+  SYSTEM
 }

@@ -24,6 +24,7 @@ import TaskCalendarView from "@/components/tasks/TaskCalendarView";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import KanbanBoard from "@/components/tasks/KanbanBoard";
 import TeamProgressBoard from "@/components/tasks/TeamProgressBoard";
+import GanttView from "@/components/tasks/GanttView";
 
 const PlusIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,7 +54,7 @@ export default function ProjectDetailPage() {
     assignee_ids: [],
   });
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
-  const [activeView, setActiveView] = useState<"kanban" | "list" | "calendar" | "team">("kanban");
+  const [activeView, setActiveView] = useState<"kanban" | "list" | "calendar" | "gantt" | "team">("kanban");
   const [selectedTaskForModal, setSelectedTaskForModal] = useState<Task | null>(null);
   
   // Filtres et recherche
@@ -183,6 +184,28 @@ export default function ProjectDetailPage() {
       loadData();
     } catch (error) {
       toast.error("Erreur lors de la création");
+    }
+  };
+
+  // Fonction pour éditer une colonne
+  const handleColumnEdit = async (columnId: number, newName: string) => {
+    try {
+      await projectsService.updateColumn(columnId, { name: newName });
+      toast.success("Colonne renommée");
+      loadData();
+    } catch (error) {
+      toast.error("Erreur lors du renommage");
+    }
+  };
+
+  // Fonction pour supprimer une colonne
+  const handleColumnDelete = async (columnId: number) => {
+    try {
+      await projectsService.deleteColumn(columnId);
+      toast.success("Colonne supprimée");
+      loadData();
+    } catch (error) {
+      toast.error("Erreur lors de la suppression");
     }
   };
 
@@ -333,6 +356,19 @@ export default function ProjectDetailPage() {
             Calendrier
             </button>
             <button
+              onClick={() => setActiveView("gantt")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeView === "gantt"
+                  ? "bg-primary text-white"
+                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Gantt
+            </button>
+            <button
               onClick={() => setActiveView("team")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                 activeView === "team"
@@ -472,6 +508,14 @@ export default function ProjectDetailPage() {
           <TaskCalendarView projectId={projectId} onTaskUpdate={loadData} />
         )}
 
+        {/* Vue Gantt */}
+        {activeView === "gantt" && board && (
+          <GanttView
+            tasks={board.task_column.flatMap(col => col.task || [])}
+            onTaskClick={(task) => setSelectedTaskForModal(task)}
+          />
+        )}
+
         {/* Kanban Board avec Drag & Drop */}
         {activeView === "kanban" && (
           <div className="flex gap-4">
@@ -482,6 +526,8 @@ export default function ProjectDetailPage() {
                 onTaskClick={(task) => setSelectedTaskForModal(task)}
                 onTaskDelete={handleDeleteTask}
                 onAddTask={openTaskForm}
+                onColumnEdit={handleColumnEdit}
+                onColumnDelete={handleColumnDelete}
               />
             </div>
             
