@@ -84,6 +84,8 @@ type NavSubItem = {
 
   allowedRoles?: RoleCode[];
 
+  requiredPermission?: string; // Permission requise pour voir ce menu
+
 };
 
 
@@ -97,6 +99,8 @@ type NavItem = {
   path?: string;
 
   allowedRoles?: RoleCode[];
+
+  requiredPermission?: string; // Permission requise pour voir ce menu
 
   subItems?: NavSubItem[];
 
@@ -203,9 +207,8 @@ const mainNavItems: NavItem[] = [
   {
 
     icon: <UserIcon />,
-
     name: "Gestion Utilisateurs",
-
+    requiredPermission: "users.view",
     allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
 
     subItems: [
@@ -265,9 +268,8 @@ const mainNavItems: NavItem[] = [
   {
 
     icon: <GroupIcon />,
-
     name: "Organisation",
-
+    requiredPermission: "departments.view",
     allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
 
     subItems: [
@@ -327,9 +329,8 @@ const mainNavItems: NavItem[] = [
   {
 
     icon: <CalenderIcon />,
-
-    name: "Congs & Absences",
-
+    name: "Congés & Absences",
+    requiredPermission: "leaves.view",
     allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
 
     subItems: [
@@ -478,9 +479,8 @@ const advancedNavItems: NavItem[] = [
   {
 
     icon: <DollarLineIcon />,
-
     name: "Finances & Paie",
-
+    requiredPermission: "payroll.view",
     allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
 
     subItems: [
@@ -590,9 +590,8 @@ const advancedNavItems: NavItem[] = [
   {
 
     icon: <PieChartIcon />,
-
     name: "Rapports & Analytics",
-
+    requiredPermission: "reports.view",
     allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
 
     subItems: [
@@ -640,9 +639,8 @@ const advancedNavItems: NavItem[] = [
   {
 
     icon: <PlugInIcon />,
-
     name: "Administration",
-
+    requiredPermission: "system.admin",
     allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
 
     subItems: [
@@ -666,6 +664,284 @@ const advancedNavItems: NavItem[] = [
 
 ];
 
+// Nouveaux modules HRMS avancés
+const hrmsModulesNavItems: NavItem[] = [
+  {
+    icon: <TaskIcon />,
+    name: "Formation & Développement",
+    requiredPermission: "training.view",
+    allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    subItems: [
+      {
+        name: "Catalogue Formations",
+        path: "/training/catalog",
+        pro: false,
+      },
+      {
+        name: "Mes Formations",
+        path: "/training/my-trainings",
+        pro: false,
+      },
+      {
+        name: "Inscriptions",
+        path: "/training/registrations",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Certifications",
+        path: "/training/certifications",
+        pro: false,
+      },
+      {
+        name: "Plans de Développement",
+        path: "/training/development-plans",
+        pro: false,
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "E-Learning",
+        path: "/training/elearning",
+        pro: true,
+      },
+    ],
+  },
+  {
+    icon: <UserIcon />,
+    name: "Recrutement",
+    requiredPermission: "recruitment.view",
+    allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    subItems: [
+      {
+        name: "Offres d'Emploi",
+        path: "/recruitment/jobs",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Candidatures",
+        path: "/recruitment/applications",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Entretiens",
+        path: "/recruitment/interviews",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Viviers de Talents",
+        path: "/recruitment/talent-pool",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Onboarding",
+        path: "/recruitment/onboarding",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+    ],
+  },
+  {
+    icon: <DollarLineIcon />,
+    name: "Paie & Rémunération",
+    requiredPermission: "payroll.view",
+    allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    subItems: [
+      {
+        name: "Bulletins de Paie",
+        path: "/payroll/payslips",
+        pro: false,
+      },
+      {
+        name: "Avances sur Salaire",
+        path: "/payroll/advances",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Primes & Bonus",
+        path: "/payroll/bonuses",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Avantages Sociaux",
+        path: "/payroll/benefits",
+        pro: false,
+      },
+      {
+        name: "Simulations Salariales",
+        path: "/payroll/simulator",
+        pro: true,
+      },
+    ],
+  },
+  {
+    icon: <PieChartIcon />,
+    name: "Performance & Évaluations",
+    requiredPermission: "performance.view",
+    allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    subItems: [
+      {
+        name: "Objectifs (OKR/KPI)",
+        path: "/performance/objectives",
+        pro: false,
+      },
+      {
+        name: "Évaluations Annuelles",
+        path: "/performance/reviews",
+        pro: false,
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Feedback 360°",
+        path: "/performance/feedback-360",
+        pro: true,
+      },
+      {
+        name: "Plans d'Amélioration",
+        path: "/performance/improvement-plans",
+        pro: false,
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Reconnaissance",
+        path: "/performance/recognition",
+        pro: false,
+      },
+    ],
+  },
+  {
+    icon: <PlugInIcon />,
+    name: "Conformité & Documents",
+    requiredPermission: "compliance.view",
+    allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    subItems: [
+      {
+        name: "Dossiers Employés",
+        path: "/compliance/employee-files",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Contrats & Avenants",
+        path: "/compliance/contracts",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "RGPD",
+        path: "/compliance/gdpr",
+        pro: false,
+        allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Visites Médicales",
+        path: "/compliance/medical-visits",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Attestations",
+        path: "/compliance/certificates",
+        pro: false,
+      },
+    ],
+  },
+  {
+    icon: <GridIcon />,
+    name: "Assets & Équipements",
+    requiredPermission: "assets.view",
+    allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    subItems: [
+      {
+        name: "Matériel IT",
+        path: "/assets/it-equipment",
+        pro: false,
+      },
+      {
+        name: "Véhicules",
+        path: "/assets/vehicles",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Cartes & Badges",
+        path: "/assets/badges",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Demandes d'Équipement",
+        path: "/assets/requests",
+        pro: false,
+      },
+    ],
+  },
+  {
+    icon: <CalenderIcon />,
+    name: "Planification & Ressources",
+    requiredPermission: "planning.view",
+    allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    subItems: [
+      {
+        name: "Planning Équipes",
+        path: "/planning/team-schedule",
+        pro: false,
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Réservation Salles",
+        path: "/planning/room-booking",
+        pro: false,
+      },
+      {
+        name: "Télétravail",
+        path: "/planning/remote-work",
+        pro: false,
+      },
+      {
+        name: "Astreintes",
+        path: "/planning/on-call",
+        pro: false,
+        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+    ],
+  },
+  {
+    icon: <ChatIcon />,
+    name: "Bien-être & Engagement",
+    requiredPermission: "wellbeing.view",
+    allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    subItems: [
+      {
+        name: "Sondages",
+        path: "/wellbeing/surveys",
+        pro: false,
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Boîte à Idées",
+        path: "/wellbeing/ideas",
+        pro: false,
+      },
+      {
+        name: "Événements",
+        path: "/wellbeing/events",
+        pro: false,
+      },
+      {
+        name: "Bien-être",
+        path: "/wellbeing/wellness",
+        pro: false,
+      },
+    ],
+  },
+];
+
 
 
 const AppSidebar: React.FC = () => {
@@ -678,7 +954,26 @@ const AppSidebar: React.FC = () => {
 
   const { settings, getImageUrl } = useAppSettings();
 
-  const isEmployeeOnly = userRole?.role === "ROLE_EMPLOYEE";
+  // Un utilisateur est "employé seulement" s'il a le rôle EMPLOYEE ET aucune permission admin
+  const isEmployeeOnly = useMemo(() => {
+    if (!userRole) return true;
+
+    // Vérifier s'il a des permissions admin (pour rôles personnalisés avec accès admin)
+    const hasAdminPermissions = userRole.permissions.some(p =>
+      p.startsWith('users.') ||
+      p.startsWith('departments.') ||
+      p.startsWith('positions.') ||
+      p.startsWith('reports.') ||
+      p.startsWith('leaves.manage') ||
+      p === 'system.admin'
+    );
+
+    // Si l'utilisateur a des permissions admin, il n'est pas "employé seulement"
+    if (hasAdminPermissions) return false;
+
+    // Sinon, vérifier le rôle enum
+    return userRole.role === "ROLE_EMPLOYEE";
+  }, [userRole]);
 
 
 
@@ -698,42 +993,55 @@ const AppSidebar: React.FC = () => {
 
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-
-
-  const isRoleAllowed = useCallback(
-
-    (allowedRoles?: RoleCode[]) => {
-
-      if (!allowedRoles || allowedRoles.length === 0) {
-
+  // Fonction pour vérifier si l'utilisateur a accès à un menu
+  // Supporte les rôles enum ET les permissions (pour les rôles personnalisés)
+  const isAccessAllowed = useCallback(
+    (allowedRoles?: RoleCode[], requiredPermission?: string) => {
+      // Si pas de restriction, autoriser
+      if ((!allowedRoles || allowedRoles.length === 0) && !requiredPermission) {
         return true;
-
       }
-
-
 
       if (!userRole) {
-
         return false;
-
       }
 
-
-
+      // Super admin a toujours accès
       if (userRole.isSuperAdmin) {
-
         return true;
-
       }
 
+      // 1. Si une permission est requise :
+      if (requiredPermission) {
+        // L'utilisateur DOIT avoir cette permission spécifique
+        if (userRole.permissions.includes(requiredPermission)) {
+          return true;
+        }
+        // Si c'est un Admin, on lui donne accès aussi (sauf si restriction explicite ailleurs)
+        // Mais pour les rôles custom, la permission est reine.
+      }
 
+      // 2. Vérification par Rôle (Legacy / Fallback)
+      // Si l'utilisateur correspond aux rôles autorisés (ex: ROLE_RH), on laisse passer
+      // C'est utile pour les utilisateurs standards qui n'ont pas de permissions granulaires
+      if (allowedRoles && allowedRoles.length > 0) {
+        if (allowedRoles.includes(userRole.role)) {
+          return true;
+        }
+      }
 
-      return allowedRoles.includes(userRole.role);
+      // 3. Si aucune règle ne matche
+      return false;
 
+      return false;
     },
-
     [userRole],
+  );
 
+  // Alias pour compatibilité avec le code existant
+  const isRoleAllowed = useCallback(
+    (allowedRoles?: RoleCode[]) => isAccessAllowed(allowedRoles, undefined),
+    [isAccessAllowed],
   );
 
 
@@ -812,6 +1120,11 @@ const AppSidebar: React.FC = () => {
 
     [filterNavItems],
 
+  );
+
+  const visibleHrmsModulesNavItems = useMemo(
+    () => filterNavItems(hrmsModulesNavItems),
+    [filterNavItems],
   );
 
 
@@ -938,37 +1251,31 @@ const AppSidebar: React.FC = () => {
 
               onClick={() => handleSubmenuToggle(index, menuType)}
 
-              className={`menu-item group ${
+              className={`menu-item group ${openSubmenu?.type === menuType && openSubmenu?.index === index
 
-                openSubmenu?.type === menuType && openSubmenu?.index === index
+                ? "menu-item-active"
 
-                  ? "menu-item-active"
+                : "menu-item-inactive"
 
-                  : "menu-item-inactive"
-
-              } cursor-pointer ${
-
-                !isExpanded && !isHovered
+                } cursor-pointer ${!isExpanded && !isHovered
 
                   ? "lg:justify-center"
 
                   : "lg:justify-start"
 
-              }`}
+                }`}
 
             >
 
               <span
 
-                className={`${
+                className={`${openSubmenu?.type === menuType && openSubmenu?.index === index
 
-                  openSubmenu?.type === menuType && openSubmenu?.index === index
+                  ? "menu-item-icon-active"
 
-                    ? "menu-item-icon-active"
+                  : "menu-item-icon-inactive"
 
-                    : "menu-item-icon-inactive"
-
-                }`}
+                  }`}
 
               >
 
@@ -986,17 +1293,15 @@ const AppSidebar: React.FC = () => {
 
                 <ChevronDownIcon
 
-                  className={`ml-auto h-5 w-5 transition-transform duration-200 ${
-
-                    openSubmenu?.type === menuType &&
+                  className={`ml-auto h-5 w-5 transition-transform duration-200 ${openSubmenu?.type === menuType &&
 
                     openSubmenu?.index === index
 
-                      ? "rotate-180 text-brand-500"
+                    ? "rotate-180 text-brand-500"
 
-                      : ""
+                    : ""
 
-                  }`}
+                    }`}
 
                 />
 
@@ -1012,29 +1317,25 @@ const AppSidebar: React.FC = () => {
 
                 href={nav.path}
 
-                className={`menu-item group ${
+                className={`menu-item group ${isActive(nav.path)
 
-                  isActive(nav.path)
+                  ? "menu-item-active"
 
-                    ? "menu-item-active"
+                  : "menu-item-inactive"
 
-                    : "menu-item-inactive"
-
-                }`}
+                  }`}
 
               >
 
                 <span
 
-                  className={`${
+                  className={`${isActive(nav.path)
 
-                    isActive(nav.path)
+                    ? "menu-item-icon-active"
 
-                      ? "menu-item-icon-active"
+                    : "menu-item-icon-inactive"
 
-                      : "menu-item-icon-inactive"
-
-                  }`}
+                    }`}
 
                 >
 
@@ -1090,15 +1391,13 @@ const AppSidebar: React.FC = () => {
 
                       href={subItem.path}
 
-                      className={`menu-dropdown-item ${
+                      className={`menu-dropdown-item ${isActive(subItem.path)
 
-                        isActive(subItem.path)
+                        ? "menu-dropdown-item-active"
 
-                          ? "menu-dropdown-item-active"
+                        : "menu-dropdown-item-inactive"
 
-                          : "menu-dropdown-item-inactive"
-
-                      }`}
+                        }`}
 
                     >
 
@@ -1110,15 +1409,13 @@ const AppSidebar: React.FC = () => {
 
                           <span
 
-                            className={`menu-dropdown-badge ${
+                            className={`menu-dropdown-badge ${isActive(subItem.path)
 
-                              isActive(subItem.path)
+                              ? "menu-dropdown-badge-active"
 
-                                ? "menu-dropdown-badge-active"
+                              : "menu-dropdown-badge-inactive"
 
-                                : "menu-dropdown-badge-inactive"
-
-                            }`}
+                              }`}
 
                           >
 
@@ -1132,15 +1429,13 @@ const AppSidebar: React.FC = () => {
 
                           <span
 
-                            className={`menu-dropdown-badge ${
+                            className={`menu-dropdown-badge ${isActive(subItem.path)
 
-                              isActive(subItem.path)
+                              ? "menu-dropdown-badge-active"
 
-                                ? "menu-dropdown-badge-active"
+                              : "menu-dropdown-badge-inactive"
 
-                                : "menu-dropdown-badge-inactive"
-
-                            }`}
+                              }`}
 
                           >
 
@@ -1180,13 +1475,11 @@ const AppSidebar: React.FC = () => {
 
       className={`fixed top-0 left-0 z-50 mt-16 flex h-screen flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900 lg:mt-0 
 
-        ${
+        ${isExpanded || isMobileOpen
 
-          isExpanded || isMobileOpen
+          ? "w-[290px]"
 
-            ? "w-[290px]"
-
-            : isHovered
+          : isHovered
 
             ? "w-[290px]"
 
@@ -1206,11 +1499,9 @@ const AppSidebar: React.FC = () => {
 
       <div
 
-        className={`py-8 ${
+        className={`py-8 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
 
-          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-
-        } flex`}
+          } flex`}
 
       >
 
@@ -1312,15 +1603,13 @@ const AppSidebar: React.FC = () => {
 
                   <h2
 
-                    className={`mb-4 flex text-xs uppercase leading-[20px] text-gray-400 ${
+                    className={`mb-4 flex text-xs uppercase leading-[20px] text-gray-400 ${!isExpanded && !isHovered
 
-                      !isExpanded && !isHovered
+                      ? "lg:justify-center"
 
-                        ? "lg:justify-center"
+                      : "justify-start"
 
-                        : "justify-start"
-
-                    }`}
+                      }`}
 
                   >
 
@@ -1344,15 +1633,13 @@ const AppSidebar: React.FC = () => {
 
                   <h2
 
-                    className={`mb-4 flex text-xs uppercase leading-[20px] text-gray-400 ${
+                    className={`mb-4 flex text-xs uppercase leading-[20px] text-gray-400 ${!isExpanded && !isHovered
 
-                      !isExpanded && !isHovered
+                      ? "lg:justify-center"
 
-                        ? "lg:justify-center"
+                      : "justify-start"
 
-                        : "justify-start"
-
-                    }`}
+                      }`}
 
                   >
 
@@ -1371,6 +1658,24 @@ const AppSidebar: React.FC = () => {
                   {renderMenuItems(visibleAdvancedNavItems, "others")}
 
                 </div>
+
+                {visibleHrmsModulesNavItems.length > 0 && (
+                  <div>
+                    <h2
+                      className={`mb-4 flex text-xs uppercase leading-[20px] text-gray-400 ${!isExpanded && !isHovered
+                        ? "lg:justify-center"
+                        : "justify-start"
+                        }`}
+                    >
+                      {isExpanded || isHovered || isMobileOpen ? (
+                        "Modules HRMS"
+                      ) : (
+                        <HorizontaLDots />
+                      )}
+                    </h2>
+                    {renderMenuItems(visibleHrmsModulesNavItems, "main")}
+                  </div>
+                )}
 
               </div>
 

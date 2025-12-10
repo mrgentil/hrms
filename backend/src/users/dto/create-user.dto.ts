@@ -23,6 +23,10 @@ export class CreateUserDto {
   role?: UserRole;
 
   @IsOptional()
+  @IsInt({ message: 'L\'ID du rôle doit être un nombre' })
+  role_id?: number;
+
+  @IsOptional()
   @IsBoolean()
   active?: boolean;
 

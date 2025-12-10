@@ -75,19 +75,25 @@ export default function CreateRole() {
       }
     > = {};
 
-    Object.entries(catalog.permissions).forEach(([key, code]) => {
-      const categoryKey = extractCategoryKey(code);
-      if (!groups[categoryKey]) {
-        groups[categoryKey] = {
-          label: catalog.categories?.[categoryKey] || capitalizeWords(categoryKey),
+    // Le nouveau format est directement groupé par module
+    Object.entries(catalog).forEach(([module, perms]) => {
+      if (!Array.isArray(perms)) return;
+      
+      if (!groups[module]) {
+        groups[module] = {
+          label: capitalizeWords(module),
           permissions: [],
         };
       }
 
-      groups[categoryKey].permissions.push({
-        key,
-        code,
-        label: capitalizeWords(key),
+      perms.forEach((perm: any) => {
+        const permName = typeof perm === 'string' ? perm : perm.name;
+        const permDesc = typeof perm === 'string' ? perm : (perm.description || perm.name);
+        groups[module].permissions.push({
+          key: permName,
+          code: permName,
+          label: permDesc,
+        });
       });
     });
 

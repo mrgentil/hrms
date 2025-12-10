@@ -23,7 +23,7 @@ export class UsersService {
     private prisma: PrismaService,
     private rolesService: RolesService,
     private auditService: AuditService,
-  ) {}
+  ) { }
 
   async validateRoleAssignment(userId: number, targetRole: UserRole) {
     const requiredPermission = ROLE_CREATION_PERMISSIONS[targetRole];
@@ -90,6 +90,7 @@ export class UsersService {
         full_name: createUserDto.full_name,
         work_email: createUserDto.work_email,
         role: roleToAssign,
+        role_id: createUserDto.role_id, // Nouveau système de rôles
         active: createUserDto.active ?? true,
         department_id: createUserDto.department_id,
         position_id: createUserDto.position_id,
@@ -572,11 +573,27 @@ export class UsersService {
       },
     });
 
+    // Récupérer les rôles personnalisés depuis la table role
+    const customRoles = await this.prisma.role.findMany({
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        color: true,
+        icon: true,
+        is_system: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
     return {
       departments,
       positions,
       managers,
-      roles: await this.getCreatableRolesForUser(currentUserId),
+      roles: await this.getCreatableRolesForUser(currentUserId), // Ancien système (enum)
+      customRoles, // Nouveau système (table role)
     };
   }
 

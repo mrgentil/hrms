@@ -65,6 +65,55 @@ export default function EditRolePage() {
     }));
   };
 
+  // Obtenir toutes les permissions disponibles
+  const getAllPermissionNames = (): string[] => {
+    const allPerms: string[] = [];
+    Object.values(permissions).forEach((perms: any) => {
+      if (Array.isArray(perms)) {
+        perms.forEach((p: any) => {
+          allPerms.push(typeof p === 'string' ? p : p.name);
+        });
+      }
+    });
+    return allPerms;
+  };
+
+  // Tout cocher
+  const handleSelectAll = () => {
+    setFormData((prev) => ({
+      ...prev,
+      permissions: getAllPermissionNames(),
+    }));
+  };
+
+  // Tout décocher
+  const handleDeselectAll = () => {
+    setFormData((prev) => ({
+      ...prev,
+      permissions: [],
+    }));
+  };
+
+  // Cocher/décocher un module entier
+  const handleToggleModule = (modulePerms: any[]) => {
+    const modulePermNames = modulePerms.map((p: any) => typeof p === 'string' ? p : p.name);
+    const allSelected = modulePermNames.every((name) => formData.permissions.includes(name));
+    
+    if (allSelected) {
+      // Décocher tout le module
+      setFormData((prev) => ({
+        ...prev,
+        permissions: prev.permissions.filter((name) => !modulePermNames.includes(name)),
+      }));
+    } else {
+      // Cocher tout le module
+      setFormData((prev) => ({
+        ...prev,
+        permissions: [...new Set([...prev.permissions, ...modulePermNames])],
+      }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -185,29 +234,67 @@ export default function EditRolePage() {
 
         <ComponentCard title="Permissions">
           <div className="space-y-4">
+            {/* Boutons globaux */}
+            <div className="flex flex-wrap gap-2 pb-4 border-b dark:border-gray-700">
+              <button
+                type="button"
+                onClick={handleSelectAll}
+                className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                ✓ Tout cocher
+              </button>
+              <button
+                type="button"
+                onClick={handleDeselectAll}
+                className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                ✗ Tout décocher
+              </button>
+              <span className="ml-auto text-sm text-gray-500 dark:text-gray-400">
+                {formData.permissions.length} / {getAllPermissionNames().length} permissions
+              </span>
+            </div>
+
             {Object.keys(permissions).length > 0 ? (
               Object.entries(permissions).map(([module, perms]: [string, any]) => (
                 <div key={module} className="border dark:border-gray-700 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-3 capitalize">
-                    {module}
-                  </h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900 dark:text-white capitalize">
+                      {module}
+                    </h4>
+                    {Array.isArray(perms) && (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleModule(perms)}
+                        className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        {perms.every((p: any) => formData.permissions.includes(typeof p === 'string' ? p : p.name))
+                          ? 'Décocher tout'
+                          : 'Cocher tout'}
+                      </button>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {perms.map((perm: any) => (
+                    {Array.isArray(perms) ? perms.map((perm: any) => (
                       <label
-                        key={perm.name || perm.id}
+                        key={perm.name || perm.id || perm}
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         <input
                           type="checkbox"
-                          checked={formData.permissions.includes(perm.name)}
-                          onChange={() => handlePermissionToggle(perm.name)}
+                          checked={formData.permissions.includes(typeof perm === 'string' ? perm : perm.name)}
+                          onChange={() => handlePermissionToggle(typeof perm === 'string' ? perm : perm.name)}
                           className="w-4 h-4 text-primary rounded focus:ring-primary"
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300">
-                          {perm.name.split(".")[1] || perm.name}
+                          {typeof perm === 'string' 
+                            ? (perm.split(".")[1] || perm)
+                            : (perm.name?.split(".")[1] || perm.name || perm)}
                         </span>
                       </label>
-                    ))}
+                    )) : (
+                      <span className="text-sm text-gray-500">{String(perms)}</span>
+                    )}
                   </div>
                 </div>
               ))

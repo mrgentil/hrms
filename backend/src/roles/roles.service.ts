@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { UserRole } from '@prisma/client';
+import { PERMISSION_GROUPS } from '../common/constants/permissions.constants';
 
 // Définition des permissions disponibles dans le système
 export const SYSTEM_PERMISSIONS = {
@@ -237,7 +238,7 @@ export const PREDEFINED_ROLES = [
 
 @Injectable()
 export class RolesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createRoleDto: CreateRoleDto) {
     // Vérifier si le rôle existe déjà
@@ -249,21 +250,71 @@ export class RolesService {
       throw new ConflictException('Un rôle avec ce nom existe déjà');
     }
 
-    // Créer le rôle avec tous les champs
+    const { permissions, ...roleData } = createRoleDto;
+
+    // Créer le rôle
     const role = await this.prisma.role.create({
       data: {
-        name: createRoleDto.name,
-        description: createRoleDto.description,
-        permissions: createRoleDto.permissions,
-        color: createRoleDto.color || '#6b7280',
-        icon: createRoleDto.icon || '👤',
+        name: roleData.name,
+        description: roleData.description,
+        // On garde le champ JSON vide ou synchronisé si besoin, mais on utilise principalement la table de liaison
+        permissions: [],
+        color: roleData.color || '#6b7280',
+        icon: roleData.icon || '👤',
         is_system: false,
         created_at: new Date(),
         updated_at: new Date(),
       },
     });
 
-    return role;
+    // Si des permissions sont fournies, les ajouter
+    if (permissions && Array.isArray(permissions) && permissions.length > 0) {
+      console.log('📝 Création des permissions pour le rôle', role.id);
+
+      // Récupérer les permissions existantes
+      const permissionRecords = await this.prisma.permission.findMany({
+        where: {
+          name: { in: permissions },
+        },
+      });
+
+      // Créer les permissions manquantes
+      const existingNames = permissionRecords.map(p => p.name);
+      const missingPerms = permissions.filter(p => !existingNames.includes(p));
+
+      if (missingPerms.length > 0) {
+        for (const permName of missingPerms) {
+          await this.prisma.permission.create({
+            data: {
+              name: permName,
+              description: permName,
+              created_at: new Date(),
+              updated_at: new Date(),
+            },
+          });
+        }
+      }
+
+      // Récupérer toutes les permissions
+      const allPermissionRecords = await this.prisma.permission.findMany({
+        where: { name: { in: permissions } },
+      });
+
+      // Lier les permissions au rôle
+      if (allPermissionRecords.length > 0) {
+        await this.prisma.role_permission.createMany({
+          data: allPermissionRecords.map((perm) => ({
+            role_id: role.id,
+            permission_id: perm.id,
+            created_at: new Date(),
+            updated_at: new Date(),
+          })),
+        });
+        console.log('   ✅ Permissions assignées au nouveau rôle:', allPermissionRecords.length);
+      }
+    }
+
+    return this.findOne(role.id);
   }
 
   async findAll() {
@@ -271,7 +322,14 @@ export class RolesService {
       orderBy: { name: 'asc' },
       include: {
         _count: {
-          select: { users: true },
+          select: { users: true, role_permission: true },
+        },
+        role_permission: {
+          include: {
+            permission: {
+              select: { name: true },
+            },
+          },
         },
       },
     });
@@ -279,6 +337,7 @@ export class RolesService {
     return roles.map(role => ({
       ...role,
       userCount: role._count.users,
+      permissions: role.role_permission.map(rp => rp.permission?.name).filter(Boolean),
     }));
   }
 
@@ -294,6 +353,11 @@ export class RolesService {
             username: true,
           },
         },
+        role_permission: {
+          include: {
+            permission: true,
+          },
+        },
         _count: {
           select: { users: true },
         },
@@ -307,6 +371,11 @@ export class RolesService {
     return {
       ...role,
       userCount: role._count.users,
+      permissions: role.role_permission.map(rp => ({
+        id: rp.permission?.id,
+        name: rp.permission?.name,
+        description: rp.permission?.description,
+      })),
     };
   }
 
@@ -347,10 +416,14 @@ export class RolesService {
 
     // Si des permissions sont fournies, les mettre à jour
     if (permissions && Array.isArray(permissions)) {
+      console.log('📝 Mise à jour des permissions pour le rôle', id);
+      console.log('   Permissions reçues:', permissions.length, permissions.slice(0, 5));
+
       // Supprimer les anciennes permissions
-      await this.prisma.role_permission.deleteMany({
+      const deleted = await this.prisma.role_permission.deleteMany({
         where: { role_id: id },
       });
+      console.log('   Anciennes permissions supprimées:', deleted.count);
 
       // Récupérer les IDs des permissions par leurs noms
       const permissionRecords = await this.prisma.permission.findMany({
@@ -358,17 +431,43 @@ export class RolesService {
           name: { in: permissions },
         },
       });
+      console.log('   Permissions trouvées en BD:', permissionRecords.length);
 
-      // Ajouter les nouvelles permissions
-      if (permissionRecords.length > 0) {
+      // Créer les permissions manquantes
+      const existingNames = permissionRecords.map(p => p.name);
+      const missingPerms = permissions.filter(p => !existingNames.includes(p));
+
+      if (missingPerms.length > 0) {
+        console.log('   ⚠️ Permissions manquantes à créer:', missingPerms.length);
+        for (const permName of missingPerms) {
+          await this.prisma.permission.create({
+            data: {
+              name: permName,
+              description: permName,
+              created_at: new Date(),
+              updated_at: new Date(),
+            },
+          });
+        }
+      }
+
+      // Récupérer toutes les permissions (existantes + nouvelles)
+      const allPermissionRecords = await this.prisma.permission.findMany({
+        where: { name: { in: permissions } },
+      });
+      console.log('   Total permissions en BD:', allPermissionRecords.length);
+
+      // Ajouter les permissions au rôle
+      if (allPermissionRecords.length > 0) {
         await this.prisma.role_permission.createMany({
-          data: permissionRecords.map((perm) => ({
+          data: allPermissionRecords.map((perm) => ({
             role_id: id,
             permission_id: perm.id,
             created_at: new Date(),
             updated_at: new Date(),
           })),
         });
+        console.log('   ✅ Permissions assignées au rôle:', allPermissionRecords.length);
       }
     }
 
@@ -410,28 +509,25 @@ export class RolesService {
   }
 
   async getAvailablePermissions() {
-    return {
-      permissions: SYSTEM_PERMISSIONS,
-      categories: {
-        users: 'Gestion des utilisateurs',
-        departments: 'Gestion des départements',
-        positions: 'Gestion des postes',
-        leaves: 'Gestion des congés',
-        payroll: 'Gestion de la paie',
-        expenses: 'Gestion des dépenses',
-        budget: 'Gestion du budget',
-        reports: 'Rapports',
-        analytics: 'Analyses',
-        system: 'Administration système',
-        roles: 'Gestion des rôles',
-        permissions: 'Gestion des permissions',
-        profile: 'Profil personnel',
-      },
-    };
+    // Utiliser PERMISSION_GROUPS depuis le fichier de constantes
+    // qui contient toutes les permissions groupées par module
+
+    // Convertir en format attendu par le frontend
+    const permissionsByModule: Record<string, Array<{ name: string; description: string }>> = {};
+
+    for (const group of PERMISSION_GROUPS) {
+      const moduleName = group.name;
+      permissionsByModule[moduleName] = group.permissions.map(p => ({
+        name: p.key,
+        description: p.description,
+      }));
+    }
+
+    return permissionsByModule;
   }
 
   async initializePredefinedRoles() {
-    const results: Array<{action: string, role: string, error?: string}> = [];
+    const results: Array<{ action: string, role: string, error?: string }> = [];
 
     for (const roleData of PREDEFINED_ROLES) {
       try {

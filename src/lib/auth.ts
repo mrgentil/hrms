@@ -17,6 +17,7 @@ export interface User {
     is_system: boolean;
   };
   current_role?: string;
+  permissions?: string[]; // Permissions du rôle personnalisé
   work_email?: string;
   active: boolean;
   profile_photo_url?: string | null;
@@ -234,7 +235,7 @@ class AuthService {
 
     // Déterminer si c'est un FormData (pour les uploads de fichiers)
     const isFormData = options.body instanceof FormData;
-    
+
     const headers: Record<string, string> = {
       // Ne pas mettre Content-Type pour FormData - le browser le gère automatiquement
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),

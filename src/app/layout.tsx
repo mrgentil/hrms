@@ -4,6 +4,7 @@ import './globals.css';
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { PermissionsProvider } from '@/contexts/PermissionsContext';
 import { AppSettingsProvider } from '@/contexts/AppSettingsContext';
 import Toaster from '@/components/common/Toaster';
 import DynamicHead from '@/components/common/DynamicHead';
@@ -26,13 +27,15 @@ export default function RootLayout({
           <AppSettingsProvider>
             <DynamicHead />
             <AuthProvider>
-              <ThemeProvider>
-                <SidebarProvider>
-                  {children}
-                </SidebarProvider>
-                <Toaster />
-                <CommandSearchWrapper />
-              </ThemeProvider>
+              <PermissionsProvider>
+                <ThemeProvider>
+                  <SidebarProvider>
+                    {children}
+                  </SidebarProvider>
+                  <Toaster />
+                  <CommandSearchWrapper />
+                </ThemeProvider>
+              </PermissionsProvider>
             </AuthProvider>
           </AppSettingsProvider>
         </QueryProvider>

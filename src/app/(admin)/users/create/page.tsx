@@ -15,6 +15,7 @@ type FormState = {
   work_email: string;
   password: string;
   role: UserRole | "";
+  role_id: string; // ID du rôle personnalisé
   department_id: string;
   position_id: string;
   manager_user_id: string;
@@ -28,6 +29,7 @@ const initialFormState: FormState = {
   work_email: "",
   password: "",
   role: "",
+  role_id: "",
   department_id: "",
   position_id: "",
   manager_user_id: "",
@@ -83,6 +85,11 @@ export default function CreateUser() {
       role: formState.role,
       active: formState.active === "true",
     };
+
+    // Ajouter role_id si un rôle personnalisé est sélectionné
+    if (formState.role_id) {
+      payload.role_id = Number(formState.role_id);
+    }
 
     if (formState.work_email.trim()) {
       payload.work_email = formState.work_email.trim();
@@ -209,13 +216,32 @@ export default function CreateUser() {
                 </label>
                 <select
                   name="role"
-                  value={formState.role}
-                  onChange={handleInputChange}
+                  value={formState.role_id ? `custom_${formState.role_id}` : formState.role}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val.startsWith('custom_')) {
+                      // C'est un rôle personnalisé
+                      setFormState(prev => ({
+                        ...prev,
+                        role: 'ROLE_EMPLOYEE', // Fallback pour l'ancien système
+                        role_id: val.replace('custom_', ''),
+                      }));
+                    } else {
+                      // C'est un rôle enum
+                      setFormState(prev => ({
+                        ...prev,
+                        role: val as UserRole,
+                        role_id: '',
+                      }));
+                    }
+                  }}
                   disabled={isFormDisabled || isSubmitting}
                   className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-not-allowed disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                   required
                 >
-                  {!roles.length && <option value="">Aucun rôle disponible</option>}
+                  {!roles.length && !adminOptions?.customRoles?.length && <option value="">Aucun rôle disponible</option>}
+
+                  {/* Rôles système (enum) */}
                   {roles.length > 0 && (
                     <>
                       {Object.entries(ROLE_CATEGORIES).map(([key, category]) => {
@@ -232,6 +258,17 @@ export default function CreateUser() {
                         );
                       })}
                     </>
+                  )}
+
+                  {/* Rôles personnalisés (table role) */}
+                  {adminOptions?.customRoles && adminOptions.customRoles.length > 0 && (
+                    <optgroup label="📋 Rôles personnalisés">
+                      {adminOptions.customRoles.map((customRole) => (
+                        <option key={`custom_${customRole.id}`} value={`custom_${customRole.id}`}>
+                          {customRole.icon || '👤'} {customRole.name}
+                        </option>
+                      ))}
+                    </optgroup>
                   )}
                 </select>
               </div>

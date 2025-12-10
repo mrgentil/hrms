@@ -1,0 +1,4 @@
+[1] Tshitsho Bilongo Bédi / Tshitsho (tshitshob@gmail.com) - Role: Super Admin
+[2] Administrateur / admin (admin@efficia.com) - Role: Admin
+[3] MrGentil / MrGentil (gentil@efficia.com) - Role: Employé
+[4] Kumbu Tshitsho / jemima (jemima@gmail.com) - Role: Directeur Finance

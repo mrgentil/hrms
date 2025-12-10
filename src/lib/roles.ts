@@ -37,10 +37,12 @@ export interface UpdateRoleData {
   icon?: string;
 }
 
-export interface PermissionsCatalog {
-  permissions: Record<string, string>;
-  categories: Record<string, string>;
+export interface PermissionItem {
+  name: string;
+  description: string;
 }
+
+export type PermissionsCatalog = Record<string, PermissionItem[]>;
 
 export interface RoleResponse {
   success: boolean;

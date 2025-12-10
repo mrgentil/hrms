@@ -15,7 +15,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private auditService: AuditService,
-  ) {}
+  ) { }
 
   async validateUser(username: string, password: string): Promise<any> {
     const user = await this.prisma.user.findUnique({
@@ -35,7 +35,35 @@ export class AuthService {
       throw new UnauthorizedException('Nom d\'utilisateur ou mot de passe incorrect');
     }
 
-    const payload = { username: user.username, sub: user.id, role: user.role };
+    // Récupérer les permissions de l'utilisateur via son rôle
+    let permissions: string[] = [];
+    if (user.role_id) {
+      const roleWithPermissions = await this.prisma.role.findUnique({
+        where: { id: user.role_id },
+        include: {
+          role_permission: {
+            include: {
+              permission: {
+                select: { name: true },
+              },
+            },
+          },
+        },
+      });
+      if (roleWithPermissions) {
+        permissions = roleWithPermissions.role_permission
+          .map(rp => rp.permission?.name)
+          .filter(Boolean) as string[];
+      }
+    }
+
+    const payload = {
+      username: user.username,
+      sub: user.id,
+      role: user.role,
+      role_id: user.role_id,
+      permissions: permissions,
+    };
     const access_token = this.jwtService.sign(payload);
     const refresh_token = this.jwtService.sign(payload, {
       secret: process.env.JWT_REFRESH_SECRET,
@@ -63,6 +91,7 @@ export class AuthService {
         active: fullProfile.active,
         profile_photo_url: fullProfile.profile_photo_url,
         department: fullProfile.department,
+        permissions: permissions,
       },
     };
   }
@@ -142,7 +171,35 @@ export class AuthService {
         throw new UnauthorizedException('Utilisateur non trouvé ou inactif');
       }
 
-      const newPayload = { username: user.username, sub: user.id, role: user.role };
+      // Récupérer les permissions pour le nouveau token
+      let permissions: string[] = [];
+      if (user.role_id) {
+        const roleWithPermissions = await this.prisma.role.findUnique({
+          where: { id: user.role_id },
+          include: {
+            role_permission: {
+              include: {
+                permission: {
+                  select: { name: true },
+                },
+              },
+            },
+          },
+        });
+        if (roleWithPermissions) {
+          permissions = roleWithPermissions.role_permission
+            .map(rp => rp.permission?.name)
+            .filter(Boolean) as string[];
+        }
+      }
+
+      const newPayload = {
+        username: user.username,
+        sub: user.id,
+        role: user.role,
+        role_id: user.role_id,
+        permissions: permissions
+      };
       const access_token = this.jwtService.sign(newPayload);
 
       return { access_token };
@@ -189,6 +246,13 @@ export class AuthService {
             color: true,
             icon: true,
             is_system: true,
+            role_permission: {
+              select: {
+                permission: {
+                  select: { name: true },
+                },
+              },
+            },
           },
         },
       },
@@ -203,6 +267,7 @@ export class AuthService {
       department: user.department_user_department_idTodepartment,
       role_info: user.role_relation, // Nouveau système de rôles
       current_role: user.role_relation?.name || user.role, // Fallback vers l'ancien système
+      permissions: user.role_relation?.role_permission?.map(rp => rp.permission?.name).filter(Boolean) || [],
     };
   }
 

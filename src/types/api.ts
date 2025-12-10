@@ -39,6 +39,7 @@ export interface CreateUserDto {
   work_email: string;
   password: string;
   role: UserRole;
+  role_id?: number; // Nouveau système de rôles
   department_id?: number;
   position_id?: number;
   manager_user_id?: number;
@@ -87,7 +88,7 @@ export interface CreateDepartmentDto {
   parent_department_id?: number;
 }
 
-export interface UpdateDepartmentDto extends Partial<CreateDepartmentDto> {}
+export interface UpdateDepartmentDto extends Partial<CreateDepartmentDto> { }
 
 // Types pour les rôles
 export interface Role {
@@ -162,7 +163,7 @@ export interface CreatePositionDto {
   department_id?: number;
 }
 
-export interface UpdatePositionDto extends Partial<CreatePositionDto> {}
+export interface UpdatePositionDto extends Partial<CreatePositionDto> { }
 
 // Types pour les réponses API
 export interface ApiResponse<T> {
@@ -195,6 +196,14 @@ export interface AdminOptions {
     role: UserRole;
   }>;
   roles: UserRole[];
+  customRoles?: Array<{
+    id: number;
+    name: string;
+    description?: string;
+    color?: string;
+    icon?: string;
+    is_system?: boolean;
+  }>;
 }
 
 // Types pour les paramètres de requête

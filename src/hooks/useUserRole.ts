@@ -102,17 +102,29 @@ export function useUserRole(): UseUserRoleResult {
         }
 
         const storedUser = authService.getUser();
+
+        // Utiliser le rôle enum ou le rôle personnalisé
         const resolvedRole = normalizeRole(
           decoded?.role ||
-            user?.role ||
-            storedUser?.role ||
-            storedUser?.current_role ||
-            undefined,
+          user?.role ||
+          storedUser?.role ||
+          storedUser?.current_role ||
+          undefined,
         );
 
-        const permissionSet = new Set<string>(decoded?.permissions ?? []);
+        // Récupérer les permissions : priorité aux permissions stockées dans user
+        const userPermissions = user?.permissions || storedUser?.permissions || [];
+        const permissionSet = new Set<string>(userPermissions);
+
+        // Ajouter les permissions du token si présentes
+        if (decoded?.permissions) {
+          decoded.permissions.forEach(p => permissionSet.add(p));
+        }
+
+        // Permissions de base
         permissionSet.add('profile.view_own');
 
+        // Permissions additionnelles basées sur le rôle enum (fallback)
         if (
           ['ROLE_MANAGER', 'ROLE_RH', 'ROLE_ADMIN', 'ROLE_SUPER_ADMIN'].includes(
             resolvedRole,
@@ -156,29 +168,29 @@ export function useUserRole(): UseUserRoleResult {
 
 export function hasPermission(userRole: UserRole | null, permission: string): boolean {
   if (!userRole) return false;
-  
+
   // Super admin a tous les droits
   if (userRole.isSuperAdmin) return true;
-  
+
   // Vérifier si l'utilisateur a la permission spécifique
   return userRole.permissions.includes(permission) || userRole.permissions.includes('system.admin');
 }
 
 export function canAccessEmployeeFeatures(userRole: UserRole | null): boolean {
   if (!userRole) return false;
-  
+
   // Tous les rôles peuvent accéder aux fonctionnalités employé de base
   return true;
 }
 
 export function canAccessAdminFeatures(userRole: UserRole | null): boolean {
   if (!userRole) return false;
-  
+
   return userRole.isAdmin || userRole.isSuperAdmin || userRole.isHR;
 }
 
 export function canAccessManagerFeatures(userRole: UserRole | null): boolean {
   if (!userRole) return false;
-  
+
   return userRole.isManager || userRole.isAdmin || userRole.isSuperAdmin || userRole.isHR;
 }
