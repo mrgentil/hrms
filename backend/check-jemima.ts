@@ -17,7 +17,15 @@ async function main() {
             ]
         },
         include: {
-            role_relation: true
+            role_relation: {
+                include: {
+                    role_permission: {
+                        include: {
+                            permission: true
+                        }
+                    }
+                }
+            }
         }
     });
 
@@ -34,17 +42,19 @@ async function main() {
         console.log(`Custom Role Description: ${user.role_relation?.description || 'None'}`);
         console.log('Permissions (from Custom Role):');
 
-        if (user.role_relation && user.role_relation.permissions) {
-            // Prisma JSON type handling
-            const perms = user.role_relation.permissions;
-            if (Array.isArray(perms)) {
-                if (perms.length === 0) {
-                    console.log('  (Empty list)');
-                } else {
-                    perms.forEach(p => console.log(`  - ${p}`));
-                }
+        if (user.role_relation && user.role_relation.role_permission) {
+            const perms = user.role_relation.role_permission
+                .map(rp => rp.permission?.name)
+                .filter((p): p is string => !!p);
+
+            console.log(`Total Permissions: ${perms.length}`);
+            console.log(`Has users.view? ${perms.includes('users.view') ? 'YES' : 'NO'}`);
+            console.log('All Permissions:', JSON.stringify(perms, null, 2));
+
+            if (perms.length === 0) {
+                console.log('  (Empty list)');
             } else {
-                console.log('  (Not an array, raw):', perms);
+                perms.sort().forEach(p => console.log(`  - ${p}`));
             }
         } else {
             console.log('  (No custom role permissions)');

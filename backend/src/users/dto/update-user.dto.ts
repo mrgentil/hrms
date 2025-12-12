@@ -52,4 +52,69 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   profile_photo_url?: string;
+
+  // Financial information
+  @IsOptional()
+  @IsInt()
+  salary_basic?: number;
+
+  @IsOptional()
+  @IsInt()
+  salary_gross?: number;
+
+  @IsOptional()
+  @IsInt()
+  salary_net?: number;
+
+  @IsOptional()
+  @IsInt()
+  allowance_house_rent?: number;
+
+  @IsOptional()
+  @IsInt()
+  allowance_medical?: number;
+
+  @IsOptional()
+  @IsInt()
+  allowance_special?: number;
+
+  @IsOptional()
+  @IsInt()
+  allowance_fuel?: number;
+
+  @IsOptional()
+  @IsInt()
+  allowance_phone_bill?: number;
+
+  @IsOptional()
+  @IsInt()
+  allowance_other?: number;
+
+  @IsOptional()
+  @IsInt()
+  deduction_provident_fund?: number;
+
+  @IsOptional()
+  @IsInt()
+  deduction_tax?: number;
+
+  @IsOptional()
+  @IsInt()
+  deduction_other?: number;
+
+  @IsOptional()
+  @IsString()
+  bank_name?: string;
+
+  @IsOptional()
+  @IsString()
+  account_name?: string;
+
+  @IsOptional()
+  @IsString()
+  account_number?: string;
+
+  @IsOptional()
+  @IsString()
+  iban?: string;
 }

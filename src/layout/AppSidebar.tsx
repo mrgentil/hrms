@@ -208,59 +208,36 @@ const mainNavItems: NavItem[] = [
 
     icon: <UserIcon />,
     name: "Gestion Utilisateurs",
-    requiredPermission: "users.view",
+    requiredPermission: "users.view,users.view_salary",
     allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
 
     subItems: [
-
       {
-
         name: "Liste Utilisateurs",
-
         path: "/users",
-
         pro: false,
-
+        requiredPermission: "users.view,users.view_salary",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
         name: "Profils",
-
         path: "/users/profiles",
-
         pro: false,
-
-        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
+        allowedRoles: ["ROLE_SUPER_ADMIN"],
       },
-
       {
-
-        name: "Rles & Permissions",
-
+        name: "Rôles & Permissions",
         path: "/users/roles",
-
         pro: false,
-
+        requiredPermission: "roles.manage",
         allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
         name: "Documents",
-
         path: "/users/documents",
-
         pro: false,
-
-        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
+        allowedRoles: ["ROLE_SUPER_ADMIN"],
       },
-
     ],
 
   },
@@ -273,55 +250,34 @@ const mainNavItems: NavItem[] = [
     allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
 
     subItems: [
-
       {
-
-        name: "Dpartements",
-
+        name: "Départements",
         path: "/departments",
-
         pro: false,
-
+        requiredPermission: "departments.view",
         allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
         name: "Postes",
-
         path: "/positions",
-
         pro: false,
-
+        requiredPermission: "positions.view",
         allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
         name: "Contrats",
-
         path: "/contracts",
-
         pro: false,
-
+        requiredPermission: "compliance.contracts",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
         name: "Annonces",
-
         path: "/announcements",
-
         pro: false,
-
+        requiredPermission: "departments.view", // FIXME: Need specific permission?
         allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
     ],
 
   },
@@ -339,39 +295,35 @@ const mainNavItems: NavItem[] = [
         name: "Mes Congés",
         path: "/leaves/my-leaves",
         pro: false,
+        requiredPermission: "leaves.view",
       },
-
       {
         name: "Tous les Congés",
         path: "/leaves/all",
         pro: false,
+        requiredPermission: "leaves.view_all",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
-
       {
         name: "Quotas de Congés",
         path: "/leaves/types",
         pro: false,
+        requiredPermission: "leaves.manage_types",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
-
       {
         name: "Soldes de Congés",
         path: "/leaves/balances",
         pro: false,
+        requiredPermission: "leaves.view_all",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
-
       {
-
-        name: "Validation des Congs",
-
+        name: "Validation des Congés",
         path: "/leaves/review",
-
         pro: false,
-
+        requiredPermission: "leaves.approve",
         allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
 
       {
@@ -397,75 +349,46 @@ const mainNavItems: NavItem[] = [
     name: "Projets & Tâches",
 
     subItems: [
-
       {
-
         name: "Mes Projets",
-
         path: "/employees/projects",
-
         pro: false,
-
+        requiredPermission: "projects.view",
       },
-
       {
-
         name: "Mes Tâches",
-
         path: "/my-tasks",
-
         pro: false,
-
+        requiredPermission: "tasks.view",
       },
-
       {
-
         name: "Tous les Projets",
-
         path: "/projects",
-
         pro: false,
-
+        requiredPermission: "projects.view_all",
         allowedRoles: ["ROLE_MANAGER", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
         name: "Toutes les Tâches",
-
         path: "/tasks",
-
         pro: false,
-
+        requiredPermission: "tasks.view_all",
         allowedRoles: ["ROLE_MANAGER", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
         name: "Tableaux Kanban",
-
         path: "/task-boards",
-
         pro: false,
-
+        requiredPermission: "projects.view",
         allowedRoles: ["ROLE_MANAGER", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
         name: "Membres Projets",
-
         path: "/project-members",
-
         pro: false,
-
+        requiredPermission: "projects.view",
         allowedRoles: ["ROLE_MANAGER", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
     ],
 
   },
@@ -484,55 +407,34 @@ const advancedNavItems: NavItem[] = [
     allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
 
     subItems: [
-
       {
-
-        name: "Informations Financires",
-
+        name: "Informations Financières",
         path: "/finance/info",
-
         pro: false,
-
+        requiredPermission: "payroll.view",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
         name: "Paiements",
-
         path: "/finance/payments",
-
         pro: false,
-
+        requiredPermission: "payroll.manage",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
-        name: "Dpenses",
-
+        name: "Dépenses",
         path: "/finance/expenses",
-
         pro: false,
-
+        requiredPermission: "expenses.view",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
         name: "Emplois",
-
         path: "/finance/jobs",
-
         pro: false,
-
+        requiredPermission: "payroll.view",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
     ],
 
   },
@@ -595,43 +497,27 @@ const advancedNavItems: NavItem[] = [
     allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
 
     subItems: [
-
       {
-
         name: "Tableau de Bord RH",
-
         path: "/reports/hr",
-
         pro: false,
-
+        requiredPermission: "reports.view",
         allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
-        name: "Statistiques Congs",
-
+        name: "Statistiques Congés",
         path: "/reports/leave",
-
         pro: false,
-
+        requiredPermission: "reports.view",
         allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
       {
-
         name: "Performance Projets",
-
         path: "/reports/projects",
-
         pro: false,
-
+        requiredPermission: "reports.view",
         allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
       },
-
     ],
 
   },
@@ -676,33 +562,39 @@ const hrmsModulesNavItems: NavItem[] = [
         name: "Catalogue Formations",
         path: "/training/catalog",
         pro: false,
+        requiredPermission: "training.view",
       },
       {
         name: "Mes Formations",
         path: "/training/my-trainings",
         pro: false,
+        requiredPermission: "training.view_own",
       },
       {
         name: "Inscriptions",
         path: "/training/registrations",
         pro: false,
+        requiredPermission: "training.manage",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Certifications",
         path: "/training/certifications",
         pro: false,
+        requiredPermission: "training.view",
       },
       {
         name: "Plans de Développement",
         path: "/training/development-plans",
         pro: false,
+        requiredPermission: "training.view",
         allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "E-Learning",
         path: "/training/elearning",
         pro: true,
+        requiredPermission: "training.view",
       },
     ],
   },
@@ -716,30 +608,35 @@ const hrmsModulesNavItems: NavItem[] = [
         name: "Offres d'Emploi",
         path: "/recruitment/jobs",
         pro: false,
+        requiredPermission: "recruitment.manage",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Candidatures",
         path: "/recruitment/applications",
         pro: false,
+        requiredPermission: "recruitment.view",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Entretiens",
         path: "/recruitment/interviews",
         pro: false,
+        requiredPermission: "recruitment.view",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Viviers de Talents",
         path: "/recruitment/talent-pool",
         pro: false,
+        requiredPermission: "recruitment.view",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Onboarding",
         path: "/recruitment/onboarding",
         pro: false,
+        requiredPermission: "recruitment.view",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
     ],
@@ -751,31 +648,42 @@ const hrmsModulesNavItems: NavItem[] = [
     allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
     subItems: [
       {
+        name: "Gestion Salaires",
+        path: "/payroll/salaries",
+        pro: false,
+        requiredPermission: "users.view_salary",
+      },
+      {
         name: "Bulletins de Paie",
         path: "/payroll/payslips",
         pro: false,
+        requiredPermission: "payroll.view_own",
       },
       {
         name: "Avances sur Salaire",
         path: "/payroll/advances",
         pro: false,
+        requiredPermission: "payroll.view_own",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Primes & Bonus",
         path: "/payroll/bonuses",
         pro: false,
+        requiredPermission: "payroll.view_own",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Avantages Sociaux",
         path: "/payroll/benefits",
         pro: false,
+        requiredPermission: "payroll.view_own",
       },
       {
         name: "Simulations Salariales",
         path: "/payroll/simulator",
         pro: true,
+        requiredPermission: "payroll.manage",
       },
     ],
   },
@@ -789,28 +697,33 @@ const hrmsModulesNavItems: NavItem[] = [
         name: "Objectifs (OKR/KPI)",
         path: "/performance/objectives",
         pro: false,
+        requiredPermission: "performance.view_own",
       },
       {
         name: "Évaluations Annuelles",
         path: "/performance/reviews",
         pro: false,
+        requiredPermission: "performance.view_own",
         allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Feedback 360°",
         path: "/performance/feedback-360",
         pro: true,
+        requiredPermission: "performance.view_own",
       },
       {
         name: "Plans d'Amélioration",
         path: "/performance/improvement-plans",
         pro: false,
+        requiredPermission: "performance.view_own",
         allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Reconnaissance",
         path: "/performance/recognition",
         pro: false,
+        requiredPermission: "performance.view_own",
       },
     ],
   },
@@ -824,30 +737,35 @@ const hrmsModulesNavItems: NavItem[] = [
         name: "Dossiers Employés",
         path: "/compliance/employee-files",
         pro: false,
+        requiredPermission: "compliance.view",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Contrats & Avenants",
         path: "/compliance/contracts",
         pro: false,
+        requiredPermission: "compliance.contracts",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "RGPD",
         path: "/compliance/gdpr",
         pro: false,
+        requiredPermission: "compliance.manage",
         allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Visites Médicales",
         path: "/compliance/medical-visits",
         pro: false,
+        requiredPermission: "compliance.view",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Attestations",
         path: "/compliance/certificates",
         pro: false,
+        requiredPermission: "compliance.view",
       },
     ],
   },
@@ -861,23 +779,27 @@ const hrmsModulesNavItems: NavItem[] = [
         name: "Matériel IT",
         path: "/assets/it-equipment",
         pro: false,
+        requiredPermission: "assets.view",
       },
       {
         name: "Véhicules",
         path: "/assets/vehicles",
         pro: false,
+        requiredPermission: "assets.view",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Cartes & Badges",
         path: "/assets/badges",
         pro: false,
+        requiredPermission: "assets.view",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Demandes d'Équipement",
         path: "/assets/requests",
         pro: false,
+        requiredPermission: "assets.request",
       },
     ],
   },
@@ -891,22 +813,26 @@ const hrmsModulesNavItems: NavItem[] = [
         name: "Planning Équipes",
         path: "/planning/team-schedule",
         pro: false,
+        requiredPermission: "planning.view",
         allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Réservation Salles",
         path: "/planning/room-booking",
         pro: false,
+        requiredPermission: "planning.view",
       },
       {
         name: "Télétravail",
         path: "/planning/remote-work",
         pro: false,
+        requiredPermission: "planning.view",
       },
       {
         name: "Astreintes",
         path: "/planning/on-call",
         pro: false,
+        requiredPermission: "planning.view",
         allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
     ],
@@ -921,22 +847,26 @@ const hrmsModulesNavItems: NavItem[] = [
         name: "Sondages",
         path: "/wellbeing/surveys",
         pro: false,
+        requiredPermission: "wellbeing.view",
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
         name: "Boîte à Idées",
         path: "/wellbeing/ideas",
         pro: false,
+        requiredPermission: "wellbeing.view",
       },
       {
         name: "Événements",
         path: "/wellbeing/events",
         pro: false,
+        requiredPermission: "wellbeing.view",
       },
       {
         name: "Bien-être",
         path: "/wellbeing/wellness",
         pro: false,
+        requiredPermission: "wellbeing.view",
       },
     ],
   },
@@ -996,7 +926,7 @@ const AppSidebar: React.FC = () => {
   // Fonction pour vérifier si l'utilisateur a accès à un menu
   // Supporte les rôles enum ET les permissions (pour les rôles personnalisés)
   const isAccessAllowed = useCallback(
-    (allowedRoles?: RoleCode[], requiredPermission?: string) => {
+    (allowedRoles?: RoleCode[], requiredPermission?: string, itemName?: string) => {
       // Si pas de restriction, autoriser
       if ((!allowedRoles || allowedRoles.length === 0) && !requiredPermission) {
         return true;
@@ -1006,6 +936,13 @@ const AppSidebar: React.FC = () => {
         return false;
       }
 
+      console.log(`Sidebar Debug [${itemName || 'Unk'}]:`, {
+        requiredPerm: requiredPermission || 'NONE',
+        hasPerm: requiredPermission ? requiredPermission.split(',').some(p => userRole.permissions.includes(p.trim())) : 'N/A',
+        roleMatch: allowedRoles ? allowedRoles.includes(userRole.role) : 'N/A',
+        result: (requiredPermission && requiredPermission.split(',').some(p => userRole.permissions.includes(p.trim()))) || (allowedRoles && allowedRoles.includes(userRole.role))
+      });
+
       // Super admin a toujours accès
       if (userRole.isSuperAdmin) {
         return true;
@@ -1013,12 +950,13 @@ const AppSidebar: React.FC = () => {
 
       // 1. Si une permission est requise :
       if (requiredPermission) {
-        // L'utilisateur DOIT avoir cette permission spécifique
-        if (userRole.permissions.includes(requiredPermission)) {
+        // Support pour plusieurs permissions séparées par virgule (OR)
+        const permissions = requiredPermission.split(',').map(p => p.trim());
+        const hasPermission = permissions.some(p => userRole.permissions.includes(p));
+
+        if (hasPermission) {
           return true;
         }
-        // Si c'est un Admin, on lui donne accès aussi (sauf si restriction explicite ailleurs)
-        // Mais pour les rôles custom, la permission est reine.
       }
 
       // 2. Vérification par Rôle (Legacy / Fallback)
@@ -1052,7 +990,7 @@ const AppSidebar: React.FC = () => {
 
       items.reduce<NavItem[]>((visible, item) => {
 
-        if (!isRoleAllowed(item.allowedRoles)) {
+        if (!isAccessAllowed(item.allowedRoles, item.requiredPermission, item.name)) {
 
           return visible;
 
@@ -1064,7 +1002,7 @@ const AppSidebar: React.FC = () => {
 
           const filteredSubItems = item.subItems.filter((sub) =>
 
-            isRoleAllowed(sub.allowedRoles),
+            isAccessAllowed(sub.allowedRoles, sub.requiredPermission, sub.name),
 
           );
 

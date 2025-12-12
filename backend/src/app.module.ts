@@ -28,6 +28,11 @@ import { TasksModule } from './tasks/tasks.module';
 import { MessagesModule } from './messages/messages.module';
 import { TagsModule } from './tags/tags.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AdvancesModule } from './advances/advances.module';
+import { BonusesModule } from './bonuses/bonuses.module';
+import { BenefitsModule } from './benefits/benefits.module';
+import { PayslipsModule } from './payslips/payslips.module';
+import { RecruitmentModule } from './recruitment/recruitment.module';
 
 @Module({
   imports: [
@@ -62,6 +67,11 @@ import { NotificationsModule } from './notifications/notifications.module';
     MessagesModule,
     TagsModule,
     NotificationsModule,
+    AdvancesModule,
+    BonusesModule,
+    BenefitsModule,
+    PayslipsModule,
+    RecruitmentModule,
   ],
   controllers: [AppController],
   providers: [
@@ -72,4 +82,4 @@ import { NotificationsModule } from './notifications/notifications.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

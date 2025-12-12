@@ -75,6 +75,23 @@ interface FormData {
   address: string;
   city: string;
   country: string;
+  // Financial info
+  salary_basic: string;
+  salary_gross: string;
+  salary_net: string;
+  allowance_house_rent: string;
+  allowance_medical: string;
+  allowance_special: string;
+  allowance_fuel: string;
+  allowance_phone_bill: string;
+  allowance_other: string;
+  deduction_provident_fund: string;
+  deduction_tax: string;
+  deduction_other: string;
+  bank_name: string;
+  account_name: string;
+  account_number: string;
+  iban: string;
 }
 
 const inputClass = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-white outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
@@ -88,11 +105,11 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  
+
   const [departments, setDepartments] = useState<Department[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
   const [managers, setManagers] = useState<Manager[]>([]);
-  
+
   const [formData, setFormData] = useState<FormData>({
     username: "",
     full_name: "",
@@ -112,6 +129,22 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
     address: "",
     city: "",
     country: "",
+    salary_basic: "",
+    salary_gross: "",
+    salary_net: "",
+    allowance_house_rent: "",
+    allowance_medical: "",
+    allowance_special: "",
+    allowance_fuel: "",
+    allowance_phone_bill: "",
+    allowance_other: "",
+    deduction_provident_fund: "",
+    deduction_tax: "",
+    deduction_other: "",
+    bank_name: "",
+    account_name: "",
+    account_number: "",
+    iban: "",
   });
 
   useEffect(() => {
@@ -121,7 +154,7 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       // Charger utilisateur et options en parallèle
       const [userRes, deptRes, posRes, usersRes] = await Promise.all([
         authService.authenticatedFetch(`${API_BASE_URL}/users/${resolvedParams.id}`),
@@ -143,7 +176,8 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
       setManagers(usersData.filter((u: any) => u.id !== userData.id));
 
       const personalInfo = userData.user_personal_info?.[0] || {};
-      
+      const financialInfo = userData.user_financial_info?.[0] || {};
+
       setFormData({
         username: userData.username || "",
         full_name: userData.full_name || "",
@@ -163,6 +197,22 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
         address: personalInfo.address || "",
         city: personalInfo.city || "",
         country: personalInfo.country || "",
+        salary_basic: financialInfo.salary_basic?.toString() || "",
+        salary_gross: financialInfo.salary_gross?.toString() || "",
+        salary_net: financialInfo.salary_net?.toString() || "",
+        allowance_house_rent: financialInfo.allowance_house_rent?.toString() || "",
+        allowance_medical: financialInfo.allowance_medical?.toString() || "",
+        allowance_special: financialInfo.allowance_special?.toString() || "",
+        allowance_fuel: financialInfo.allowance_fuel?.toString() || "",
+        allowance_phone_bill: financialInfo.allowance_phone_bill?.toString() || "",
+        allowance_other: financialInfo.allowance_other?.toString() || "",
+        deduction_provident_fund: financialInfo.deduction_provident_fund?.toString() || "",
+        deduction_tax: financialInfo.deduction_tax?.toString() || "",
+        deduction_other: financialInfo.deduction_other?.toString() || "",
+        bank_name: financialInfo.bank_name || "",
+        account_name: financialInfo.account_name || "",
+        account_number: financialInfo.account_number || "",
+        iban: financialInfo.iban || "",
       });
     } catch (err: any) {
       setError(err.message || "Erreur lors du chargement");
@@ -188,7 +238,7 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
       setError("");
       setSuccess("");
 
-      // Préparer les données utilisateur
+      // Préparer les données utilisateur (incluant les finances)
       const userPayload: any = {
         username: formData.username,
         full_name: formData.full_name,
@@ -199,6 +249,23 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
         position_id: formData.position_id ? parseInt(formData.position_id) : undefined,
         manager_id: formData.manager_id ? parseInt(formData.manager_id) : undefined,
         hire_date: formData.hire_date || undefined,
+        // Financial fields
+        salary_basic: formData.salary_basic ? parseInt(formData.salary_basic) : undefined,
+        salary_gross: formData.salary_gross ? parseInt(formData.salary_gross) : undefined,
+        salary_net: formData.salary_net ? parseInt(formData.salary_net) : undefined,
+        allowance_house_rent: formData.allowance_house_rent ? parseInt(formData.allowance_house_rent) : undefined,
+        allowance_medical: formData.allowance_medical ? parseInt(formData.allowance_medical) : undefined,
+        allowance_special: formData.allowance_special ? parseInt(formData.allowance_special) : undefined,
+        allowance_fuel: formData.allowance_fuel ? parseInt(formData.allowance_fuel) : undefined,
+        allowance_phone_bill: formData.allowance_phone_bill ? parseInt(formData.allowance_phone_bill) : undefined,
+        allowance_other: formData.allowance_other ? parseInt(formData.allowance_other) : undefined,
+        deduction_provident_fund: formData.deduction_provident_fund ? parseInt(formData.deduction_provident_fund) : undefined,
+        deduction_tax: formData.deduction_tax ? parseInt(formData.deduction_tax) : undefined,
+        deduction_other: formData.deduction_other ? parseInt(formData.deduction_other) : undefined,
+        bank_name: formData.bank_name || undefined,
+        account_name: formData.account_name || undefined,
+        account_number: formData.account_number || undefined,
+        iban: formData.iban || undefined,
       };
 
       if (formData.password) {
@@ -237,7 +304,7 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
       if (hasPersonalInfo) {
         const existingPersonalInfo = user.user_personal_info?.[0];
         const method = existingPersonalInfo ? "PATCH" : "POST";
-        const url = existingPersonalInfo 
+        const url = existingPersonalInfo
           ? `${API_BASE_URL}/personal-info/${existingPersonalInfo.id}`
           : `${API_BASE_URL}/personal-info`;
 
@@ -289,7 +356,7 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
   return (
     <div>
       <PageBreadcrumb pageTitle={`Modifier - ${user?.full_name || "Utilisateur"}`} />
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Messages */}
         {error && (
@@ -567,6 +634,100 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
           </div>
         </ComponentCard>
 
+        {/* Informations financières */}
+        <ComponentCard title="💰 Informations Financières">
+          <div className="space-y-6">
+            {/* Salaires */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Salaires</h3>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div>
+                  <label className={labelClass}>Salaire de base ($)</label>
+                  <input type="number" name="salary_basic" value={formData.salary_basic} onChange={handleChange} placeholder="3000" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Salaire brut ($)</label>
+                  <input type="number" name="salary_gross" value={formData.salary_gross} onChange={handleChange} placeholder="3500" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Salaire net ($)</label>
+                  <input type="number" name="salary_net" value={formData.salary_net} onChange={handleChange} placeholder="2700" className={inputClass} />
+                </div>
+              </div>
+            </div>
+            {/* Allocations */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Allocations</h3>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div>
+                  <label className={labelClass}>Logement ($)</label>
+                  <input type="number" name="allowance_house_rent" value={formData.allowance_house_rent} onChange={handleChange} placeholder="500" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Médical ($)</label>
+                  <input type="number" name="allowance_medical" value={formData.allowance_medical} onChange={handleChange} placeholder="100" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Spécial ($)</label>
+                  <input type="number" name="allowance_special" value={formData.allowance_special} onChange={handleChange} placeholder="200" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Carburant ($)</label>
+                  <input type="number" name="allowance_fuel" value={formData.allowance_fuel} onChange={handleChange} placeholder="150" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Téléphone ($)</label>
+                  <input type="number" name="allowance_phone_bill" value={formData.allowance_phone_bill} onChange={handleChange} placeholder="50" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Autre ($)</label>
+                  <input type="number" name="allowance_other" value={formData.allowance_other} onChange={handleChange} placeholder="0" className={inputClass} />
+                </div>
+              </div>
+            </div>
+            {/* Déductions */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Déductions</h3>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div>
+                  <label className={labelClass}>Fonds de prévoyance ($)</label>
+                  <input type="number" name="deduction_provident_fund" value={formData.deduction_provident_fund} onChange={handleChange} placeholder="300" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Impôts ($)</label>
+                  <input type="number" name="deduction_tax" value={formData.deduction_tax} onChange={handleChange} placeholder="500" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Autre ($)</label>
+                  <input type="number" name="deduction_other" value={formData.deduction_other} onChange={handleChange} placeholder="0" className={inputClass} />
+                </div>
+              </div>
+            </div>
+            {/* Informations bancaires */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Informations Bancaires</h3>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  <label className={labelClass}>Nom de la banque</label>
+                  <input type="text" name="bank_name" value={formData.bank_name} onChange={handleChange} placeholder="BNP Paribas" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Nom du compte</label>
+                  <input type="text" name="account_name" value={formData.account_name} onChange={handleChange} placeholder="John Doe" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Numéro de compte</label>
+                  <input type="text" name="account_number" value={formData.account_number} onChange={handleChange} placeholder="123456789" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>IBAN</label>
+                  <input type="text" name="iban" value={formData.iban} onChange={handleChange} placeholder="FR76 1234 5678 9012 3456 7890 123" className={inputClass} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </ComponentCard>
+
         {/* Actions */}
         <div className="flex justify-between items-center">
           <Link
@@ -602,6 +763,6 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
           </button>
         </div>
       </form>
-    </div>
+    </div >
   );
 }

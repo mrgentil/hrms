@@ -363,21 +363,23 @@ export default function UsersClient() {
                                 />
                               </svg>
                             </a>
-                            <a href={`/users/${user.id}/edit`} className="hover:text-primary" title="Modifier">
-                              <svg
-                                className="fill-current"
-                                width="18"
-                                height="18"
-                                viewBox="0 0 18 18"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M8.99981 14.8219C3.43106 14.8219 0.674805 9.50624 0.562305 9.28124C0.47793 9.11249 0.47793 8.88749 0.562305 8.71874C0.674805 8.49374 3.43106 3.20624 8.99981 3.20624C14.5686 3.20624 17.3248 8.49374 17.4373 8.71874C17.5217 8.88749 17.5217 9.11249 17.4373 9.28124C17.3248 9.50624 14.5686 14.8219 8.99981 14.8219Z"
-                                  fill=""
-                                />
-                              </svg>
-                            </a>
+                            <Can permission={PERMISSIONS.USERS_EDIT}>
+                              <a href={`/users/${user.id}/edit`} className="hover:text-primary" title="Modifier">
+                                <svg
+                                  className="fill-current"
+                                  width="18"
+                                  height="18"
+                                  viewBox="0 0 18 18"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M8.99981 14.8219C3.43106 14.8219 0.674805 9.50624 0.562305 9.28124C0.47793 9.11249 0.47793 8.88749 0.562305 8.71874C0.674805 8.49374 3.43106 3.20624 8.99981 3.20624C14.5686 3.20624 17.3248 8.49374 17.4373 8.71874C17.5217 8.88749 17.5217 9.11249 17.4373 9.28124C17.3248 9.50624 14.5686 14.8219 8.99981 14.8219Z"
+                                    fill=""
+                                  />
+                                </svg>
+                              </a>
+                            </Can>
                             <Can permission={PERMISSIONS.USERS_DELETE}>
                               <button
                                 onClick={() => handleDeleteUser(user.id, user.full_name)}

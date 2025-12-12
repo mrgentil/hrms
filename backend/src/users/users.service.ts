@@ -274,6 +274,29 @@ export class UsersService {
             emergency_contact_primary_phone: true,
           },
         },
+        user_financial_info: {
+          select: {
+            id: true,
+            salary_basic: true,
+            salary_gross: true,
+            salary_net: true,
+            allowance_house_rent: true,
+            allowance_medical: true,
+            allowance_special: true,
+            allowance_fuel: true,
+            allowance_phone_bill: true,
+            allowance_other: true,
+            allowance_total: true,
+            deduction_provident_fund: true,
+            deduction_tax: true,
+            deduction_other: true,
+            deduction_total: true,
+            bank_name: true,
+            account_name: true,
+            account_number: true,
+            iban: true,
+          },
+        },
         user_employment_history: {
           select: {
             id: true,
@@ -310,6 +333,9 @@ export class UsersService {
   async update(id: number, updateUserDto: UpdateUserDto) {
     const existingUser = await this.prisma.user.findUnique({
       where: { id },
+      include: {
+        user_financial_info: true,
+      },
     });
 
     if (!existingUser) {
@@ -338,9 +364,30 @@ export class UsersService {
       }
     }
 
-    // Préparer les données à mettre à jour
+    // Extraire les champs financiers du DTO
+    const {
+      salary_basic,
+      salary_gross,
+      salary_net,
+      allowance_house_rent,
+      allowance_medical,
+      allowance_special,
+      allowance_fuel,
+      allowance_phone_bill,
+      allowance_other,
+      deduction_provident_fund,
+      deduction_tax,
+      deduction_other,
+      bank_name,
+      account_name,
+      account_number,
+      iban,
+      ...userFields
+    } = updateUserDto;
+
+    // Préparer les données à mettre à jour pour l'utilisateur (sans les champs financiers)
     const updateData: any = {
-      ...updateUserDto,
+      ...userFields,
       updated_at: new Date(),
     };
 
@@ -359,6 +406,7 @@ export class UsersService {
       updateData.termination_date = new Date(updateUserDto.termination_date);
     }
 
+    // Mettre à jour l'utilisateur
     const user = await this.prisma.user.update({
       where: { id },
       data: updateData,
@@ -378,6 +426,89 @@ export class UsersService {
         },
       },
     });
+
+    // Gérer les informations financières si des champs sont fournis
+    const hasFinancialData =
+      salary_basic !== undefined ||
+      salary_gross !== undefined ||
+      salary_net !== undefined ||
+      allowance_house_rent !== undefined ||
+      allowance_medical !== undefined ||
+      allowance_special !== undefined ||
+      allowance_fuel !== undefined ||
+      allowance_phone_bill !== undefined ||
+      allowance_other !== undefined ||
+      deduction_provident_fund !== undefined ||
+      deduction_tax !== undefined ||
+      deduction_other !== undefined ||
+      bank_name !== undefined ||
+      account_name !== undefined ||
+      account_number !== undefined ||
+      iban !== undefined;
+
+    if (hasFinancialData) {
+      const financialData: any = {};
+
+      if (salary_basic !== undefined) financialData.salary_basic = salary_basic;
+      if (salary_gross !== undefined) financialData.salary_gross = salary_gross;
+      if (salary_net !== undefined) financialData.salary_net = salary_net;
+      if (allowance_house_rent !== undefined) financialData.allowance_house_rent = allowance_house_rent;
+      if (allowance_medical !== undefined) financialData.allowance_medical = allowance_medical;
+      if (allowance_special !== undefined) financialData.allowance_special = allowance_special;
+      if (allowance_fuel !== undefined) financialData.allowance_fuel = allowance_fuel;
+      if (allowance_phone_bill !== undefined) financialData.allowance_phone_bill = allowance_phone_bill;
+      if (allowance_other !== undefined) financialData.allowance_other = allowance_other;
+      if (deduction_provident_fund !== undefined) financialData.deduction_provident_fund = deduction_provident_fund;
+      if (deduction_tax !== undefined) financialData.deduction_tax = deduction_tax;
+      if (deduction_other !== undefined) financialData.deduction_other = deduction_other;
+      if (bank_name !== undefined) financialData.bank_name = bank_name;
+      if (account_name !== undefined) financialData.account_name = account_name;
+      if (account_number !== undefined) financialData.account_number = account_number;
+      if (iban !== undefined) financialData.iban = iban;
+
+      // Calculer les totaux
+      const allowances = [
+        allowance_house_rent,
+        allowance_medical,
+        allowance_special,
+        allowance_fuel,
+        allowance_phone_bill,
+        allowance_other,
+      ].filter((v) => v !== undefined) as number[];
+
+      if (allowances.length > 0) {
+        financialData.allowance_total = allowances.reduce((sum, val) => sum + val, 0);
+      }
+
+      const deductions = [
+        deduction_provident_fund,
+        deduction_tax,
+        deduction_other,
+      ].filter((v) => v !== undefined) as number[];
+
+      if (deductions.length > 0) {
+        financialData.deduction_total = deductions.reduce((sum, val) => sum + val, 0);
+      }
+
+      // Vérifier si des infos financières existent déjà
+      const existingFinancial = existingUser.user_financial_info?.[0];
+
+      if (existingFinancial) {
+        // Mettre à jour
+        await this.prisma.user_financial_info.update({
+          where: { id: existingFinancial.id },
+          data: financialData,
+        });
+      } else {
+        // Créer
+        await this.prisma.user_financial_info.create({
+          data: {
+            ...financialData,
+            user_id: id,
+          },
+        });
+      }
+    }
 
     // Retourner l'utilisateur sans le mot de passe
     const { password, ...userWithoutPassword } = user;

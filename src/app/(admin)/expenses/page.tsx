@@ -29,14 +29,14 @@ export default function ExpensesPage() {
   const { user } = useAuth();
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [expenses, setExpenses] = useState<ExpenseReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ExpenseReport | null>(null);
   const [filterStatus, setFilterStatus] = useState<ExpenseStatus | "">("");
   const [uploading, setUploading] = useState(false);
-  
+
   // Form state
   const [form, setForm] = useState<CreateExpensePayload>({
     title: "",
@@ -81,7 +81,7 @@ export default function ExpensesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!form.title || !form.amount || !form.category) {
       toast.error("Veuillez remplir tous les champs requis");
       return;
@@ -207,7 +207,7 @@ export default function ExpensesPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
           <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {stats.total.toFixed(2)} €
+            {stats.total.toFixed(2)} $
           </div>
           <div className="text-sm text-gray-500">Total</div>
         </div>
@@ -264,7 +264,7 @@ export default function ExpensesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-                    Montant (€) *
+                    Montant ($) *
                   </label>
                   <input
                     type="number"
@@ -416,7 +416,7 @@ export default function ExpensesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
-                      {Number(expense.amount).toFixed(2)} €
+                      {Number(expense.amount).toFixed(2)} $
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       {getStatusBadge(expense.status)}

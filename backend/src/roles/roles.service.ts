@@ -583,7 +583,15 @@ export class RolesService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
-        role_relation: true,
+        role_relation: {
+          include: {
+            role_permission: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -592,13 +600,15 @@ export class RolesService {
     }
 
     const legacy = this.getLegacyPermissions(user.role);
+    const relationPermissions = user.role_relation?.role_permission?.map(rp => rp.permission?.name).filter(Boolean) as string[] || [];
 
+    let jsonPermissions: string[] = [];
     if (user.role_relation?.permissions && Array.isArray(user.role_relation.permissions)) {
-      const persisted = user.role_relation.permissions as string[];
-      return Array.from(new Set([...persisted, ...legacy]));
+      jsonPermissions = user.role_relation.permissions as string[];
     }
 
-    return legacy;
+    // Merge all sources of permissions: Legacy + Relation Table + JSON Field
+    return Array.from(new Set([...legacy, ...relationPermissions, ...jsonPermissions]));
   }
 
   private getLegacyPermissions(role: UserRole | null): string[] {
