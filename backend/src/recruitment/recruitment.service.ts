@@ -1,5 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import OpenAI from 'openai';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import { Prisma } from '@prisma/client';
 import { CreateJobOfferDto, UpdateJobOfferDto } from './dto/job-offer.dto';
 import { CreateCandidateDto, UpdateCandidateDto } from './dto/candidate.dto';
@@ -7,10 +10,10 @@ import { CreateApplicationDto, UpdateApplicationDto } from './dto/application.dt
 import { CreateInterviewDto, UpdateInterviewDto } from './dto/interview.dto';
 import { CreateOnboardingDto, UpdateOnboardingDto } from './dto/onboarding.dto';
 
-import { MailService } from '../mail/mail.service';
-
 @Injectable()
 export class RecruitmentService {
+    private readonly logger = new Logger(RecruitmentService.name);
+
     constructor(
         private prisma: PrismaService,
         private mailService: MailService
@@ -202,31 +205,121 @@ export class RecruitmentService {
     }
 
     async updateApplicationStage(id: number, stage: string) {
-        return this.prisma.candidate_application.update({
+        const application = await this.prisma.candidate_application.update({
             where: { id },
             data: { stage, status: stage },
         });
-    }
 
-    async rejectApplication(id: number, sendEmail: boolean) {
-        const application = await this.prisma.candidate_application.update({
-            where: { id },
-            data: { stage: 'REJECTED', status: 'REJECTED' },
-            include: { candidate: true, job_offer: true },
-        });
-
-        if (sendEmail && application.candidate?.email && application.job_offer) {
-            this.mailService.sendRejectionEmail(
-                {
-                    firstName: application.candidate.first_name,
-                    lastName: application.candidate.last_name,
-                    email: application.candidate.email,
-                },
-                application.job_offer.title
-            ).catch(err => console.error('Failed to send rejection email', err));
+        if (stage === 'HIRED') {
+            await this.handleHiredCandidate(id);
         }
 
         return application;
+    }
+
+    /**
+     * Automatisation : Création compte employé + Onboarding
+     */
+    private async handleHiredCandidate(applicationId: number) {
+        try {
+            const application = await this.prisma.candidate_application.findUnique({
+                where: { id: applicationId },
+                include: { candidate: true, job_offer: true }
+            });
+
+            if (!application || !application.candidate) return;
+
+            const { candidate } = application;
+
+            // 1. Vérifier si l'utilisateur existe déjà
+            const existingUser = await this.prisma.user.findFirst({
+                where: { username: candidate.email }
+            });
+
+            if (existingUser) {
+                this.logger.log(`User already exists for candidate ${candidate.email}`);
+                return;
+            }
+
+            // 2. Créer le compte Utilisateur
+            const hashedPassword = await bcrypt.hash('Welcome123!', 10);
+            const newUser = await this.prisma.user.create({
+                data: {
+                    username: candidate.email,
+                    work_email: candidate.email,
+                    password: hashedPassword,
+                    full_name: `${candidate.first_name} ${candidate.last_name} `,
+                    role: 'ROLE_EMPLOYEE',
+                    active: true,
+                    hire_date: new Date(),
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                }
+            });
+
+            this.logger.log(`Created new user for hired candidate: ${newUser.username} `);
+
+            // 3. Créer le processus d'Onboarding
+            await this.prisma.onboarding_process.create({
+                data: {
+                    employee_id: newUser.id,
+                    status: 'PRE_BOARDING',
+                    start_date: new Date(),
+                    checklist: [
+                        { title: "Signature Contrat", done: false },
+                        { title: "Documents administratifs", done: false },
+                        { title: "Configuration Email", done: false },
+                        { title: "Préparation Matériel", done: false },
+                        { title: "Badge d'accès", done: false },
+                    ]
+                }
+            });
+
+            this.logger.log(`Started onboarding process for user: ${newUser.id} `);
+
+        } catch (error) {
+            this.logger.error('Error handling hired candidate automation', error);
+        }
+    }
+
+    async rejectApplication(id: number, sendEmail: boolean, addToTalentPool?: boolean) {
+        this.logger.log(`Rejecting application ${id}. addToTalentPool: ${addToTalentPool}`);
+
+        return this.prisma.$transaction(async (prisma) => {
+            const application = await prisma.candidate_application.update({
+                where: { id },
+                data: { stage: 'REJECTED', status: 'REJECTED' },
+                include: { candidate: true, job_offer: true },
+            });
+
+            // Add to Talent Pool if requested
+            const shouldAddToPool = addToTalentPool === true || String(addToTalentPool) === 'true';
+
+            if (shouldAddToPool && application.candidate) {
+                this.logger.log(`Adding candidate ${application.candidate.id} to talent pool`);
+                const updated = await prisma.candidate.update({
+                    where: { id: application.candidate.id },
+                    data: { is_in_talent_pool: true }
+                });
+                this.logger.log(`Candidate pooled: ${updated.is_in_talent_pool}`);
+            }
+
+            if (sendEmail && application.candidate?.email && application.job_offer) {
+                // Email sending shouldn't revert the transaction, so we do it outside or catch it?
+                // Sending inside transaction is risky if it takes time, but acceptable for now.
+                // Better: schedule it or fire-and-forget.
+                this.mailService.sendRejectionEmail(
+                    {
+                        firstName: application.candidate.first_name,
+                        lastName: application.candidate.last_name,
+                        email: application.candidate.email,
+                    },
+                    application.job_offer.title
+                ).catch(err => this.logger.error('Failed to send rejection email', err));
+            }
+
+            return application;
+        });
     }
 
     async deleteApplication(id: number) {

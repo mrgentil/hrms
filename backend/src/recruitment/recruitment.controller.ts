@@ -123,8 +123,14 @@ export class RecruitmentController {
     }
 
     @Put('applications/:id/reject')
-    rejectApplication(@Param('id', ParseIntPipe) id: number, @Body('sendEmail') sendEmail: boolean) {
-        return this.recruitmentService.rejectApplication(id, sendEmail);
+    rejectApplication(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: any
+    ) {
+        console.log('Reject Application Body:', body);
+        const sendEmail = body.sendEmail;
+        const addToTalentPool = body.addToTalentPool;
+        return this.recruitmentService.rejectApplication(id, sendEmail, addToTalentPool);
     }
 
     @Delete('applications/:id')

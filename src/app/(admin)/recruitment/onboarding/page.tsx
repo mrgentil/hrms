@@ -3,17 +3,35 @@
 import React, { useEffect, useState } from "react";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { OnboardingProcess, recruitmentService } from "@/services/recruitment.service";
-
-interface SimpleUser {
-    id: number;
-    full_name: string;
-}
+import { userService } from "@/services/userService";
+import { User } from "@/types/api";
 
 export default function OnboardingPage() {
     const [list, setList] = useState<OnboardingProcess[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [saving, setSaving] = useState(false);
+    const [selectedProcess, setSelectedProcess] = useState<OnboardingProcess | null>(null);
+
+    const handleToggleCheck = async (process: OnboardingProcess, index: number) => {
+        if (!process.checklist) return;
+
+        const newChecklist = [...process.checklist];
+        newChecklist[index].done = !newChecklist[index].done;
+
+        // Optimistic update
+        const updatedProcess = { ...process, checklist: newChecklist };
+        setList(list.map(p => p.id === process.id ? updatedProcess : p));
+        setSelectedProcess(updatedProcess);
+
+        try {
+            await recruitmentService.updateOnboarding(process.id, { checklist: newChecklist });
+        } catch (error) {
+            console.error("Failed to update checklist", error);
+            // Revert on error (could reload date)
+            loadData();
+        }
+    };
+    const [users, setUsers] = useState<User[]>([]);
 
     const [formData, setFormData] = useState({
         employeeId: 0,
@@ -21,22 +39,29 @@ export default function OnboardingPage() {
         startDate: "",
     });
 
-    // For demo, we'll use a simple list - in real app, fetch from users API
-    const [employees] = useState<SimpleUser[]>([
-        { id: 1, full_name: "Admin User" },
-        { id: 2, full_name: "HR Manager" },
-    ]);
-
     useEffect(() => {
         loadData();
+        loadUsers();
     }, []);
 
     const loadData = async () => {
         try {
             const data = await recruitmentService.getOnboardingList();
             setList(data);
+        } catch (error) {
+            console.error("Failed to load onboarding list", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadUsers = async () => {
+        try {
+            // Fetch users for dropdowns (limit 100 for now)
+            const response = await userService.getUsers({ limit: 100 });
+            setUsers(response.data);
+        } catch (error) {
+            console.error("Failed to load users", error);
         }
     };
 
@@ -162,7 +187,10 @@ export default function OnboardingPage() {
                                 </div>
 
                                 <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-                                    <button className="w-full py-2 text-sm text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors">
+                                    <button
+                                        onClick={() => setSelectedProcess(item)}
+                                        className="w-full py-2 text-sm text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors"
+                                    >
                                         Voir la checklist
                                     </button>
                                 </div>
@@ -189,11 +217,10 @@ export default function OnboardingPage() {
                                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
                                 >
                                     <option value={0}>-- Sélectionner --</option>
-                                    {employees.map((emp) => (
-                                        <option key={emp.id} value={emp.id}>{emp.full_name}</option>
+                                    {users.map((user) => (
+                                        <option key={user.id} value={user.id}>{user.full_name}</option>
                                     ))}
                                 </select>
-                                <p className="text-xs text-gray-500 mt-1">Note: En production, cette liste viendrait de l'API utilisateurs</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium mb-1">Mentor</label>
@@ -203,8 +230,8 @@ export default function OnboardingPage() {
                                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
                                 >
                                     <option value={0}>-- Aucun --</option>
-                                    {employees.map((emp) => (
-                                        <option key={emp.id} value={emp.id}>{emp.full_name}</option>
+                                    {users.map((user) => (
+                                        <option key={user.id} value={user.id}>{user.full_name}</option>
                                     ))}
                                 </select>
                             </div>
@@ -227,6 +254,44 @@ export default function OnboardingPage() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+            {/* Checklist Modal */}
+            {selectedProcess && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                                {selectedProcess.employee?.full_name}
+                            </h2>
+                            <button onClick={() => setSelectedProcess(null)} className="text-gray-500 hover:text-gray-700">
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <h3 className="font-semibold text-gray-700 dark:text-gray-300">Checklist d'intégration</h3>
+                            {selectedProcess.checklist?.map((item: any, index: number) => (
+                                <div key={index} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                    <input
+                                        type="checkbox"
+                                        checked={item.done}
+                                        onChange={() => handleToggleCheck(selectedProcess, index)}
+                                        className="h-5 w-5 text-primary rounded border-gray-300 focus:ring-primary"
+                                    />
+                                    <span className={item.done ? "line-through text-gray-400" : "text-gray-700 dark:text-gray-300"}>
+                                        {item.title}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-8 flex justify-end">
+                            <button onClick={() => setSelectedProcess(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                                Fermer
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

@@ -329,6 +329,45 @@ export default function ApplicationsPage() {
         }
     };
 
+    const handleActionStageChange = async (applicationId: number, newStage: string) => {
+        try {
+            if (newStage === 'REJECTED') {
+                await recruitmentService.rejectApplication(applicationId, true);
+            } else {
+                await recruitmentService.updateApplicationStage(applicationId, newStage);
+            }
+            loadData();
+            setSelectedApplication(null);
+        } catch (error) {
+            console.error("Failed to update status", error);
+            alert("Erreur lors de la mise à jour du statut");
+        }
+    };
+
+    const handleDeleteApplication = async (applicationId: number) => {
+        try {
+            await recruitmentService.deleteApplication(applicationId);
+            loadData();
+            setSelectedApplication(null);
+        } catch (error) {
+            console.error("Failed to delete application", error);
+            alert("Erreur lors de la suppression");
+        }
+    };
+
+    const handleRejectToPool = async (applicationId: number) => {
+        try {
+            // Rejeter et ajouter au vivier
+            await recruitmentService.rejectApplication(applicationId, true, true);
+            alert("Candidat rejeté et ajouté au vivier de talents avec succès.");
+            loadData();
+            setSelectedApplication(null);
+        } catch (error) {
+            console.error("Failed to reject to pool", error);
+            alert("Erreur lors de l'opération");
+        }
+    };
+
     const findContainer = (id: number | string) => {
         if (stages.find(s => s.id === id)) {
             return id as string;
@@ -632,17 +671,9 @@ export default function ApplicationsPage() {
                     isOpen={!!selectedApplication}
                     onClose={() => setSelectedApplication(null)}
                     application={selectedApplication}
-                    onStageChange={handleStageChange}
-                    onDelete={async (id) => {
-                        try {
-                            await recruitmentService.deleteApplication(id);
-                            setSelectedApplication(null);
-                            loadData();
-                        } catch (error) {
-                            console.error("Failed to delete application", error);
-                            alert("Erreur lors de la suppression");
-                        }
-                    }}
+                    onStageChange={handleActionStageChange}
+                    onDelete={handleDeleteApplication}
+                    onRejectToPool={handleRejectToPool}
                 />
             )}
 

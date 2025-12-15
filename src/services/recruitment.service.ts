@@ -237,8 +237,8 @@ class RecruitmentService {
         return response.data;
     }
 
-    async rejectApplication(applicationId: number, sendEmail: boolean): Promise<CandidateApplication> {
-        const response = await api.put(`${this.baseUrl}/applications/${applicationId}/reject`, { sendEmail });
+    async rejectApplication(id: number, sendEmail: boolean = true, addToTalentPool: boolean = false): Promise<CandidateApplication> {
+        const response = await api.put(`${this.baseUrl}/applications/${id}/reject`, { sendEmail, addToTalentPool });
         return response.data;
     }
 

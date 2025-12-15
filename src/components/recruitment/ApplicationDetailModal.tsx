@@ -28,6 +28,7 @@ interface ApplicationDetailModalProps {
     };
     onStageChange: (applicationId: number, newStage: string) => void;
     onDelete?: (applicationId: number) => void;
+    onRejectToPool?: (applicationId: number) => void;
 }
 
 export default function ApplicationDetailModal({
@@ -36,6 +37,7 @@ export default function ApplicationDetailModal({
     application,
     onStageChange,
     onDelete,
+    onRejectToPool,
 }: ApplicationDetailModalProps) {
     if (!isOpen || !application) return null;
 
@@ -209,6 +211,19 @@ export default function ApplicationDetailModal({
                             title="Supprimer la candidature"
                         >
                             🗑️
+                        </button>
+                    )}
+                    {onRejectToPool && application.stage !== 'REJECTED' && (
+                        <button
+                            onClick={() => {
+                                if (window.confirm("Voulez-vous rejeter ce candidat tout en l'ajoutant au Vivier de Talents ?")) {
+                                    onRejectToPool(application.id);
+                                }
+                            }}
+                            className="px-4 py-2.5 border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
+                            title="Rejeter et ajouter au vivier"
+                        >
+                            📥 Rejeter & Vivier
                         </button>
                     )}
                 </div>
