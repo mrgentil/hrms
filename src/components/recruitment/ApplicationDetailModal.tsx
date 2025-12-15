@@ -27,6 +27,7 @@ interface ApplicationDetailModalProps {
         score_breakdown?: ScoreBreakdown;
     };
     onStageChange: (applicationId: number, newStage: string) => void;
+    onDelete?: (applicationId: number) => void;
 }
 
 export default function ApplicationDetailModal({
@@ -34,6 +35,7 @@ export default function ApplicationDetailModal({
     onClose,
     application,
     onStageChange,
+    onDelete,
 }: ApplicationDetailModalProps) {
     if (!isOpen || !application) return null;
 
@@ -166,8 +168,8 @@ export default function ApplicationDetailModal({
                                     key={stage}
                                     onClick={() => onStageChange(application.id, stage)}
                                     className={`px-3 py-1.5 rounded-full text-sm transition ${application.stage === stage
-                                            ? 'bg-primary text-white'
-                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                        ? 'bg-primary text-white'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                         }`}
                                 >
                                     {stageLabels[stage]}
@@ -195,6 +197,20 @@ export default function ApplicationDetailModal({
                     >
                         Voir profil complet →
                     </Link>
+
+                    {onDelete && (
+                        <button
+                            onClick={() => {
+                                if (window.confirm("Êtes-vous sûr de vouloir supprimer cette candidature ? Cette action est irréversible.")) {
+                                    onDelete(application.id);
+                                }
+                            }}
+                            className="px-4 py-2.5 border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors flex items-center gap-2"
+                            title="Supprimer la candidature"
+                        >
+                            🗑️
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

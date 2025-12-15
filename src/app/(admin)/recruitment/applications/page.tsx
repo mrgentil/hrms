@@ -142,6 +142,7 @@ function KanbanColumn({ stage, applications, onClickApp }: { stage: KanbanStage;
 export default function ApplicationsPage() {
     const [stages, setStages] = useState<KanbanStage[]>([]);
     const [jobs, setJobs] = useState<JobOffer[]>([]);
+    const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [showCandidateModal, setShowCandidateModal] = useState(false);
     const [showApplicationModal, setShowApplicationModal] = useState(false);
@@ -426,9 +427,28 @@ export default function ApplicationsPage() {
                         onClick={() => setShowApplicationModal(true)}
                         className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary/90"
                     >
-                        + Nouvelle candidature
+                        <span className="hidden sm:inline">Nouvelle candidature</span>
                     </button>
                 </div>
+            </div>
+
+            {/* Filtre par offre d'emploi */}
+            <div className="mb-6 flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Filtrer par offre :
+                </label>
+                <select
+                    value={selectedJobId || ""}
+                    onChange={(e) => setSelectedJobId(e.target.value ? parseInt(e.target.value) : null)}
+                    className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none min-w-[250px]"
+                >
+                    <option value="">Toutes les offres</option>
+                    {jobs.map(job => (
+                        <option key={job.id} value={job.id}>
+                            {job.title} ({job.applications?.length || 0} candidats)
+                        </option>
+                    ))}
+                </select>
             </div>
 
             <DndContext
@@ -440,14 +460,21 @@ export default function ApplicationsPage() {
             >
                 <div className="flex-1 overflow-x-auto pb-4">
                     <div className="flex gap-4 min-w-max h-full">
-                        {stages.map((stage) => (
-                            <KanbanColumn
-                                key={stage.id}
-                                stage={stage}
-                                applications={stage.applications}
-                                onClickApp={(app) => setSelectedApplication(app)}
-                            />
-                        ))}
+                        {stages.map((stage) => {
+                            // Filter applications based on selected Job ID
+                            const filteredApps = selectedJobId
+                                ? stage.applications.filter(app => app.job_offer_id === selectedJobId)
+                                : stage.applications;
+
+                            return (
+                                <KanbanColumn
+                                    key={stage.id}
+                                    stage={stage}
+                                    applications={filteredApps}
+                                    onClickApp={(app) => setSelectedApplication(app)}
+                                />
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -602,12 +629,19 @@ export default function ApplicationsPage() {
             {/* Modal Détail Application */}
             {selectedApplication && (
                 <ApplicationDetailModal
-                    isOpen={!!selectedApplication && !showInterviewModal} // Hide if interview modal is open
+                    isOpen={!!selectedApplication}
                     onClose={() => setSelectedApplication(null)}
                     application={selectedApplication}
-                    onStageChange={(appId, newStage) => {
-                        handleStageChange(appId, newStage);
-                        setSelectedApplication(null);
+                    onStageChange={handleStageChange}
+                    onDelete={async (id) => {
+                        try {
+                            await recruitmentService.deleteApplication(id);
+                            setSelectedApplication(null);
+                            loadData();
+                        } catch (error) {
+                            console.error("Failed to delete application", error);
+                            alert("Erreur lors de la suppression");
+                        }
                     }}
                 />
             )}

@@ -162,8 +162,8 @@ export default function CVUploadModal({ isOpen, onClose, jobs, onComplete }: CVU
                                                     {result.score !== undefined && (
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${result.score >= 70 ? 'bg-green-100 text-green-700' :
-                                                                    result.score >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                                                                        'bg-red-100 text-red-700'
+                                                                result.score >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                                                                    'bg-red-100 text-red-700'
                                                                 }`}>
                                                                 Score: {result.score}
                                                             </span>
@@ -205,9 +205,9 @@ export default function CVUploadModal({ isOpen, onClose, jobs, onComplete }: CVU
                                     disabled={uploading}
                                 >
                                     <option value="">-- Sélectionner une offre --</option>
-                                    {jobs.filter(j => j.status === "PUBLISHED").map((job) => (
+                                    {jobs.map((job) => (
                                         <option key={job.id} value={job.id}>
-                                            {job.title} ({job.department})
+                                            {job.title} ({job.department}) - {job.status === 'PUBLISHED' ? '✅ Publiée' : job.status === 'DRAFT' ? '📝 Brouillon' : '🔒 Fermée'}
                                         </option>
                                     ))}
                                 </select>

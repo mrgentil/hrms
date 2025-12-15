@@ -161,6 +161,12 @@ class RecruitmentService {
         await api.delete(`${this.baseUrl}/jobs/${id}`);
     }
 
+    async extractSkills(description: string): Promise<string[]> {
+        const response = await api.post(`${this.baseUrl}/job-offers/extract-skills`, { description });
+        return response.data.skills || [];
+    }
+
+
     // --- SCORING ---
     async getCandidateRanking(jobOfferId: number): Promise<RankedCandidate[]> {
         const response = await api.get(`${this.baseUrl}/jobs/${jobOfferId}/ranking`);
@@ -234,6 +240,10 @@ class RecruitmentService {
     async rejectApplication(applicationId: number, sendEmail: boolean): Promise<CandidateApplication> {
         const response = await api.put(`${this.baseUrl}/applications/${applicationId}/reject`, { sendEmail });
         return response.data;
+    }
+
+    async deleteApplication(applicationId: number): Promise<void> {
+        await api.delete(`${this.baseUrl}/applications/${applicationId}`);
     }
 
     // --- INTERVIEWS ---

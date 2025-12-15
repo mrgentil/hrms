@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { RecruitmentService } from './recruitment.service';
 import { ScoringService } from './scoring.service';
+import { AiService } from './ai.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateJobOfferDto, UpdateJobOfferDto } from './dto/job-offer.dto';
 import { CreateCandidateDto, UpdateCandidateDto } from './dto/candidate.dto';
@@ -25,6 +26,7 @@ export class RecruitmentController {
     constructor(
         private readonly recruitmentService: RecruitmentService,
         private readonly scoringService: ScoringService,
+        private readonly aiService: AiService,
     ) { }
 
     // ===================== JOB OFFERS =====================
@@ -41,6 +43,12 @@ export class RecruitmentController {
     @Post('jobs')
     createJob(@Body() dto: CreateJobOfferDto) {
         return this.recruitmentService.createJobOffer(dto);
+    }
+
+    @Post('job-offers/extract-skills')
+    async extractSkills(@Body('description') description: string) {
+        const skills = await this.aiService.extractSkillsFromText(description);
+        return { skills };
     }
 
     @Put('jobs/:id')
@@ -115,11 +123,13 @@ export class RecruitmentController {
     }
 
     @Put('applications/:id/reject')
-    rejectApplication(
-        @Param('id', ParseIntPipe) id: number,
-        @Body('sendEmail') sendEmail: boolean,
-    ) {
+    rejectApplication(@Param('id', ParseIntPipe) id: number, @Body('sendEmail') sendEmail: boolean) {
         return this.recruitmentService.rejectApplication(id, sendEmail);
+    }
+
+    @Delete('applications/:id')
+    deleteApplication(@Param('id', ParseIntPipe) id: number) {
+        return this.recruitmentService.deleteApplication(id);
     }
 
     @Post('applications/:id/score')

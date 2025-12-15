@@ -10,6 +10,7 @@ export default function JobOffersPage() {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [extracting, setExtracting] = useState(false);
     const [editingJob, setEditingJob] = useState<JobOffer | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
     const [formData, setFormData] = useState({
@@ -58,6 +59,7 @@ export default function JobOffersPage() {
     };
 
     const openEditModal = (job: JobOffer) => {
+        console.log("Opening edit modal for job:", job);
         setEditingJob(job);
         setFormData({
             title: job.title,
@@ -66,22 +68,26 @@ export default function JobOffersPage() {
             location: job.location,
             contract_type: job.contract_type,
             status: job.status,
-            required_skills: job.required_skills?.join(", ") || "",
+            required_skills: (job.required_skills && Array.isArray(job.required_skills)) ? job.required_skills.join(", ") : "",
             min_experience: job.min_experience || 0,
         });
         setShowModal(true);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: any) => {
         e.preventDefault();
+
+        console.log("Submitting Job Data start...");
+
         setSaving(true);
         try {
             const dataToSave = {
                 ...formData,
                 required_skills: formData.required_skills
-                    ? formData.required_skills.split(",").map(s => s.trim()).filter(Boolean)
+                    ? (formData.required_skills as string).split(",").map(s => s.trim()).filter(Boolean)
                     : [],
             };
+            console.log("Submitting Job Data:", dataToSave);
 
             if (editingJob) {
                 await recruitmentService.updateJobOffer(editingJob.id, dataToSave);
@@ -263,7 +269,6 @@ export default function JobOffersPage() {
                                 </label>
                                 <input
                                     type="text"
-                                    required
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -276,7 +281,6 @@ export default function JobOffersPage() {
                                 </label>
                                 <input
                                     type="text"
-                                    required
                                     value={formData.department}
                                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -289,7 +293,6 @@ export default function JobOffersPage() {
                                 </label>
                                 <input
                                     type="text"
-                                    required
                                     value={formData.location}
                                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -338,6 +341,50 @@ export default function JobOffersPage() {
                                     rows={3}
                                     placeholder="Décrivez le poste..."
                                 />
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        if (!formData.description) {
+                                            alert("Veuillez d'abord saisir une description du poste.");
+                                            return;
+                                        }
+                                        setExtracting(true);
+                                        try {
+                                            const skills = await recruitmentService.extractSkills(formData.description);
+                                            if (skills.length > 0) {
+                                                setFormData({ ...formData, required_skills: skills.join(", ") });
+                                                alert(`${skills.length} compétences extraites avec succès !`);
+                                            } else {
+                                                alert("Aucune compétence n'a pu être extraite.");
+                                            }
+                                        } catch (error: any) {
+                                            console.error(error);
+                                            const errorMessage = error.response?.data?.message || error.message || "Erreur lors de l'extraction des compétences.";
+                                            alert(errorMessage);
+                                        } finally {
+                                            setExtracting(false);
+                                        }
+                                    }}
+                                    disabled={extracting || !formData.description}
+                                    className="mt-2 px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                >
+                                    {extracting ? (
+                                        <>
+                                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Extraction en cours...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                            Extraire les compétences (AI)
+                                        </>
+                                    )}
+                                </button>
                             </div>
 
                             {/* Scoring fields */}
@@ -380,8 +427,12 @@ export default function JobOffersPage() {
                                     Annuler
                                 </button>
                                 <button
-                                    type="submit"
+                                    type="button"
                                     disabled={saving}
+                                    onClick={(e) => {
+                                        console.log('MANUAL Submit button clicked');
+                                        handleSubmit(e);
+                                    }}
                                     className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
                                 >
                                     {saving ? "Enregistrement..." : editingJob ? "Enregistrer" : "Créer l'offre"}

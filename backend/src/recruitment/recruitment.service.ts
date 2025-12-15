@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { CreateJobOfferDto, UpdateJobOfferDto } from './dto/job-offer.dto';
 import { CreateCandidateDto, UpdateCandidateDto } from './dto/candidate.dto';
 import { CreateApplicationDto, UpdateApplicationDto } from './dto/application.dto';
@@ -48,12 +49,15 @@ export class RecruitmentService {
                 contract_type: dto.contractType,
                 status: dto.status || 'DRAFT',
                 posted_date: dto.postedDate ? new Date(dto.postedDate) : null,
+                required_skills: dto.requiredSkills || [],
+                min_experience: dto.minExperience || 0,
+                scoring_criteria: dto.scoringCriteria || Prisma.JsonNull,
             },
         });
     }
 
     async updateJobOffer(id: number, dto: UpdateJobOfferDto) {
-        return this.prisma.job_offer.update({
+        const result = await this.prisma.job_offer.update({
             where: { id },
             data: {
                 title: dto.title,
@@ -63,6 +67,9 @@ export class RecruitmentService {
                 contract_type: dto.contractType,
                 status: dto.status,
                 posted_date: dto.postedDate ? new Date(dto.postedDate) : undefined,
+                required_skills: dto.requiredSkills !== undefined ? dto.requiredSkills : undefined,
+                min_experience: dto.minExperience !== undefined ? dto.minExperience : undefined,
+                scoring_criteria: dto.scoringCriteria !== undefined ? dto.scoringCriteria : undefined,
             },
         });
     }
@@ -220,6 +227,18 @@ export class RecruitmentService {
         }
 
         return application;
+    }
+
+    async deleteApplication(id: number) {
+        // Supprimer d'abord les entretiens liés
+        await this.prisma.job_interview.deleteMany({
+            where: { application_id: id }
+        });
+
+        // Supprimer la candidature
+        return this.prisma.candidate_application.delete({
+            where: { id }
+        });
     }
 
     // ===================== INTERVIEWS =====================
