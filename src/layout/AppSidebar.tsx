@@ -619,6 +619,14 @@ const hrmsModulesNavItems: NavItem[] = [
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
+        name: "Scoring Candidats",
+        path: "/recruitment/scoring",
+        pro: false,
+        new: true,
+        requiredPermission: "recruitment.view",
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
         name: "Entretiens",
         path: "/recruitment/interviews",
         pro: false,

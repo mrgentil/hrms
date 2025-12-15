@@ -31,6 +31,10 @@ export class CreateCandidateDto {
     rating?: number;
 
     @IsOptional()
+    @IsInt()
+    yearsExperience?: number;
+
+    @IsOptional()
     @IsBoolean()
     isInTalentPool?: boolean;
 }
@@ -67,6 +71,10 @@ export class UpdateCandidateDto {
     @IsOptional()
     @IsInt()
     rating?: number;
+
+    @IsOptional()
+    @IsInt()
+    yearsExperience?: number;
 
     @IsOptional()
     @IsBoolean()

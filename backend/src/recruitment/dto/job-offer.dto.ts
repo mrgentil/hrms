@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsArray, IsInt, IsObject } from 'class-validator';
 
 export class CreateJobOfferDto {
     @IsString()
@@ -24,6 +24,20 @@ export class CreateJobOfferDto {
     @IsOptional()
     @IsDateString()
     postedDate?: string;
+
+    // Scoring fields
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    requiredSkills?: string[];
+
+    @IsOptional()
+    @IsInt()
+    minExperience?: number;
+
+    @IsOptional()
+    @IsObject()
+    scoringCriteria?: Record<string, number>;
 }
 
 export class UpdateJobOfferDto {
@@ -54,4 +68,19 @@ export class UpdateJobOfferDto {
     @IsOptional()
     @IsDateString()
     postedDate?: string;
+
+    // Scoring fields
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    requiredSkills?: string[];
+
+    @IsOptional()
+    @IsInt()
+    minExperience?: number;
+
+    @IsOptional()
+    @IsObject()
+    scoringCriteria?: Record<string, number>;
 }
+

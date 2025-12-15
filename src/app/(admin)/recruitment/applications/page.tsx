@@ -2,7 +2,142 @@
 
 import React, { useEffect, useState } from "react";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import { recruitmentService, KanbanStage, JobOffer, Candidate } from "@/services/recruitment.service";
+import { recruitmentService, KanbanStage, JobOffer, Candidate, CandidateApplication } from "@/services/recruitment.service";
+import CVUploadModal from "@/components/recruitment/CVUploadModal";
+import ApplicationDetailModal from "@/components/recruitment/ApplicationDetailModal";
+import ScheduleInterviewModal from "@/components/recruitment/ScheduleInterviewModal";
+import RejectApplicationModal from "@/components/recruitment/RejectApplicationModal";
+import {
+    DndContext,
+    DragOverlay,
+    closestCorners,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragStartEvent,
+    DragOverEvent,
+    DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+// Draggable Application Card
+function SortableApplication({ application, onClick, getStageColor }: { application: CandidateApplication; onClick: (app: CandidateApplication) => void; getStageColor?: any }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: application.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            onClick={() => onClick(application)}
+            className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing mb-3"
+        >
+            <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                    {application.candidate?.first_name?.charAt(0) || "?"}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white text-sm truncate">
+                        {application.candidate?.first_name} {application.candidate?.last_name}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">{application.job_offer?.title}</p>
+                </div>
+                {application.score !== undefined && application.score !== null && (
+                    <div
+                        className={`px-2 py-1 rounded-full text-xs font-bold ${application.score >= 75
+                            ? "bg-green-100 text-green-700"
+                            : application.score >= 50
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                        title={`Score: ${application.score}/100`}
+                    >
+                        {application.score}
+                    </div>
+                )}
+            </div>
+            <div className="flex justify-between items-center mt-2">
+                <span className="text-xs text-gray-400">
+                    {new Date(application.created_at).toLocaleDateString()}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+// Droppable Column
+function KanbanColumn({ stage, applications, onClickApp }: { stage: KanbanStage; applications: CandidateApplication[]; onClickApp: (app: CandidateApplication) => void }) {
+    const { setNodeRef } = useSortable({ id: stage.id });
+
+    const getStageColor = (stageId: string) => {
+        const colors: Record<string, string> = {
+            NEW: "bg-blue-500",
+            SCREENING: "bg-yellow-500",
+            INTERVIEW: "bg-purple-500",
+            OFFER: "bg-orange-500",
+            HIRED: "bg-green-500",
+            REJECTED: "bg-red-500",
+        };
+        return colors[stageId] || "bg-gray-500";
+    };
+
+    return (
+        <div key={stage.id} className="w-72 flex-shrink-0 flex flex-col h-full">
+            <div className={`h-1 ${getStageColor(stage.id)} rounded-t-lg`}></div>
+            <div ref={setNodeRef} className="bg-gray-100 dark:bg-gray-800 rounded-b-lg p-4 flex-1">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{stage.name}</h3>
+                    <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-1 rounded-full">
+                        {applications.length}
+                    </span>
+                </div>
+
+                <div className="space-y-3 min-h-[200px]">
+                    <SortableContext
+                        id={stage.id}
+                        items={applications.map((app) => app.id)}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        {applications.map((app) => (
+                            <SortableApplication
+                                key={app.id}
+                                application={app}
+                                onClick={onClickApp}
+                            />
+                        ))}
+                    </SortableContext>
+                    {applications.length === 0 && (
+                        <div className="text-center text-gray-400 text-sm py-8">
+                            Déposez ici
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default function ApplicationsPage() {
     const [stages, setStages] = useState<KanbanStage[]>([]);
@@ -10,8 +145,17 @@ export default function ApplicationsPage() {
     const [loading, setLoading] = useState(true);
     const [showCandidateModal, setShowCandidateModal] = useState(false);
     const [showApplicationModal, setShowApplicationModal] = useState(false);
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [showInterviewModal, setShowInterviewModal] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+
+    // Workflow tracking
+    const [pendingStageChange, setPendingStageChange] = useState<{ applicationId: number, stage: string } | null>(null);
+
+    const [selectedApplication, setSelectedApplication] = useState<CandidateApplication | null>(null);
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [saving, setSaving] = useState(false);
+    const [activeId, setActiveId] = useState<number | null>(null);
 
     const [candidateForm, setCandidateForm] = useState({
         first_name: "",
@@ -25,6 +169,17 @@ export default function ApplicationsPage() {
         jobOfferId: 0,
         candidateId: 0,
     });
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     useEffect(() => {
         loadData();
@@ -61,7 +216,6 @@ export default function ApplicationsPage() {
             setCandidates([...candidates, newCandidate]);
             setShowCandidateModal(false);
             setCandidateForm({ first_name: "", last_name: "", email: "", phone: "", skills: "" });
-            // Open application modal with this candidate pre-selected
             setApplicationForm({ ...applicationForm, candidateId: newCandidate.id });
             setShowApplicationModal(true);
         } catch (error) {
@@ -93,24 +247,140 @@ export default function ApplicationsPage() {
     };
 
     const handleStageChange = async (applicationId: number, newStage: string) => {
+        // --- WORKFLOW AUTOMATIONS ---
+
+        // 1. Move to INTERVIEW -> Open Modal
+        if (newStage === "INTERVIEW") {
+            setPendingStageChange({ applicationId, stage: newStage });
+            // Find application to pass to modal
+            let app: CandidateApplication | undefined;
+            for (const stage of stages) {
+                const found = stage.applications.find(a => a.id === applicationId);
+                if (found) app = found;
+            }
+            if (app) setSelectedApplication(app);
+            setShowInterviewModal(true);
+            return; // Stop here, wait for modal confirmation
+        }
+
+        // 2. Move to HIRED -> Trigger Onboarding
+        if (newStage === "HIRED") {
+            if (confirm("🎉 Félicitations ! Voulez-vous démarrer le processus d'Onboarding pour ce candidat ?")) {
+                await proceedWithStageChange(applicationId, newStage);
+                // Trigger onboarding logic (mock or real)
+                alert("Processus d'Onboarding initié ! Le candidat a été converti en employé.");
+                return;
+            }
+        }
+
+        // 3. Move to REJECTED -> Open Reject Modal
+        if (newStage === "REJECTED") {
+            setPendingStageChange({ applicationId, stage: newStage });
+            let app: CandidateApplication | undefined;
+            for (const stage of stages) {
+                const found = stage.applications.find(a => a.id === applicationId);
+                if (found) app = found;
+            }
+            if (app) setSelectedApplication(app);
+            setShowRejectModal(true);
+            return;
+        }
+
+        await proceedWithStageChange(applicationId, newStage);
+    };
+
+    const proceedWithStageChange = async (applicationId: number, newStage: string) => {
         try {
+            // Optimistic update
+            const updatedStages = stages.map(stage => {
+                // Remove from old stage
+                const app = stage.applications.find(a => a.id === applicationId);
+                if (app) {
+                    return { ...stage, applications: stage.applications.filter(a => a.id !== applicationId) };
+                }
+                return stage;
+            });
+
+            // Find the app separately to add it to new stage
+            let movedApp: CandidateApplication | undefined;
+            for (const stage of stages) {
+                const found = stage.applications.find(a => a.id === applicationId);
+                if (found) movedApp = { ...found, stage: newStage };
+            }
+
+            if (movedApp) {
+                const finalStages = updatedStages.map(stage => {
+                    if (stage.id === newStage) {
+                        return { ...stage, applications: [...stage.applications, movedApp!] };
+                    }
+                    return stage;
+                });
+                setStages(finalStages);
+            }
+
+            // API Call
             await recruitmentService.updateApplicationStage(applicationId, newStage);
+            // Reload to ensure consistency (optional if optimistic is perfect)
             loadData();
         } catch (error) {
             console.error("Failed to update stage", error);
+            loadData(); // Revert on error
         }
     };
 
-    const getStageColor = (stageId: string) => {
-        const colors: Record<string, string> = {
-            NEW: "bg-blue-500",
-            SCREENING: "bg-yellow-500",
-            INTERVIEW: "bg-purple-500",
-            OFFER: "bg-orange-500",
-            HIRED: "bg-green-500",
-            REJECTED: "bg-red-500",
-        };
-        return colors[stageId] || "bg-gray-500";
+    const findContainer = (id: number | string) => {
+        if (stages.find(s => s.id === id)) {
+            return id as string;
+        }
+
+        for (const stage of stages) {
+            if (stage.applications.find(a => a.id === id)) {
+                return stage.id;
+            }
+        }
+        return null;
+    };
+
+    const handleDragStart = (event: DragStartEvent) => {
+        const { active } = event;
+        setActiveId(active.id as number);
+    };
+
+    const handleDragOver = (event: DragOverEvent) => {
+        const { active, over } = event;
+        const overId = over?.id;
+
+        if (!overId || active.id === overId) return;
+
+        const activeContainer = findContainer(active.id);
+        const overContainer = findContainer(overId);
+
+        if (!activeContainer || !overContainer || activeContainer === overContainer) {
+            return;
+        }
+
+        // Implementation for moving visually during drag (optional, complexity reduced for now)
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        const activeId = active.id as number;
+        const overId = over?.id;
+
+        if (!overId) {
+            setActiveId(null);
+            return;
+        }
+
+        const activeContainer = findContainer(activeId);
+        const overContainer = findContainer(overId);
+
+        if (activeContainer && overContainer && activeContainer !== overContainer) {
+            // Moved to a different column
+            handleStageChange(activeId, overContainer as string);
+        }
+
+        setActiveId(null);
     };
 
     if (loading) {
@@ -120,6 +390,11 @@ export default function ApplicationsPage() {
             </div>
         );
     }
+
+    // Identify active application for overlay
+    const activeApplication = activeId
+        ? stages.flatMap(s => s.applications).find(a => a.id === activeId)
+        : null;
 
     return (
         <div className="h-full flex flex-col">
@@ -131,10 +406,16 @@ export default function ApplicationsPage() {
                         Pipeline de recrutement
                     </h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Gérez vos candidatures et déplacez-les entre les étapes.
+                        Gérez vos candidatures et déplacez-les entre les étapes par simple glisser-déposer.
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    <button
+                        onClick={() => setShowUploadModal(true)}
+                        className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 flex items-center gap-2"
+                    >
+                        📁 Importer CVs
+                    </button>
                     <button
                         onClick={() => setShowCandidateModal(true)}
                         className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
@@ -150,60 +431,44 @@ export default function ApplicationsPage() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-x-auto pb-4">
-                <div className="flex gap-4 min-w-max">
-                    {stages.map((stage) => (
-                        <div key={stage.id} className="w-72 flex-shrink-0">
-                            <div className={`h-1 ${getStageColor(stage.id)} rounded-t-lg`}></div>
-                            <div className="bg-gray-100 dark:bg-gray-800 rounded-b-lg p-4">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="font-semibold text-gray-900 dark:text-white">{stage.name}</h3>
-                                    <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-1 rounded-full">
-                                        {stage.applications.length}
-                                    </span>
-                                </div>
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCorners}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+            >
+                <div className="flex-1 overflow-x-auto pb-4">
+                    <div className="flex gap-4 min-w-max h-full">
+                        {stages.map((stage) => (
+                            <KanbanColumn
+                                key={stage.id}
+                                stage={stage}
+                                applications={stage.applications}
+                                onClickApp={(app) => setSelectedApplication(app)}
+                            />
+                        ))}
+                    </div>
+                </div>
 
-                                <div className="space-y-3 min-h-[200px]">
-                                    {stage.applications.map((app) => (
-                                        <div
-                                            key={app.id}
-                                            className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow"
-                                        >
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                                    {app.candidate?.first_name?.charAt(0) || "?"}
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium text-gray-900 dark:text-white text-sm">
-                                                        {app.candidate?.first_name} {app.candidate?.last_name}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500">{app.job_offer?.title}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex justify-end mt-2">
-                                                <select
-                                                    value={app.stage}
-                                                    onChange={(e) => handleStageChange(app.id, e.target.value)}
-                                                    className="text-xs px-2 py-1 border rounded dark:bg-gray-600 dark:border-gray-500"
-                                                >
-                                                    {stages.map((s) => (
-                                                        <option key={s.id} value={s.id}>{s.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {stage.applications.length === 0 && (
-                                        <div className="text-center text-gray-400 text-sm py-8">
-                                            Aucune candidature
-                                        </div>
-                                    )}
+                <DragOverlay>
+                    {activeApplication ? (
+                        <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-xl border-2 border-primary rotate-3 cursor-grabbing opacity-90 w-72">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                    {activeApplication.candidate?.first_name?.charAt(0) || "?"}
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-900 dark:text-white text-sm">
+                                        {activeApplication.candidate?.first_name} {activeApplication.candidate?.last_name}
+                                    </p>
+                                    <p className="text-xs text-gray-500">{activeApplication.job_offer?.title}</p>
                                 </div>
                             </div>
                         </div>
-                    ))}
-                </div>
-            </div>
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
 
             {/* Modal Nouveau Candidat */}
             {showCandidateModal && (
@@ -325,6 +590,61 @@ export default function ApplicationsPage() {
                     </div>
                 </div>
             )}
+
+            {/* Modal Import CVs */}
+            <CVUploadModal
+                isOpen={showUploadModal}
+                onClose={() => setShowUploadModal(false)}
+                jobs={jobs}
+                onComplete={loadData}
+            />
+
+            {/* Modal Détail Application */}
+            {selectedApplication && (
+                <ApplicationDetailModal
+                    isOpen={!!selectedApplication && !showInterviewModal} // Hide if interview modal is open
+                    onClose={() => setSelectedApplication(null)}
+                    application={selectedApplication}
+                    onStageChange={(appId, newStage) => {
+                        handleStageChange(appId, newStage);
+                        setSelectedApplication(null);
+                    }}
+                />
+            )}
+
+            {/* Modal Planification Entretien */}
+            {selectedApplication && (
+                <ScheduleInterviewModal
+                    isOpen={showInterviewModal}
+                    onClose={() => {
+                        setShowInterviewModal(false);
+                        setPendingStageChange(null);
+                    }}
+                    application={selectedApplication}
+                    onConfirm={() => {
+                        if (pendingStageChange) {
+                            proceedWithStageChange(pendingStageChange.applicationId, pendingStageChange.stage);
+                        }
+                    }}
+                />
+            )}
+
+            {/* Modal Refus */}
+            {selectedApplication && (
+                <RejectApplicationModal
+                    isOpen={showRejectModal}
+                    onClose={() => {
+                        setShowRejectModal(false);
+                        setPendingStageChange(null);
+                    }}
+                    application={selectedApplication}
+                    onConfirm={() => {
+                        loadData();
+                    }}
+                />
+            )}
         </div>
     );
 }
+
+

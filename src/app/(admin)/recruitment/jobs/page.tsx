@@ -10,6 +10,8 @@ export default function JobOffersPage() {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [editingJob, setEditingJob] = useState<JobOffer | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -17,6 +19,8 @@ export default function JobOffersPage() {
         location: "",
         contract_type: "CDI",
         status: "DRAFT",
+        required_skills: "",
+        min_experience: 0,
     });
 
     useEffect(() => {
@@ -34,19 +38,75 @@ export default function JobOffersPage() {
         }
     };
 
-    const handleCreate = async (e: React.FormEvent) => {
+    const resetForm = () => {
+        setFormData({
+            title: "",
+            description: "",
+            department: "",
+            location: "",
+            contract_type: "CDI",
+            status: "DRAFT",
+            required_skills: "",
+            min_experience: 0,
+        });
+        setEditingJob(null);
+    };
+
+    const openCreateModal = () => {
+        resetForm();
+        setShowModal(true);
+    };
+
+    const openEditModal = (job: JobOffer) => {
+        setEditingJob(job);
+        setFormData({
+            title: job.title,
+            description: job.description || "",
+            department: job.department,
+            location: job.location,
+            contract_type: job.contract_type,
+            status: job.status,
+            required_skills: job.required_skills?.join(", ") || "",
+            min_experience: job.min_experience || 0,
+        });
+        setShowModal(true);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
         try {
-            await recruitmentService.createJobOffer(formData);
+            const dataToSave = {
+                ...formData,
+                required_skills: formData.required_skills
+                    ? formData.required_skills.split(",").map(s => s.trim()).filter(Boolean)
+                    : [],
+            };
+
+            if (editingJob) {
+                await recruitmentService.updateJobOffer(editingJob.id, dataToSave);
+            } else {
+                await recruitmentService.createJobOffer(dataToSave);
+            }
             setShowModal(false);
-            setFormData({ title: "", description: "", department: "", location: "", contract_type: "CDI", status: "DRAFT" });
+            resetForm();
             loadJobs();
         } catch (error) {
             console.error(error);
-            alert("Erreur lors de la création");
+            alert("Erreur lors de la sauvegarde");
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleDelete = async (jobId: number) => {
+        try {
+            await recruitmentService.deleteJobOffer(jobId);
+            setDeleteConfirm(null);
+            loadJobs();
+        } catch (error) {
+            console.error(error);
+            alert("Erreur lors de la suppression");
         }
     };
 
@@ -81,7 +141,7 @@ export default function JobOffersPage() {
                     </p>
                 </div>
                 <button
-                    onClick={() => setShowModal(true)}
+                    onClick={openCreateModal}
                     className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2"
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +154,7 @@ export default function JobOffersPage() {
             {jobs.length === 0 ? (
                 <div className="bg-white dark:bg-gray-800 rounded-xl p-12 text-center">
                     <p className="text-gray-500 mb-4">Aucune offre d'emploi pour le moment.</p>
-                    <button onClick={() => setShowModal(true)} className="text-primary hover:underline">
+                    <button onClick={openCreateModal} className="text-primary hover:underline">
                         Créer votre première offre
                     </button>
                 </div>
@@ -109,6 +169,27 @@ export default function JobOffersPage() {
                                 <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}>
                                     {job.status === 'PUBLISHED' ? 'Publiée' : job.status === 'DRAFT' ? 'Brouillon' : 'Fermée'}
                                 </span>
+                                {/* Action buttons */}
+                                <div className="flex gap-1">
+                                    <button
+                                        onClick={() => openEditModal(job)}
+                                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                                        title="Modifier"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        onClick={() => setDeleteConfirm(job.id)}
+                                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                        title="Supprimer"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
 
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
@@ -129,7 +210,28 @@ export default function JobOffersPage() {
                                 <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded">
                                     💼 {job.contract_type}
                                 </span>
+                                {job.min_experience && job.min_experience > 0 && (
+                                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded">
+                                        📅 {job.min_experience}+ ans
+                                    </span>
+                                )}
                             </div>
+
+                            {/* Skills */}
+                            {job.required_skills && job.required_skills.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-4">
+                                    {job.required_skills.slice(0, 3).map((skill, i) => (
+                                        <span key={i} className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
+                                            {skill}
+                                        </span>
+                                    ))}
+                                    {job.required_skills.length > 3 && (
+                                        <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 text-xs rounded-full">
+                                            +{job.required_skills.length - 3}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
                                 <span className="text-xs text-gray-500">
@@ -147,14 +249,14 @@ export default function JobOffersPage() {
                 </div>
             )}
 
-            {/* Modal de création */}
+            {/* Modal de création/modification */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
                         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-                            Créer une offre d'emploi
+                            {editingJob ? "Modifier l'offre" : "Créer une offre d'emploi"}
                         </h2>
-                        <form onSubmit={handleCreate} className="space-y-4">
+                        <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Titre du poste *
@@ -221,6 +323,7 @@ export default function JobOffersPage() {
                                     >
                                         <option value="DRAFT">Brouillon</option>
                                         <option value="PUBLISHED">Publiée</option>
+                                        <option value="CLOSED">Fermée</option>
                                     </select>
                                 </div>
                             </div>
@@ -236,10 +339,42 @@ export default function JobOffersPage() {
                                     placeholder="Décrivez le poste..."
                                 />
                             </div>
+
+                            {/* Scoring fields */}
+                            <div className="border-t pt-4 mt-4">
+                                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                                    Critères pour le scoring
+                                </h3>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Compétences requises (séparées par virgule)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.required_skills}
+                                        onChange={(e) => setFormData({ ...formData, required_skills: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                                        placeholder="React, Node.js, TypeScript"
+                                    />
+                                </div>
+                                <div className="mt-3">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Expérience minimum (années)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={formData.min_experience}
+                                        onChange={(e) => setFormData({ ...formData, min_experience: parseInt(e.target.value) || 0 })}
+                                        className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                                    />
+                                </div>
+                            </div>
+
                             <div className="flex gap-3 pt-4">
                                 <button
                                     type="button"
-                                    onClick={() => setShowModal(false)}
+                                    onClick={() => { setShowModal(false); resetForm(); }}
                                     className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                                 >
                                     Annuler
@@ -249,13 +384,49 @@ export default function JobOffersPage() {
                                     disabled={saving}
                                     className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
                                 >
-                                    {saving ? "Création..." : "Créer l'offre"}
+                                    {saving ? "Enregistrement..." : editingJob ? "Enregistrer" : "Créer l'offre"}
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
+
+            {/* Modal de confirmation de suppression */}
+            {deleteConfirm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-sm">
+                        <div className="text-center mb-6">
+                            <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                                Supprimer cette offre ?
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                                Cette action est irréversible. Toutes les candidatures associées seront également supprimées.
+                            </p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setDeleteConfirm(null)}
+                                className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                onClick={() => handleDelete(deleteConfirm)}
+                                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                            >
+                                Supprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
+

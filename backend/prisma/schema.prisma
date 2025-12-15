@@ -1360,6 +1360,11 @@ model job_offer {
   status          String    @default("DRAFT") @db.VarChar(50)
   posted_date     DateTime? @db.Date
 
+  // Scoring fields
+  required_skills   Json?     // Liste des compétences requises
+  min_experience    Int?      // Années d'expérience minimum
+  scoring_criteria  Json?     // Critères personnalisés {skills: 40, experience: 25, interview: 20, rating: 15}
+
   created_at      DateTime  @default(now()) @db.DateTime(0)
   updated_at      DateTime  @updatedAt @db.DateTime(0)
 
@@ -1377,6 +1382,7 @@ model candidate {
 
   rating          Int       @default(0)
   skills          Json?
+  years_experience Int      @default(0)  // Années d'expérience du candidat
 
   is_in_talent_pool Boolean @default(false)
 
@@ -1394,6 +1400,11 @@ model candidate_application {
 
   status          String    @default("NEW") @db.VarChar(50)
   stage           String    @default("NEW") @db.VarChar(50)
+
+  // Scoring fields
+  score           Int?      // Score global calculé (0-100)
+  score_breakdown Json?     // Détail: {skills: 85, experience: 70, interview: 90, rating: 75}
+  scored_at       DateTime? @db.DateTime(0)  // Date du dernier calcul
 
   created_at      DateTime  @default(now()) @db.DateTime(0)
   updated_at      DateTime  @updatedAt @db.DateTime(0)

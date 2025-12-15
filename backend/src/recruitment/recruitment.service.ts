@@ -6,9 +6,14 @@ import { CreateApplicationDto, UpdateApplicationDto } from './dto/application.dt
 import { CreateInterviewDto, UpdateInterviewDto } from './dto/interview.dto';
 import { CreateOnboardingDto, UpdateOnboardingDto } from './dto/onboarding.dto';
 
+import { MailService } from '../mail/mail.service';
+
 @Injectable()
 export class RecruitmentService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private mailService: MailService
+    ) { }
 
     // ===================== JOB OFFERS =====================
     async findAllJobOffers() {
@@ -71,6 +76,24 @@ export class RecruitmentService {
         return this.prisma.candidate.findMany({
             include: { applications: { include: { job_offer: true } } },
             orderBy: { created_at: 'desc' },
+        });
+    }
+
+    async findOneCandidate(id: number) {
+        return this.prisma.candidate.findUnique({
+            where: { id },
+            include: {
+                applications: {
+                    include: {
+                        job_offer: true,
+                        interviews: {
+                            include: {
+                                interviewer: { select: { id: true, full_name: true } },
+                            },
+                        },
+                    },
+                },
+            },
         });
     }
 
@@ -178,6 +201,27 @@ export class RecruitmentService {
         });
     }
 
+    async rejectApplication(id: number, sendEmail: boolean) {
+        const application = await this.prisma.candidate_application.update({
+            where: { id },
+            data: { stage: 'REJECTED', status: 'REJECTED' },
+            include: { candidate: true, job_offer: true },
+        });
+
+        if (sendEmail && application.candidate?.email && application.job_offer) {
+            this.mailService.sendRejectionEmail(
+                {
+                    firstName: application.candidate.first_name,
+                    lastName: application.candidate.last_name,
+                    email: application.candidate.email,
+                },
+                application.job_offer.title
+            ).catch(err => console.error('Failed to send rejection email', err));
+        }
+
+        return application;
+    }
+
     // ===================== INTERVIEWS =====================
     async findAllInterviews() {
         return this.prisma.job_interview.findMany({
@@ -191,7 +235,8 @@ export class RecruitmentService {
     }
 
     async createInterview(dto: CreateInterviewDto) {
-        return this.prisma.job_interview.create({
+        // Create the interview
+        const interview = await this.prisma.job_interview.create({
             data: {
                 application_id: dto.applicationId,
                 candidate_id: dto.candidateId,
@@ -200,8 +245,41 @@ export class RecruitmentService {
                 type: dto.type || 'VISIO',
                 status: 'SCHEDULED',
             },
-            include: { candidate: true, interviewer: { select: { id: true, full_name: true } } },
+            include: {
+                candidate: true,
+                application: { include: { job_offer: true } },
+                interviewer: {
+                    select: {
+                        id: true,
+                        full_name: true,
+                        position: { select: { title: true } }
+                    }
+                }
+            },
         });
+
+        // Send Email Invitation
+        if (interview.candidate && interview.candidate.email) {
+            const role = interview.interviewer?.position?.title || "Service Recrutement";
+            const jobTitle = interview.application?.job_offer?.title || "votre candidature";
+
+            this.mailService.sendInterviewInvitation(
+                {
+                    firstName: interview.candidate.first_name,
+                    lastName: interview.candidate.last_name,
+                    email: interview.candidate.email,
+                },
+                {
+                    date: interview.interview_date,
+                    type: interview.type,
+                    interviewerName: interview.interviewer?.full_name,
+                    interviewerRole: role,
+                    jobTitle: jobTitle
+                }
+            ).catch(err => console.error('Failed to send interview invitation email', err));
+        }
+
+        return interview;
     }
 
     async updateInterview(id: number, dto: UpdateInterviewDto) {

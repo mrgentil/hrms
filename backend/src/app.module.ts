@@ -33,6 +33,7 @@ import { BonusesModule } from './bonuses/bonuses.module';
 import { BenefitsModule } from './benefits/benefits.module';
 import { PayslipsModule } from './payslips/payslips.module';
 import { RecruitmentModule } from './recruitment/recruitment.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { RecruitmentModule } from './recruitment/recruitment.module';
     BenefitsModule,
     PayslipsModule,
     RecruitmentModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [

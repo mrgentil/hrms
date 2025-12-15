@@ -11,6 +11,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { RecruitmentService } from './recruitment.service';
+import { ScoringService } from './scoring.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateJobOfferDto, UpdateJobOfferDto } from './dto/job-offer.dto';
 import { CreateCandidateDto, UpdateCandidateDto } from './dto/candidate.dto';
@@ -21,7 +22,10 @@ import { CreateOnboardingDto, UpdateOnboardingDto } from './dto/onboarding.dto';
 @Controller('recruitment')
 @UseGuards(JwtAuthGuard)
 export class RecruitmentController {
-    constructor(private readonly recruitmentService: RecruitmentService) { }
+    constructor(
+        private readonly recruitmentService: RecruitmentService,
+        private readonly scoringService: ScoringService,
+    ) { }
 
     // ===================== JOB OFFERS =====================
     @Get('jobs')
@@ -49,10 +53,26 @@ export class RecruitmentController {
         return this.recruitmentService.deleteJobOffer(id);
     }
 
+    // ===================== SCORING =====================
+    @Get('jobs/:id/ranking')
+    getCandidateRanking(@Param('id', ParseIntPipe) id: number) {
+        return this.scoringService.getCandidateRanking(id);
+    }
+
+    @Post('jobs/:id/score-all')
+    scoreAllCandidates(@Param('id', ParseIntPipe) id: number) {
+        return this.scoringService.scoreAllCandidatesForJob(id);
+    }
+
     // ===================== CANDIDATES =====================
     @Get('candidates')
     findAllCandidates() {
         return this.recruitmentService.findAllCandidates();
+    }
+
+    @Get('candidates/:id')
+    findOneCandidate(@Param('id', ParseIntPipe) id: number) {
+        return this.recruitmentService.findOneCandidate(id);
     }
 
     @Get('talent-pool')
@@ -94,6 +114,19 @@ export class RecruitmentController {
         return this.recruitmentService.updateApplicationStage(id, stage);
     }
 
+    @Put('applications/:id/reject')
+    rejectApplication(
+        @Param('id', ParseIntPipe) id: number,
+        @Body('sendEmail') sendEmail: boolean,
+    ) {
+        return this.recruitmentService.rejectApplication(id, sendEmail);
+    }
+
+    @Post('applications/:id/score')
+    scoreApplication(@Param('id', ParseIntPipe) id: number) {
+        return this.scoringService.calculateScore(id);
+    }
+
     // ===================== INTERVIEWS =====================
     @Get('interviews')
     findAllInterviews() {
@@ -126,3 +159,4 @@ export class RecruitmentController {
         return this.recruitmentService.updateOnboarding(id, dto);
     }
 }
+
