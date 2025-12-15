@@ -102,6 +102,14 @@ export const payslipService = {
         const response = await apiClient.delete(`/payroll/payslips/${id}`);
         return response.data;
     },
+
+    /**
+     * Simulate salary calculation (Gross <-> Net)
+     */
+    simulateSalary: async (grossSalary: number): Promise<ApiResponse<any>> => {
+        const response = await apiClient.post('/payroll/payslips/simulate', { gross_salary: grossSalary });
+        return response.data;
+    },
 };
 
 // ========================================

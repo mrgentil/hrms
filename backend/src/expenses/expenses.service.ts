@@ -5,7 +5,7 @@ import { expense_report_status } from '@prisma/client';
 
 @Injectable()
 export class ExpensesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // Créer une note de frais
   async create(userId: number, dto: CreateExpenseDto) {
@@ -15,7 +15,7 @@ export class ExpensesService {
         title: dto.title,
         description: dto.description,
         amount: dto.amount,
-        currency: dto.currency || 'EUR',
+        currency: dto.currency || 'USD',
         category: dto.category,
         expense_date: new Date(dto.expense_date),
         receipt_url: dto.receipt_url,

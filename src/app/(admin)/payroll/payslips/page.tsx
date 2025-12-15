@@ -481,9 +481,9 @@ export default function PayslipsPage() {
 function PayslipDetailsModal({ payslip, onClose }: { payslip: Payslip; onClose: () => void }) {
     const formatCurrency = (amount: number | string | undefined | null) => {
         if (!amount && amount !== 0) return '-';
-        return new Intl.NumberFormat('fr-FR', {
+        return new Intl.NumberFormat('en-US', {
             style: 'currency',
-            currency: 'EUR',
+            currency: 'USD',
         }).format(typeof amount === 'string' ? parseFloat(amount) : Number(amount));
     };
 

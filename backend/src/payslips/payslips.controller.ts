@@ -133,4 +133,12 @@ export class PayslipsController {
 
         res.send(pdfBuffer);
     }
+
+    /**
+     * Simulate salary (Public/Auth)
+     */
+    @Post('simulate')
+    async simulate(@Body('gross_salary') grossSalary: number) {
+        return await this.payslipsService.simulateSalary(grossSalary);
+    }
 }

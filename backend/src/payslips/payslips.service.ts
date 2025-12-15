@@ -475,13 +475,44 @@ export class PayslipsService {
     }
 
     /**
-     * Generate PDF (placeholder - would use pdfkit or puppeteer in real implementation)
+     * Simulate salary calculation
+     */
+    async simulateSalary(grossSalary: number) {
+        // Simulation standard (Approximation RDC/International)
+        // Adjust these rates based on local tax laws (IPR, CNSS, etc.)
+        const socialSecurityRate = 0.05; // Exemple: CNSS (Part employé) ~5%
+        const taxRate = 0.15; // Exemple: IPR (Impôt) ~15% (Moyenne)
+
+        const employerChargesRate = 0.10; // Exemple: CNSS/INPP (Part patronale) ~10%
+
+        const salaryGross = Number(grossSalary);
+        const employeeDeductions = salaryGross * (socialSecurityRate + taxRate);
+        const salaryNet = salaryGross - employeeDeductions;
+        const employerCost = salaryGross * (1 + employerChargesRate);
+
+        return {
+            gross_salary: salaryGross,
+            net_salary: Number(salaryNet.toFixed(2)),
+            employee_deductions: Number(employeeDeductions.toFixed(2)),
+            employer_cost: Number(employerCost.toFixed(2)),
+            employer_charges: Number((salaryGross * employerChargesRate).toFixed(2)),
+            monthly_net: Number(salaryNet.toFixed(2)) // Monthly same as calculated
+        };
+    }
+
+    /**
+     * Generate PDF using PDFKit
      */
     async generatePDF(id: number): Promise<Buffer> {
         const payslip = await this.prisma.payslip.findUnique({
             where: { id },
             include: {
-                user: true,
+                user: {
+                    include: {
+                        department_user_department_idTodepartment: true,
+                        position: true
+                    }
+                },
             },
         });
 
@@ -489,26 +520,94 @@ export class PayslipsService {
             throw new NotFoundException('Payslip not found');
         }
 
-        // TODO: Implement real PDF generation with pdfkit or puppeteer
-        // For now, return a simple text-based PDF
-        const pdfContent = `
-BULLETIN DE PAIE
-================
+        const PDFDocument = require('pdfkit');
+        const doc = new PDFDocument({ margin: 50 });
+        const buffers: Buffer[] = [];
 
-Employé: ${payslip.user.full_name}
-Période: ${payslip.month}/${payslip.year}
+        return new Promise((resolve, reject) => {
+            doc.on('data', (buffer: any) => buffers.push(buffer));
+            doc.on('end', () => resolve(Buffer.concat(buffers)));
+            doc.on('error', (err: any) => reject(err));
 
-Salaire de base: ${payslip.salary_basic} EUR
-Salaire brut: ${payslip.salary_gross} EUR
-Allocations: ${payslip.allowances_total} EUR
-Déductions: ${payslip.deductions_total} EUR
-Primes: ${payslip.bonuses_total || 0} EUR
+            // -- HEADER --
+            doc.fontSize(20).text('BULLETIN DE PAIE', { align: 'center' });
+            doc.moveDown();
 
-SALAIRE NET: ${payslip.salary_net} EUR
+            // Company Info (Mock)
+            doc.fontSize(10).text('HRMS Corp', 50, 80);
+            doc.text('123 Business Street', 50, 95);
+            doc.text('75000 Paris, France', 50, 110);
+            doc.text('SIRET: 123 456 789 00012', 50, 125);
 
-Généré le: ${new Date().toLocaleDateString('fr-FR')}
-    `;
+            // Employee Info
+            doc.rect(300, 80, 250, 80).stroke();
+            doc.fontSize(10).font('Helvetica-Bold').text('EMPLOYÉ', 310, 90);
+            doc.font('Helvetica').text(`${payslip.user.full_name}`, 310, 105);
+            doc.text(`Email: ${payslip.user.work_email}`, 310, 120);
+            doc.text(`Département: ${payslip.user.department_user_department_idTodepartment?.department_name || 'N/A'}`, 310, 135);
+            doc.text(`Poste: ${payslip.user.position?.title || 'N/A'}`, 310, 150);
 
-        return Buffer.from(pdfContent, 'utf-8');
+            doc.moveDown(4);
+
+            // Period
+            doc.fontSize(12).font('Helvetica-Bold')
+                .text(`Période de paie: ${(payslip.month).toString().padStart(2, '0')}/${payslip.year}`, 50, 200);
+
+            // -- TABLE HEADER --
+            const tableTop = 230;
+            doc.font('Helvetica-Bold');
+            doc.text('Description', 50, tableTop);
+            doc.text('Base', 200, tableTop, { align: 'right' });
+            doc.text('Taux', 300, tableTop, { align: 'right' });
+            doc.text('Montant', 400, tableTop, { align: 'right' });
+            doc.text('Net', 500, tableTop, { align: 'right' });
+
+            doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
+
+            // -- ROWS --
+            let y = tableTop + 25;
+            doc.font('Helvetica');
+
+            // Salaire de base
+            doc.text('Salaire de base', 50, y);
+            doc.text(Number(payslip.salary_basic).toFixed(2), 200, y, { align: 'right' });
+            doc.text(Number(payslip.salary_gross).toFixed(2), 500, y, { align: 'right' });
+            y += 20;
+
+            // Allowances
+            if (payslip.allowances_breakdown && Array.isArray(payslip.allowances_breakdown)) {
+                (payslip.allowances_breakdown as any[]).forEach(item => {
+                    doc.text(`Indemnité: ${item.name}`, 50, y);
+                    doc.text(Number(item.amount).toFixed(2), 500, y, { align: 'right' });
+                    y += 15;
+                });
+            }
+
+            // Deductions
+            if (payslip.deductions_breakdown && Array.isArray(payslip.deductions_breakdown)) {
+                doc.fillColor('red');
+                (payslip.deductions_breakdown as any[]).forEach(item => {
+                    doc.text(`Retenue: ${item.name}`, 50, y);
+                    doc.text(`-${Number(item.amount).toFixed(2)}`, 500, y, { align: 'right' });
+                    y += 15;
+                });
+                doc.fillColor('black');
+            }
+
+            // -- TOTALS --
+            y += 20;
+            doc.moveTo(50, y).lineTo(550, y).stroke();
+            y += 15;
+
+            doc.font('Helvetica-Bold').fontSize(12);
+            doc.text('NET À PAYER', 350, y);
+            doc.rect(480, y - 5, 70, 20).fill('#e2e8f0');
+            doc.fillColor('black').text(`${Number(payslip.salary_net).toFixed(2)} €`, 480, y, { align: 'right' });
+
+            // Footer
+            doc.fontSize(8).text('Ce bulletin de paie est généré électroniquement par HRMS.', 50, 700, { align: 'center' });
+
+            doc.end();
+        });
     }
 }

@@ -70,9 +70,9 @@ export default function SalariesPage() {
 
     const formatCurrency = (amount?: number | null) => {
         if (!amount && amount !== 0) return '-';
-        return new Intl.NumberFormat('fr-FR', {
+        return new Intl.NumberFormat('en-US', {
             style: 'currency',
-            currency: 'EUR',
+            currency: 'USD',
         }).format(amount);
     };
 

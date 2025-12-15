@@ -749,7 +749,7 @@ model expense_report {
   title           String                  @db.VarChar(255)
   description     String?                 @db.Text
   amount          Decimal                 @db.Decimal(10, 2)
-  currency        String                  @default("EUR") @db.VarChar(3)
+  currency        String                  @default("USD") @db.VarChar(3)
   category        expense_report_category
   expense_date    DateTime                @db.Date
   receipt_url     String?                 @db.VarChar(500)
@@ -778,7 +778,7 @@ model contract {
   start_date      DateTime        @db.Date
   end_date        DateTime?       @db.Date
   salary          Decimal?        @db.Decimal(12, 2)
-  salary_currency String          @default("EUR") @db.VarChar(3)
+  salary_currency String          @default("USD") @db.VarChar(3)
   working_hours   Float?          @db.Float
   probation_end   DateTime?       @db.Date
   status          contract_status @default(ACTIVE)

@@ -688,7 +688,7 @@ const hrmsModulesNavItems: NavItem[] = [
         requiredPermission: "payroll.view_own",
       },
       {
-        name: "Simulations Salariales",
+        name: "Calculatrice Salaire",
         path: "/payroll/simulator",
         pro: true,
         requiredPermission: "payroll.manage",
