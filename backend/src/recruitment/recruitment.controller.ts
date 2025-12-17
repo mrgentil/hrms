@@ -31,8 +31,12 @@ export class RecruitmentController {
 
     // ===================== JOB OFFERS =====================
     @Get('jobs')
-    findAllJobs() {
-        return this.recruitmentService.findAllJobOffers();
+    findAllJobs(
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 10,
+        @Query('search') search?: string,
+    ) {
+        return this.recruitmentService.findAllJobOffers({ page, limit, search });
     }
 
     @Get('jobs/:id')
@@ -74,8 +78,12 @@ export class RecruitmentController {
 
     // ===================== CANDIDATES =====================
     @Get('candidates')
-    findAllCandidates() {
-        return this.recruitmentService.findAllCandidates();
+    findAllCandidates(
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 10,
+        @Query('search') search?: string,
+    ) {
+        return this.recruitmentService.findAllCandidates({ page, limit, search });
     }
 
     @Get('candidates/:id')

@@ -401,46 +401,6 @@ const advancedNavItems: NavItem[] = [
 
   {
 
-    icon: <DollarLineIcon />,
-    name: "Finances & Paie",
-    requiredPermission: "payroll.view",
-    allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
-    subItems: [
-      {
-        name: "Informations Financières",
-        path: "/finance/info",
-        pro: false,
-        requiredPermission: "payroll.view",
-        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-      },
-      {
-        name: "Paiements",
-        path: "/finance/payments",
-        pro: false,
-        requiredPermission: "payroll.manage",
-        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-      },
-      {
-        name: "Dépenses",
-        path: "/finance/expenses",
-        pro: false,
-        requiredPermission: "expenses.view",
-        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-      },
-      {
-        name: "Emplois",
-        path: "/finance/jobs",
-        pro: false,
-        requiredPermission: "payroll.view",
-        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-      },
-    ],
-
-  },
-
-  {
-
     icon: <ChatIcon />,
 
     name: "Communication",

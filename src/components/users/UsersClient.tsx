@@ -1,7 +1,8 @@
 "use client";
 
-import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import ComponentCard from "@/components/common/ComponentCard";
+import Pagination from "@/components/common/Pagination";
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/useToast";
 import {
@@ -36,6 +37,7 @@ export default function UsersClient() {
   // Données des utilisateurs
   const users = usersData?.data || [];
   const totalUsers = usersData?.total || 0;
+  const totalPages = usersData?.totalPages || Math.ceil(totalUsers / 10);
 
   // Statistiques
   const stats = statsData?.data || {
@@ -409,6 +411,14 @@ export default function UsersClient() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-4 border-t border-stroke pt-4 dark:border-strokedark">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </ComponentCard>
       </div>

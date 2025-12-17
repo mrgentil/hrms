@@ -86,7 +86,6 @@ model department {
   other_department                      department[]              @relation("departmentTodepartment")
   department_announcement               department_announcement[]
   expense                               expense[]
-  position                              position[]
   user_user_department_idTodepartment   user[]                    @relation("user_department_idTodepartment")
 
   @@index([manager_user_id], map: "manager_user_id")
@@ -205,17 +204,13 @@ model permission {
 }
 
 model position {
-  id            Int         @id @default(autoincrement())
-  title         String      @db.VarChar(255)
-  level         String?     @db.VarChar(255)
-  description   String?     @db.Text
-  created_at    DateTime    @db.DateTime(0)
-  updated_at    DateTime    @db.DateTime(0)
-  department_id Int?
-  department    department? @relation(fields: [department_id], references: [id], map: "position_ibfk_1")
-  user          user[]
-
-  @@index([department_id], map: "department_id")
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  level       String?  @db.VarChar(255)
+  description String?  @db.Text
+  created_at  DateTime @db.DateTime(0)
+  updated_at  DateTime @db.DateTime(0)
+  user        user[]
 }
 
 model project {
@@ -368,37 +363,78 @@ model task_column {
 }
 
 model task_comment {
-  id                Int               @id @default(autoincrement())
-  content           String            @db.Text
+  id                Int                    @id @default(autoincrement())
+  content           String                 @db.Text
+  content_html      String?                @db.Text
   task_id           Int
   user_id           Int
   parent_comment_id Int?
-  created_at        DateTime          @db.DateTime(0)
-  updated_at        DateTime          @db.DateTime(0)
-  attachments       task_attachment[] @relation("CommentAttachments")
-  parent_comment    task_comment?     @relation("CommentReplies", fields: [parent_comment_id], references: [id], onDelete: Cascade)
-  replies           task_comment[]    @relation("CommentReplies")
-  task              task              @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  user              user              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  is_pinned         Boolean                @default(false)
+  is_resolved       Boolean                @default(false)
+  resolved_by       Int?
+  resolved_at       DateTime?              @db.DateTime(0)
+  created_at        DateTime               @db.DateTime(0)
+  updated_at        DateTime               @db.DateTime(0)
+  attachments       task_attachment[]      @relation("CommentAttachments")
+  parent_comment    task_comment?          @relation("CommentReplies", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  replies           task_comment[]         @relation("CommentReplies")
+  task              task                   @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user              user                   @relation("CommentAuthor", fields: [user_id], references: [id], onDelete: Cascade)
+  resolver          user?                  @relation("CommentResolver", fields: [resolved_by], references: [id])
+  reactions         comment_reaction[]
+  edit_history      comment_edit_history[]
 
   @@index([task_id], map: "task_comment_task_id")
   @@index([user_id], map: "task_comment_user_id")
   @@index([parent_comment_id], map: "task_comment_parent_id")
+  @@index([is_pinned], map: "task_comment_is_pinned")
+  @@index([is_resolved], map: "task_comment_is_resolved")
+  @@index([resolved_by], map: "task_comment_resolved_by")
+}
+
+model comment_reaction {
+  id         Int          @id @default(autoincrement())
+  comment_id Int
+  user_id    Int
+  emoji      String       @db.VarChar(10)
+  created_at DateTime     @default(now()) @db.DateTime(0)
+  comment    task_comment @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  user       user         @relation("UserCommentReactions", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([comment_id, user_id, emoji])
+  @@index([comment_id], map: "comment_reaction_comment_id")
+  @@index([user_id], map: "comment_reaction_user_id")
+}
+
+model comment_edit_history {
+  id          Int          @id @default(autoincrement())
+  comment_id  Int
+  user_id     Int
+  old_content String       @db.Text
+  new_content String       @db.Text
+  edited_at   DateTime     @default(now()) @db.DateTime(0)
+  comment     task_comment @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  user        user         @relation("UserCommentEdits", fields: [user_id], references: [id])
+
+  @@index([comment_id], map: "comment_edit_history_comment_id")
+  @@index([user_id], map: "comment_edit_history_user_id")
 }
 
 model task_attachment {
-  id          Int           @id @default(autoincrement())
-  file_name   String        @db.VarChar(255)
-  file_path   String        @db.VarChar(500)
-  file_size   Int?
-  file_type   String?       @db.VarChar(100)
-  task_id     Int
-  uploaded_by Int
-  comment_id  Int?
-  created_at  DateTime      @db.DateTime(0)
-  comment     task_comment? @relation("CommentAttachments", fields: [comment_id], references: [id], onDelete: Cascade)
-  task        task          @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  user        user          @relation(fields: [uploaded_by], references: [id], onDelete: Cascade)
+  id             Int           @id @default(autoincrement())
+  file_name      String        @db.VarChar(255)
+  file_path      String        @db.VarChar(500)
+  file_size      Int?
+  file_type      String?       @db.VarChar(100)
+  thumbnail_path String?       @db.VarChar(500)
+  preview_url    String?       @db.VarChar(500)
+  task_id        Int
+  uploaded_by    Int
+  comment_id     Int?
+  created_at     DateTime      @db.DateTime(0)
+  comment        task_comment? @relation("CommentAttachments", fields: [comment_id], references: [id], onDelete: Cascade)
+  task           task          @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user           user          @relation(fields: [uploaded_by], references: [id], onDelete: Cascade)
 
   @@index([task_id], map: "task_attachment_task_id")
   @@index([uploaded_by], map: "task_attachment_uploaded_by")
@@ -553,7 +589,10 @@ model user {
   task_assignment                                       task_assignment[]
   task_attachments                                      task_attachment[]
   task_checklist_items_completed                        task_checklist_item[]
-  task_comments                                         task_comment[]
+  task_comments_authored                                task_comment[]             @relation("CommentAuthor")
+  task_comments_resolved                                task_comment[]             @relation("CommentResolver")
+  comment_reactions                                     comment_reaction[]         @relation("UserCommentReactions")
+  comment_edits                                         comment_edit_history[]     @relation("UserCommentEdits")
   task_dependencies_created                             task_dependency[]
   task_templates_created                                task_template[]
   task_time_entries                                     task_time_entry[]
@@ -571,21 +610,21 @@ model user {
   user_personal_event                                   user_personal_event[]
   user_personal_info                                    user_personal_info[]
   user_role                                             user_role[]
-  
+
   // Payroll relations
-  payslips                                              payslip[]
-  payslips_generated                                    payslip[]                  @relation("payslip_generator")
-  salary_advances                                       salary_advance[]
-  advances_reviewed                                     salary_advance[]           @relation("advance_reviewer")
-  bonuses                                               bonus[]
-  bonuses_created                                       bonus[]                    @relation("bonus_creator")
-  bonuses_approved                                      bonus[]                    @relation("bonus_approver")
-  employee_benefits                                     employee_benefit[]
+  payslips           payslip[]
+  payslips_generated payslip[]          @relation("payslip_generator")
+  salary_advances    salary_advance[]
+  advances_reviewed  salary_advance[]   @relation("advance_reviewer")
+  bonuses            bonus[]
+  bonuses_created    bonus[]            @relation("bonus_creator")
+  bonuses_approved   bonus[]            @relation("bonus_approver")
+  employee_benefits  employee_benefit[]
 
   // Recruitment relations
-  interviews_as_interviewer                             job_interview[]           @relation("Interviewer")
-  onboarding_as_employee                                onboarding_process?       @relation("OnboardingEmployee")
-  onboarding_as_mentor                                  onboarding_process[]      @relation("OnboardingMentor")
+  interviews_as_interviewer job_interview[]      @relation("Interviewer")
+  onboarding_as_employee    onboarding_process?  @relation("OnboardingEmployee")
+  onboarding_as_mentor      onboarding_process[] @relation("OnboardingMentor")
 
   @@index([department_id], map: "department_id")
   @@index([manager_user_id], map: "manager_user_id")
@@ -931,37 +970,37 @@ model notification {
 // ========================================
 
 model payslip {
-  id                Int              @id @default(autoincrement())
+  id                Int      @id @default(autoincrement())
   user_id           Int
-  month             Int              // 1-12
-  year              Int              // 2024, 2025, etc.
-  salary_basic      Decimal          @db.Decimal(10, 2)
-  salary_gross      Decimal          @db.Decimal(10, 2)
-  salary_net        Decimal          @db.Decimal(10, 2)
-  allowances_total  Decimal          @db.Decimal(10, 2)
-  deductions_total  Decimal          @db.Decimal(10, 2)
-  bonuses_total     Decimal?         @db.Decimal(10, 2)
-  advances_deducted Decimal?         @db.Decimal(10, 2)
-  
+  month             Int // 1-12
+  year              Int // 2024, 2025, etc.
+  salary_basic      Decimal  @db.Decimal(10, 2)
+  salary_gross      Decimal  @db.Decimal(10, 2)
+  salary_net        Decimal  @db.Decimal(10, 2)
+  allowances_total  Decimal  @db.Decimal(10, 2)
+  deductions_total  Decimal  @db.Decimal(10, 2)
+  bonuses_total     Decimal? @db.Decimal(10, 2)
+  advances_deducted Decimal? @db.Decimal(10, 2)
+
   // Details JSON - store breakdown of allowances, deductions, bonuses
   allowances_breakdown Json?
   deductions_breakdown Json?
   bonuses_breakdown    Json?
-  
+
   // Metadata
-  status            payslip_status   @default(DRAFT)
-  generated_by      Int
-  generated_at      DateTime         @default(now()) @db.DateTime(0)
-  published_at      DateTime?        @db.DateTime(0)
-  pdf_path          String?          @db.VarChar(500)
-  notes             String?          @db.Text
-  
-  created_at        DateTime         @default(now()) @db.DateTime(0)
-  updated_at        DateTime         @updatedAt @db.DateTime(0)
-  
-  user              user             @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  generator         user             @relation("payslip_generator", fields: [generated_by], references: [id])
-  
+  status       payslip_status @default(DRAFT)
+  generated_by Int
+  generated_at DateTime       @default(now()) @db.DateTime(0)
+  published_at DateTime?      @db.DateTime(0)
+  pdf_path     String?        @db.VarChar(500)
+  notes        String?        @db.Text
+
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @updatedAt @db.DateTime(0)
+
+  user      user @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  generator user @relation("payslip_generator", fields: [generated_by], references: [id])
+
   @@unique([user_id, month, year])
   @@index([user_id], map: "payslip_user_id")
   @@index([status], map: "payslip_status")
@@ -970,86 +1009,86 @@ model payslip {
 }
 
 model salary_advance {
-  id                  Int                    @id @default(autoincrement())
-  user_id             Int
-  amount              Decimal                @db.Decimal(10, 2)
-  reason              String                 @db.Text
-  requested_date      DateTime               @default(now()) @db.DateTime(0)
-  needed_by_date      DateTime?              @db.Date
-  
+  id             Int       @id @default(autoincrement())
+  user_id        Int
+  amount         Decimal   @db.Decimal(10, 2)
+  reason         String    @db.Text
+  requested_date DateTime  @default(now()) @db.DateTime(0)
+  needed_by_date DateTime? @db.Date
+
   // Approval workflow
-  status              advance_status         @default(DRAFT)
-  submitted_at        DateTime?              @db.DateTime(0)
-  reviewed_by         Int?
-  reviewed_at         DateTime?              @db.DateTime(0)
-  reviewer_comment    String?                @db.Text
-  
+  status           advance_status @default(DRAFT)
+  submitted_at     DateTime?      @db.DateTime(0)
+  reviewed_by      Int?
+  reviewed_at      DateTime?      @db.DateTime(0)
+  reviewer_comment String?        @db.Text
+
   // Repayment
-  repayment_months    Int?                   // Number of months to repay
-  monthly_deduction   Decimal?               @db.Decimal(10, 2)
-  total_repaid        Decimal                @default(0) @db.Decimal(10, 2)
-  repayment_start     DateTime?              @db.Date
-  fully_repaid_at     DateTime?              @db.DateTime(0)
-  
+  repayment_months  Int? // Number of months to repay
+  monthly_deduction Decimal?  @db.Decimal(10, 2)
+  total_repaid      Decimal   @default(0) @db.Decimal(10, 2)
+  repayment_start   DateTime? @db.Date
+  fully_repaid_at   DateTime? @db.DateTime(0)
+
   // Payment
-  paid_at             DateTime?              @db.DateTime(0)
-  payment_method      String?                @db.VarChar(50)
-  payment_reference   String?                @db.VarChar(100)
-  
-  created_at          DateTime               @default(now()) @db.DateTime(0)
-  updated_at          DateTime               @updatedAt @db.DateTime(0)
-  
-  user                user                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  reviewer            user?                  @relation("advance_reviewer", fields: [reviewed_by], references: [id])
-  repayments          advance_repayment[]
-  
+  paid_at           DateTime? @db.DateTime(0)
+  payment_method    String?   @db.VarChar(50)
+  payment_reference String?   @db.VarChar(100)
+
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @updatedAt @db.DateTime(0)
+
+  user       user                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  reviewer   user?               @relation("advance_reviewer", fields: [reviewed_by], references: [id])
+  repayments advance_repayment[]
+
   @@index([user_id], map: "salary_advance_user_id")
   @@index([status], map: "salary_advance_status")
   @@index([reviewed_by], map: "salary_advance_reviewer")
 }
 
 model advance_repayment {
-  id                Int              @id @default(autoincrement())
-  advance_id        Int
-  payslip_month     Int
-  payslip_year      Int
-  amount            Decimal          @db.Decimal(10, 2)
-  deducted_at       DateTime         @default(now()) @db.DateTime(0)
-  
-  advance           salary_advance   @relation(fields: [advance_id], references: [id], onDelete: Cascade)
-  
+  id            Int      @id @default(autoincrement())
+  advance_id    Int
+  payslip_month Int
+  payslip_year  Int
+  amount        Decimal  @db.Decimal(10, 2)
+  deducted_at   DateTime @default(now()) @db.DateTime(0)
+
+  advance salary_advance @relation(fields: [advance_id], references: [id], onDelete: Cascade)
+
   @@index([advance_id], map: "advance_repayment_advance_id")
 }
 
 model bonus {
-  id                Int            @id @default(autoincrement())
-  user_id           Int
-  bonus_type        bonus_type
-  amount            Decimal        @db.Decimal(10, 2)
-  title             String         @db.VarChar(255)
-  description       String?        @db.Text
-  period            String?        @db.VarChar(100) // e.g., "Q4 2024", "Janvier 2025"
-  
+  id          Int        @id @default(autoincrement())
+  user_id     Int
+  bonus_type  bonus_type
+  amount      Decimal    @db.Decimal(10, 2)
+  title       String     @db.VarChar(255)
+  description String?    @db.Text
+  period      String?    @db.VarChar(100) // e.g., "Q4 2024", "Janvier 2025"
+
   // Approval workflow
-  status            bonus_status   @default(DRAFT)
-  created_by        Int
-  submitted_at      DateTime?      @db.DateTime(0)
-  approved_by       Int?
-  approved_at       DateTime?      @db.DateTime(0)
-  approver_comment  String?        @db.Text
-  
+  status           bonus_status @default(DRAFT)
+  created_by       Int
+  submitted_at     DateTime?    @db.DateTime(0)
+  approved_by      Int?
+  approved_at      DateTime?    @db.DateTime(0)
+  approver_comment String?      @db.Text
+
   // Payment
-  payslip_month     Int?           // Month included in payslip
-  payslip_year      Int?           // Year included in payslip
-  paid_at           DateTime?      @db.DateTime(0)
-  
-  created_at        DateTime       @default(now()) @db.DateTime(0)
-  updated_at        DateTime       @updatedAt @db.DateTime(0)
-  
-  user              user           @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  creator           user           @relation("bonus_creator", fields: [created_by], references: [id])
-  approver          user?          @relation("bonus_approver", fields: [approved_by], references: [id])
-  
+  payslip_month Int? // Month included in payslip
+  payslip_year  Int? // Year included in payslip
+  paid_at       DateTime? @db.DateTime(0)
+
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @updatedAt @db.DateTime(0)
+
+  user     user  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  creator  user  @relation("bonus_creator", fields: [created_by], references: [id])
+  approver user? @relation("bonus_approver", fields: [approved_by], references: [id])
+
   @@index([user_id], map: "bonus_user_id")
   @@index([status], map: "bonus_status")
   @@index([bonus_type], map: "bonus_type")
@@ -1058,57 +1097,57 @@ model bonus {
 }
 
 model benefit_catalog {
-  id                    Int                    @id @default(autoincrement())
-  name                  String                 @db.VarChar(255)
-  description           String                 @db.Text
-  benefit_type          benefit_type
-  value_type            benefit_value_type     // FIXED, PERCENTAGE
-  value_amount          Decimal?               @db.Decimal(10, 2)
-  value_percentage      Decimal?               @db.Decimal(5, 2)
-  
+  id               Int                @id @default(autoincrement())
+  name             String             @db.VarChar(255)
+  description      String             @db.Text
+  benefit_type     benefit_type
+  value_type       benefit_value_type // FIXED, PERCENTAGE
+  value_amount     Decimal?           @db.Decimal(10, 2)
+  value_percentage Decimal?           @db.Decimal(5, 2)
+
   // Eligibility
-  is_active             Boolean                @default(true)
-  requires_enrollment   Boolean                @default(true)
-  eligibility_rules     Json?                  // {'min_tenure_months': 6, 'roles': ['ROLE_EMPLOYEE']}
-  
+  is_active           Boolean @default(true)
+  requires_enrollment Boolean @default(true)
+  eligibility_rules   Json? // {'min_tenure_months': 6, 'roles': ['ROLE_EMPLOYEE']}
+
   // Cost
-  employer_contribution Decimal?               @db.Decimal(10, 2)
-  employee_contribution Decimal?               @db.Decimal(10, 2)
-  
-  created_at            DateTime               @default(now()) @db.DateTime(0)
-  updated_at            DateTime               @updatedAt @db.DateTime(0)
-  
-  enrollments           employee_benefit[]
-  
+  employer_contribution Decimal? @db.Decimal(10, 2)
+  employee_contribution Decimal? @db.Decimal(10, 2)
+
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @updatedAt @db.DateTime(0)
+
+  enrollments employee_benefit[]
+
   @@index([benefit_type], map: "benefit_catalog_type")
   @@index([is_active], map: "benefit_catalog_active")
 }
 
 model employee_benefit {
-  id                Int                        @id @default(autoincrement())
-  user_id           Int
-  benefit_id        Int
-  
+  id         Int @id @default(autoincrement())
+  user_id    Int
+  benefit_id Int
+
   // Enrollment
-  enrolled_at       DateTime                   @default(now()) @db.DateTime(0)
-  start_date        DateTime                   @db.Date
-  end_date          DateTime?                  @db.Date
-  status            benefit_enrollment_status  @default(ACTIVE)
-  
+  enrolled_at DateTime                  @default(now()) @db.DateTime(0)
+  start_date  DateTime                  @db.Date
+  end_date    DateTime?                 @db.Date
+  status      benefit_enrollment_status @default(ACTIVE)
+
   // Custom values (if different from catalog)
-  custom_value      Decimal?                   @db.Decimal(10, 2)
-  
+  custom_value Decimal? @db.Decimal(10, 2)
+
   // Tracking
-  last_used_at      DateTime?                  @db.DateTime(0)
-  usage_count       Int                        @default(0)
-  notes             String?                    @db.Text
-  
-  created_at        DateTime                   @default(now()) @db.DateTime(0)
-  updated_at        DateTime                   @updatedAt @db.DateTime(0)
-  
-  user              user                       @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  benefit           benefit_catalog            @relation(fields: [benefit_id], references: [id], onDelete: Cascade)
-  
+  last_used_at DateTime? @db.DateTime(0)
+  usage_count  Int       @default(0)
+  notes        String?   @db.Text
+
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @updatedAt @db.DateTime(0)
+
+  user    user            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  benefit benefit_catalog @relation(fields: [benefit_id], references: [id], onDelete: Cascade)
+
   @@unique([user_id, benefit_id])
   @@index([user_id], map: "employee_benefit_user_id")
   @@index([benefit_id], map: "employee_benefit_benefit_id")
@@ -1118,7 +1157,6 @@ model employee_benefit {
 // ========================================
 // ENUMS
 // ========================================
-
 
 enum employment_contract_contract_type {
   PERMANENT
@@ -1351,90 +1389,90 @@ enum benefit_enrollment_status {
 // --- RECRUITMENT MODULE MODELS ---
 
 model job_offer {
-  id              Int       @id @default(autoincrement())
-  title           String    @db.VarChar(255)
-  description     String?   @db.Text
-  department      String    @db.VarChar(255)
-  location        String    @db.VarChar(255)
-  contract_type   String    @db.VarChar(50)
-  status          String    @default("DRAFT") @db.VarChar(50)
-  posted_date     DateTime? @db.Date
+  id            Int       @id @default(autoincrement())
+  title         String    @db.VarChar(255)
+  description   String?   @db.Text
+  department    String    @db.VarChar(255)
+  location      String    @db.VarChar(255)
+  contract_type String    @db.VarChar(50)
+  status        String    @default("DRAFT") @db.VarChar(50)
+  posted_date   DateTime? @db.Date
 
   // Scoring fields
-  required_skills   Json?     // Liste des compétences requises
-  min_experience    Int?      // Années d'expérience minimum
-  scoring_criteria  Json?     // Critères personnalisés {skills: 40, experience: 25, interview: 20, rating: 15}
+  required_skills  Json? // Liste des compétences requises
+  min_experience   Int? // Années d'expérience minimum
+  scoring_criteria Json? // Critères personnalisés {skills: 40, experience: 25, interview: 20, rating: 15}
 
-  created_at      DateTime  @default(now()) @db.DateTime(0)
-  updated_at      DateTime  @updatedAt @db.DateTime(0)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @updatedAt @db.DateTime(0)
 
-  applications    candidate_application[]
+  applications candidate_application[]
 }
 
 model candidate {
-  id              Int       @id @default(autoincrement())
-  first_name      String    @db.VarChar(255)
-  last_name       String    @db.VarChar(255)
-  email           String    @unique @db.VarChar(255)
-  phone           String?   @db.VarChar(50)
-  cv_url          String?   @db.VarChar(500)
-  linkedin_url    String?   @db.VarChar(500)
+  id           Int     @id @default(autoincrement())
+  first_name   String  @db.VarChar(255)
+  last_name    String  @db.VarChar(255)
+  email        String  @unique @db.VarChar(255)
+  phone        String? @db.VarChar(50)
+  cv_url       String? @db.VarChar(500)
+  linkedin_url String? @db.VarChar(500)
 
-  rating          Int       @default(0)
-  skills          Json?
-  years_experience Int      @default(0)  // Années d'expérience du candidat
+  rating           Int   @default(0)
+  skills           Json?
+  years_experience Int   @default(0) // Années d'expérience du candidat
 
   is_in_talent_pool Boolean @default(false)
 
-  created_at      DateTime  @default(now()) @db.DateTime(0)
-  updated_at      DateTime  @updatedAt @db.DateTime(0)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @updatedAt @db.DateTime(0)
 
-  applications    candidate_application[]
-  interviews      job_interview[]
+  applications candidate_application[]
+  interviews   job_interview[]
 }
 
 model candidate_application {
-  id              Int       @id @default(autoincrement())
-  job_offer_id    Int
-  candidate_id    Int
+  id           Int @id @default(autoincrement())
+  job_offer_id Int
+  candidate_id Int
 
-  status          String    @default("NEW") @db.VarChar(50)
-  stage           String    @default("NEW") @db.VarChar(50)
+  status String @default("NEW") @db.VarChar(50)
+  stage  String @default("NEW") @db.VarChar(50)
 
   // Scoring fields
-  score           Int?      // Score global calculé (0-100)
-  score_breakdown Json?     // Détail: {skills: 85, experience: 70, interview: 90, rating: 75}
-  scored_at       DateTime? @db.DateTime(0)  // Date du dernier calcul
+  score           Int? // Score global calculé (0-100)
+  score_breakdown Json? // Détail: {skills: 85, experience: 70, interview: 90, rating: 75}
+  scored_at       DateTime? @db.DateTime(0) // Date du dernier calcul
 
-  created_at      DateTime  @default(now()) @db.DateTime(0)
-  updated_at      DateTime  @updatedAt @db.DateTime(0)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @updatedAt @db.DateTime(0)
 
-  job_offer       job_offer @relation(fields: [job_offer_id], references: [id], onDelete: Cascade)
-  candidate       candidate @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
-  interviews      job_interview[]
+  job_offer  job_offer       @relation(fields: [job_offer_id], references: [id], onDelete: Cascade)
+  candidate  candidate       @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
+  interviews job_interview[]
 
   @@index([job_offer_id])
   @@index([candidate_id])
 }
 
 model job_interview {
-  id              Int       @id @default(autoincrement())
-  application_id  Int
-  candidate_id    Int
+  id             Int @id @default(autoincrement())
+  application_id Int
+  candidate_id   Int
 
-  interview_date  DateTime  @db.DateTime(0)
-  interviewer_id  Int
-  type            String    @default("VISIO") @db.VarChar(50)
-  status          String    @default("SCHEDULED") @db.VarChar(50)
-  rating          Int?
-  feedback        String?   @db.Text
+  interview_date DateTime @db.DateTime(0)
+  interviewer_id Int
+  type           String   @default("VISIO") @db.VarChar(50)
+  status         String   @default("SCHEDULED") @db.VarChar(50)
+  rating         Int?
+  feedback       String?  @db.Text
 
-  created_at      DateTime  @default(now()) @db.DateTime(0)
-  updated_at      DateTime  @updatedAt @db.DateTime(0)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @updatedAt @db.DateTime(0)
 
-  application     candidate_application @relation(fields: [application_id], references: [id], onDelete: Cascade)
-  candidate       candidate @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
-  interviewer     user      @relation("Interviewer", fields: [interviewer_id], references: [id])
+  application candidate_application @relation(fields: [application_id], references: [id], onDelete: Cascade)
+  candidate   candidate             @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
+  interviewer user                  @relation("Interviewer", fields: [interviewer_id], references: [id])
 
   @@index([application_id])
   @@index([candidate_id])
@@ -1442,20 +1480,20 @@ model job_interview {
 }
 
 model onboarding_process {
-  id              Int       @id @default(autoincrement())
-  employee_id     Int       @unique
-  mentor_id       Int?
+  id          Int  @id @default(autoincrement())
+  employee_id Int  @unique
+  mentor_id   Int?
 
-  status          String    @default("PRE_BOARDING") @db.VarChar(50)
-  start_date      DateTime  @db.Date
+  status     String   @default("PRE_BOARDING") @db.VarChar(50)
+  start_date DateTime @db.Date
 
-  checklist       Json?
+  checklist Json?
 
-  created_at      DateTime  @default(now()) @db.DateTime(0)
-  updated_at      DateTime  @updatedAt @db.DateTime(0)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @updatedAt @db.DateTime(0)
 
-  employee        user      @relation("OnboardingEmployee", fields: [employee_id], references: [id], onDelete: Cascade)
-  mentor          user?     @relation("OnboardingMentor", fields: [mentor_id], references: [id])
+  employee user  @relation("OnboardingEmployee", fields: [employee_id], references: [id], onDelete: Cascade)
+  mentor   user? @relation("OnboardingMentor", fields: [mentor_id], references: [id])
 
   @@index([mentor_id])
 }

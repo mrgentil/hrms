@@ -2,10 +2,18 @@ import { Injectable, BadRequestException, NotFoundException, ForbiddenException 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateExpenseDto, UpdateExpenseDto, UpdateExpenseStatusDto, MarkAsPaidDto } from './dto/create-expense.dto';
 import { expense_report_status } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
+import { MailService } from '../mail/mail.service';
+import { SYSTEM_PERMISSIONS } from '../roles/roles.service';
+import { NotificationType } from '../notifications/dto/create-notification.dto';
 
 @Injectable()
 export class ExpensesService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+    private mailService: MailService,
+  ) { }
 
   // Créer une note de frais
   async create(userId: number, dto: CreateExpenseDto) {
@@ -96,7 +104,7 @@ export class ExpensesService {
       throw new BadRequestException('Un justificatif est requis pour soumettre la note');
     }
 
-    return this.prisma.expense_report.update({
+    const updatedExpense = await this.prisma.expense_report.update({
       where: { id },
       data: {
         status: 'PENDING',
@@ -106,6 +114,91 @@ export class ExpensesService {
         user: { select: { id: true, full_name: true } },
       },
     });
+
+    // --- NOTIFICATIONS & EMAILS ---
+    try {
+      // 1. Trouver les utilisateurs qui ont la permission d'approuver les dépenses
+      const potentialApprovers = await this.prisma.user.findMany({
+        where: {
+          active: true,
+          role_relation: {
+            role_permission: {
+              some: {
+                permission: {
+                  name: SYSTEM_PERMISSIONS.EXPENSES_APPROVE,
+                },
+              },
+            },
+          },
+        },
+        include: {
+          role_relation: true,
+        },
+      });
+
+      // 2. Filtrer les Managers et Directeurs (selon demande utilisateur)
+      const targetUsers = potentialApprovers.filter((u) => {
+        const roleName = u.role_relation?.name?.toLowerCase() || '';
+        const isManager = roleName.includes('manager');
+        const isGlobalDirector = roleName.includes('directeur') || roleName.includes('director');
+        const isFinance = roleName.includes('finance');
+
+        // On exclut les Managers et les Directeurs (SAUF le Directeur Finance qui doit recevoir)
+        if (isManager) return false;
+        if (isGlobalDirector && !isFinance) return false;
+
+        return true;
+      });
+
+      // 3. Envoyer notifs et emails
+      for (const approver of targetUsers) {
+        // Notification In-App
+        await this.notificationsService.create({
+          user_id: approver.id,
+          type: NotificationType.SYSTEM,
+          title: 'Nouvelle note de frais',
+          message: `${updatedExpense.user.full_name} a soumis une note de frais de ${updatedExpense.amount} ${updatedExpense.currency}`,
+          link: '/expenses?tab=approvals',
+          entity_type: 'expense_report',
+          entity_id: updatedExpense.id,
+        });
+
+        // Email
+        if (approver.work_email) {
+          await this.mailService.sendMail({
+            to: approver.work_email,
+            subject: `Action requise : Note de frais - ${updatedExpense.user.full_name}`,
+            html: `
+              <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                <h2 style="color: #4f46e5;">Nouvelle note de frais à valider</h2>
+                <p>Bonjour ${approver.full_name},</p>
+                <p><strong>${updatedExpense.user.full_name}</strong> vient de soumettre une note de frais qui nécessite votre validation.</p>
+                
+                <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                  <ul style="list-style: none; padding: 0; margin: 0;">
+                    <li style="margin-bottom: 5px;">💰 <strong>Montant :</strong> ${updatedExpense.amount} ${updatedExpense.currency}</li>
+                    <li style="margin-bottom: 5px;">📅 <strong>Date :</strong> ${updatedExpense.expense_date.toLocaleDateString()}</li>
+                    <li style="margin-bottom: 5px;">📂 <strong>Catégorie :</strong> ${updatedExpense.category}</li>
+                    <li>📝 <strong>Description :</strong> ${updatedExpense.description || 'Aucune description'}</li>
+                  </ul>
+                </div>
+
+                <p>Merci de vous connecter à l'application HRMS pour traiter cette demande.</p>
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/expenses?tab=approvals" 
+                   style="display: inline-block; background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                   Valider la note de frais
+                </a>
+              </div>
+            `,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi des notifications de note de frais:', error);
+      // On ne bloque pas le retour de la fonction, la note est bien soumise
+    }
+
+    return updatedExpense;
   }
 
   // Annuler ma note de frais
@@ -171,6 +264,10 @@ export class ExpensesService {
       if (filters.endDate) where.expense_date.lte = new Date(filters.endDate);
     }
 
+
+
+    console.log('ExpensesService.findAll prisma WHERE:', JSON.stringify(where, null, 2));
+
     return this.prisma.expense_report.findMany({
       where,
       orderBy: { created_at: 'desc' },
@@ -203,7 +300,7 @@ export class ExpensesService {
       throw new BadRequestException('Un motif de rejet est requis');
     }
 
-    return this.prisma.expense_report.update({
+    const updatedExpense = await this.prisma.expense_report.update({
       where: { id },
       data: {
         status: dto.status,
@@ -212,10 +309,68 @@ export class ExpensesService {
         rejected_reason: dto.rejected_reason,
       },
       include: {
-        user: { select: { id: true, full_name: true } },
+        user: { select: { id: true, full_name: true, work_email: true } },
         approver: { select: { id: true, full_name: true } },
       },
     });
+
+    // --- NOTIFICATIONS & EMAILS ---
+    try {
+      const isApproved = dto.status === 'APPROVED';
+      const isRejected = dto.status === 'REJECTED';
+      const employee = updatedExpense.user;
+
+      if (isApproved || isRejected) {
+        // Notification Content
+        const title = isApproved ? 'Note de frais approuvée' : 'Note de frais rejetée';
+        const message = isApproved
+          ? `Votre note de frais de ${updatedExpense.amount} ${updatedExpense.currency} a été approuvée.`
+          : `Votre note de frais de ${updatedExpense.amount} ${updatedExpense.currency} a été rejetée.`;
+        const actionText = isApproved ? 'Voir la note' : 'Voir les détails';
+
+        // 1. In-App Notification
+        await this.notificationsService.create({
+          user_id: employee.id,
+          type: NotificationType.SYSTEM, // Use SYSTEM to avoid 'Leave' specific icons/text
+          title: title,
+          message: message,
+          link: '/expenses',
+          entity_type: 'expense_report',
+          entity_id: updatedExpense.id,
+        });
+
+        // 2. Email
+        if (employee.work_email) {
+          await this.mailService.sendMail({
+            to: employee.work_email,
+            subject: `${title} - ${updatedExpense.amount} ${updatedExpense.currency}`,
+            html: `
+              <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                <h2 style="color: ${isApproved ? '#059669' : '#dc2626'};">${title}</h2>
+                <p>Bonjour ${employee.full_name},</p>
+                <p>${message}</p>
+                
+                ${isRejected && updatedExpense.rejected_reason ? `
+                <div style="background-color: #fee2e2; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                  <strong>Motif du rejet :</strong>
+                  <p style="margin: 5px 0 0 0;">${updatedExpense.rejected_reason}</p>
+                </div>
+                ` : ''}
+
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/expenses/${updatedExpense.id}" 
+                   style="display: inline-block; background-color: ${isApproved ? '#059669' : '#dc2626'}; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px;">
+                   ${actionText}
+                </a>
+              </div>
+            `,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi des notifications de statut note de frais:', error);
+    }
+
+    return updatedExpense;
   }
 
   // Marquer comme payé

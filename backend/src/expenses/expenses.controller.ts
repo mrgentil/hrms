@@ -40,7 +40,7 @@ type UploadedFileType = {
 @Controller('expenses')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ExpensesController {
-  constructor(private readonly expensesService: ExpensesService) {}
+  constructor(private readonly expensesService: ExpensesService) { }
 
   // ==========================================
   // ENDPOINTS EMPLOYÉ (self-service)
@@ -181,7 +181,7 @@ export class ExpensesController {
   // ==========================================
 
   @Get('pending')
-  @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_APPROVE)
+  @RequirePermissions(SYSTEM_PERMISSIONS.EXPENSES_APPROVE)
   async findPending() {
     const expenses = await this.expensesService.findPending();
     return { success: true, data: expenses };
@@ -195,12 +195,14 @@ export class ExpensesController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
+    console.log('GET /expenses - Filters:', { status, userId, startDate, endDate });
     const expenses = await this.expensesService.findAll({
       status,
       userId: userId ? parseInt(userId) : undefined,
       startDate,
       endDate,
     });
+    console.log('GET /expenses - Found:', expenses.length);
     return { success: true, data: expenses };
   }
 
@@ -226,7 +228,7 @@ export class ExpensesController {
   }
 
   @Patch(':id/status')
-  @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_APPROVE)
+  @RequirePermissions(SYSTEM_PERMISSIONS.EXPENSES_APPROVE)
   async updateStatus(
     @CurrentUser() user: any,
     @Param('id', ParseIntPipe) id: number,

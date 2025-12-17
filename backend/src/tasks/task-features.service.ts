@@ -10,20 +10,20 @@ export class TaskFeaturesService {
     private prisma: PrismaService,
     private mailService: MailService,
     private configService: ConfigService,
-  ) {}
+  ) { }
 
   // Récupérer le nom de l'app depuis les settings ou la config
   private async getAppSettings() {
     const settings = await this.prisma.app_settings.findMany({
       where: { key: { in: ['app_name', 'primary_color', 'logo_light'] } },
     });
-    
-    const appName = settings.find(s => s.key === 'app_name')?.value || 
-                    this.configService.get('APP_NAME') || 'HRMS';
+
+    const appName = settings.find(s => s.key === 'app_name')?.value ||
+      this.configService.get('APP_NAME') || 'HRMS';
     const primaryColor = settings.find(s => s.key === 'primary_color')?.value || '#465fff';
     const logoUrl = settings.find(s => s.key === 'logo_light')?.value || undefined;
     const appUrl = this.configService.get('APP_URL') || 'http://localhost:3000';
-    
+
     return { appName, primaryColor, logoUrl, appUrl };
   }
 
@@ -57,27 +57,27 @@ export class TaskFeaturesService {
       },
       orderBy: { created_at: 'asc' },
     });
-    
+
     // DEBUG: Log des commentaires avec leurs pièces jointes
     console.log('📝 getComments - taskId:', taskId);
     comments.forEach(c => {
       console.log(`  Comment ${c.id}: ${c.attachments?.length || 0} attachments`);
     });
-    
+
     return comments;
   }
 
   async addComment(
-    taskId: number, 
-    userId: number, 
-    content: string, 
+    taskId: number,
+    userId: number,
+    content: string,
     parentCommentId?: number,
     attachmentPaths: string[] = [],
   ) {
     // Récupérer la tâche pour les notifications
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
-      include: { 
+      include: {
         project: true,
         task_assignment: true,
       },
@@ -122,7 +122,7 @@ export class TaskFeaturesService {
     // Lier les pièces jointes au commentaire et récupérer leurs infos
     const attachmentInfos: { filename: string; path: string; contentType?: string }[] = [];
     console.log('📎 addComment - attachmentPaths reçus:', attachmentPaths);
-    
+
     if (attachmentPaths.length > 0) {
       // Mettre à jour les attachments pour les lier au commentaire
       const updateResult = await this.prisma.task_attachment.updateMany({
@@ -130,14 +130,14 @@ export class TaskFeaturesService {
         data: { comment_id: comment.id },
       });
       console.log('📎 Mise à jour attachments - count:', updateResult.count);
-      
+
       // Récupérer les infos des attachments pour l'email
       const attachments = await this.prisma.task_attachment.findMany({
         where: { comment_id: comment.id },
         select: { id: true, file_name: true, file_path: true, file_type: true },
       });
       console.log('📎 Attachments liés au commentaire:', attachments);
-      
+
       for (const att of attachments) {
         attachmentInfos.push({
           filename: att.file_name,
@@ -203,7 +203,7 @@ export class TaskFeaturesService {
     // Récupérer la tâche pour les notifications
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
-      include: { 
+      include: {
         project: true,
         task_assignment: true,
       },
@@ -276,7 +276,7 @@ export class TaskFeaturesService {
       path: file.path,
       contentType: file.mimetype,
     }] : [];
-    
+
     await this.notifyCommentSubscribers(
       task,
       userId,
@@ -322,7 +322,7 @@ export class TaskFeaturesService {
     // Ajouter le chef de projet et les membres du projet avec rôle de gestion
     if (task.project_id) {
       const projectMembers = await this.prisma.project_member.findMany({
-        where: { 
+        where: {
           project_id: task.project_id,
           user_id: { not: authorId },
           role: { in: ['OWNER', 'ADMIN', 'MANAGER'] },
@@ -335,27 +335,27 @@ export class TaskFeaturesService {
 
     // Récupérer les paramètres de l'app
     const appSettings = await this.getAppSettings();
-    
+
     // Si aucun attachmentNames n'est fourni, extraire du contenu
-    const finalAttachmentNames = attachmentNames.length > 0 
-      ? attachmentNames 
+    const finalAttachmentNames = attachmentNames.length > 0
+      ? attachmentNames
       : (() => {
-          const names: string[] = [];
-          const lines = commentContent.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('📎')) {
-              names.push(line.replace('📎 ', '').trim());
-            }
+        const names: string[] = [];
+        const lines = commentContent.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('📎')) {
+            names.push(line.replace('📎 ', '').trim());
           }
-          return names;
-        })();
+        }
+        return names;
+      })();
 
     // Créer les notifications
     const isReply = !!parentComment;
-    const title = isReply 
+    const title = isReply
       ? `${authorName} a répondu à un commentaire`
       : `Nouveau commentaire sur une tâche`;
-    
+
     const message = isReply
       ? `${authorName} a répondu à ${parentComment.user?.full_name || 'un commentaire'} sur la tâche "${task.title}"`
       : `${authorName} a commenté la tâche "${task.title}" dans le projet "${task.project?.name || 'Projet'}"`;
@@ -409,22 +409,22 @@ export class TaskFeaturesService {
           // Convertir le chemin relatif en chemin absolu
           const fs = require('fs');
           const path = require('path');
-          
+
           const emailAttachments = attachmentInfos.map(info => {
             // Le chemin en BD peut être: ./uploads/tasks/file.png ou uploads/tasks/file.png
             let cleanPath = info.path.replace(/\\/g, '/');
             if (cleanPath.startsWith('./')) {
               cleanPath = cleanPath.substring(2);
             }
-            
+
             const absolutePath = path.join(process.cwd(), cleanPath);
             const fileExists = fs.existsSync(absolutePath);
-            
+
             console.log('📧 Email attachment:');
             console.log('   - Chemin BD:', info.path);
             console.log('   - Chemin absolu:', absolutePath);
             console.log('   - Fichier existe:', fileExists);
-            
+
             return {
               filename: info.filename,
               path: absolutePath,
@@ -460,7 +460,7 @@ export class TaskFeaturesService {
     const mentionRegex = /@([\w_]+)/g;
     const mentions: string[] = [];
     let match;
-    
+
     while ((match = mentionRegex.exec(content)) !== null) {
       mentions.push(match[1]); // Nom sans le @
     }
@@ -471,7 +471,7 @@ export class TaskFeaturesService {
     for (const mention of mentions) {
       // Convertir les underscores en espaces pour chercher le nom complet
       const fullName = mention.replace(/_/g, ' ');
-      
+
       // Chercher l'utilisateur par nom (MySQL est insensible à la casse par défaut)
       const mentionedUser = await this.prisma.user.findFirst({
         where: {
@@ -957,7 +957,7 @@ export class TaskFeaturesService {
   ) {
     const subtask = await this.prisma.task.findUnique({
       where: { id: subtaskId },
-      include: { 
+      include: {
         project: true,
         task_assignment: true,
       },
@@ -1004,7 +1004,7 @@ export class TaskFeaturesService {
 
         // Notifier les NOUVEAUX assignés uniquement
         const newAssigneeIds = data.assignee_ids.filter(id => !oldAssigneeIds.includes(id));
-        
+
         if (newAssigneeIds.length > 0) {
           const assigner = await this.prisma.user.findUnique({
             where: { id: userId },
@@ -1250,14 +1250,14 @@ export class TaskFeaturesService {
 
     // Collecter tous les membres (owner + membres)
     const allMembers: { id: number; full_name: string; profile_photo_url: string | null; role: string }[] = [];
-    
+
     if (project.user) {
       allMembers.push({
         ...project.user,
         role: 'owner',
       });
     }
-    
+
     for (const pm of project.project_member) {
       if (pm.user && !allMembers.find(m => m.id === pm.user.id)) {
         allMembers.push({
@@ -1288,7 +1288,7 @@ export class TaskFeaturesService {
         const done = assignedTasks.filter(t => t.status === 'DONE').length;
         const inProgress = assignedTasks.filter(t => t.status === 'IN_PROGRESS').length;
         const todo = assignedTasks.filter(t => t.status === 'TODO').length;
-        const overdue = assignedTasks.filter(t => 
+        const overdue = assignedTasks.filter(t =>
           t.due_date && new Date(t.due_date) < new Date() && t.status !== 'DONE'
         ).length;
 
@@ -1448,7 +1448,7 @@ export class TaskFeaturesService {
     const inProgress = tasks.filter(t => t.status === 'IN_PROGRESS').length;
     const todo = tasks.filter(t => t.status === 'TODO').length;
     const blocked = tasks.filter(t => t.status === 'BLOCKED').length;
-    const overdue = tasks.filter(t => 
+    const overdue = tasks.filter(t =>
       t.due_date && new Date(t.due_date) < now && t.status !== 'DONE'
     ).length;
     const dueSoon = tasks.filter(t => {
@@ -1519,7 +1519,7 @@ export class TaskFeaturesService {
     if (currentTask.project?.task_board?.length > 0) {
       const board = currentTask.project.task_board[0];
       const priorityGroups = statusToColumnName[status] || [];
-      
+
       // Parcourir les groupes de priorité (premier groupe = priorité haute)
       outerLoop:
       for (const possibleNames of priorityGroups) {
@@ -1714,8 +1714,8 @@ export class TaskFeaturesService {
     return {
       estimated_hours: task?.estimated_hours ? Number(task.estimated_hours) : null,
       total_hours: totalHours,
-      remaining_hours: task?.estimated_hours 
-        ? Math.max(0, Number(task.estimated_hours) - totalHours) 
+      remaining_hours: task?.estimated_hours
+        ? Math.max(0, Number(task.estimated_hours) - totalHours)
         : null,
       entries_count: entries.length,
     };
@@ -1900,8 +1900,175 @@ export class TaskFeaturesService {
   async deleteTemplate(templateId: number, userId: number) {
     const template = await this.prisma.task_template.findUnique({ where: { id: templateId } });
     if (!template) throw new NotFoundException('Template non trouvé');
-    if (template.created_by !== userId) throw new ForbiddenException('Non autorisé');
+    if (template.created_by !== userId) throw new ForbiddenException('Non autorité');
 
     return this.prisma.task_template.delete({ where: { id: templateId } });
+  }
+
+  // ============================================
+  // RÉACTIONS EMOJI
+  // ============================================
+
+  async addReaction(commentId: number, userId: number, emoji: string) {
+    const comment = await this.prisma.task_comment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Commentaire introuvable');
+    }
+
+    return this.prisma.comment_reaction.upsert({
+      where: {
+        comment_id_user_id_emoji: {
+          comment_id: commentId,
+          user_id: userId,
+          emoji: emoji,
+        },
+      },
+      create: {
+        comment_id: commentId,
+        user_id: userId,
+        emoji: emoji,
+      },
+      update: {},
+      include: {
+        user: {
+          select: {
+            id: true,
+            full_name: true,
+            profile_photo_url: true,
+          },
+        },
+      },
+    });
+  }
+
+  async removeReaction(commentId: number, userId: number, emoji: string) {
+    try {
+      return await this.prisma.comment_reaction.delete({
+        where: {
+          comment_id_user_id_emoji: {
+            comment_id: commentId,
+            user_id: userId,
+            emoji: emoji,
+          },
+        },
+      });
+    } catch (error) {
+      throw new NotFoundException('Réaction introuvable');
+    }
+  }
+
+  async getReactions(commentId: number) {
+    const reactions = await this.prisma.comment_reaction.findMany({
+      where: { comment_id: commentId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            full_name: true,
+            profile_photo_url: true,
+          },
+        },
+      },
+      orderBy: { created_at: 'asc' },
+    });
+
+    const grouped = reactions.reduce((acc, reaction) => {
+      if (!acc[reaction.emoji]) {
+        acc[reaction.emoji] = {
+          emoji: reaction.emoji,
+          count: 0,
+          users: [],
+        };
+      }
+      acc[reaction.emoji].count++;
+      acc[reaction.emoji].users.push(reaction.user);
+      return acc;
+    }, {});
+
+    return Object.values(grouped);
+  }
+
+  // ============================================
+  // ÉPINGLER / RÉSOUDRE COMMENTAIRES
+  // ============================================
+
+  async togglePin(commentId: number, userId: number, isPinned: boolean) {
+    const comment = await this.prisma.task_comment.findUnique({
+      where: { id: commentId },
+      include: { task: true },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Commentaire introuvable');
+    }
+
+    return this.prisma.task_comment.update({
+      where: { id: commentId },
+      data: {
+        is_pinned: isPinned,
+        updated_at: new Date(),
+      },
+      include: {
+        user: {
+          select: { id: true, full_name: true, profile_photo_url: true },
+        },
+      },
+    });
+  }
+
+  async resolveComment(commentId: number, userId: number) {
+    return this.prisma.task_comment.update({
+      where: { id: commentId },
+      data: {
+        is_resolved: true,
+        resolved_by: userId,
+        resolved_at: new Date(),
+        updated_at: new Date(),
+      },
+      include: {
+        user: {
+          select: { id: true, full_name: true, profile_photo_url: true },
+        },
+        resolver: {
+          select: { id: true, full_name: true },
+        },
+      },
+    });
+  }
+
+  async unresolveComment(commentId: number, userId: number) {
+    return this.prisma.task_comment.update({
+      where: { id: commentId },
+      data: {
+        is_resolved: false,
+        resolved_by: null,
+        resolved_at: null,
+        updated_at: new Date(),
+      },
+      include: {
+        user: {
+          select: { id: true, full_name: true, profile_photo_url: true },
+        },
+      },
+    });
+  }
+
+  // ============================================
+  // HISTORIQUE DES MODIFICATIONS
+  // ============================================
+
+  async getCommentHistory(commentId: number) {
+    return this.prisma.comment_edit_history.findMany({
+      where: { comment_id: commentId },
+      include: {
+        user: {
+          select: { id: true, full_name: true, profile_photo_url: true },
+        },
+      },
+      orderBy: { edited_at: 'desc' },
+    });
   }
 }

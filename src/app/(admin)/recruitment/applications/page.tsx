@@ -188,14 +188,14 @@ export default function ApplicationsPage() {
 
     const loadData = async () => {
         try {
-            const [stagesData, jobsData, candidatesData] = await Promise.all([
+            const [stagesData, jobsResponse, candidatesResponse] = await Promise.all([
                 recruitmentService.getApplicationsKanban(),
-                recruitmentService.getJobOffers(),
-                recruitmentService.getCandidates(),
+                recruitmentService.getJobOffers({ limit: 100 }),
+                recruitmentService.getCandidates({ limit: 100 }),
             ]);
             setStages(stagesData);
-            setJobs(jobsData);
-            setCandidates(candidatesData);
+            setJobs(jobsResponse.data);
+            setCandidates(candidatesResponse.data);
         } catch (error) {
             console.error(error);
         } finally {

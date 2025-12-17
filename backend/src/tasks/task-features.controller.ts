@@ -26,7 +26,7 @@ export class TaskFeaturesController {
   constructor(
     private readonly taskFeaturesService: TaskFeaturesService,
     private readonly taskRecurrenceService: TaskRecurrenceService,
-  ) {}
+  ) { }
 
   // ============================================
   // COMMENTAIRES
@@ -45,8 +45,8 @@ export class TaskFeaturesController {
     @Body() body: { content: string; parent_comment_id?: number; attachment_paths?: string[] },
   ) {
     const comment = await this.taskFeaturesService.addComment(
-      taskId, 
-      user.id, 
+      taskId,
+      user.id,
       body.content,
       body.parent_comment_id,
       body.attachment_paths || [],
@@ -76,8 +76,8 @@ export class TaskFeaturesController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     const comment = await this.taskFeaturesService.addCommentWithAttachment(
-      taskId, 
-      user.id, 
+      taskId,
+      user.id,
       body.content,
       body.parent_comment_id,
       file,
@@ -102,6 +102,68 @@ export class TaskFeaturesController {
   ) {
     await this.taskFeaturesService.deleteComment(commentId, user.id);
     return { success: true, message: 'Commentaire supprimé' };
+  }
+
+  // ============================================
+  // RÉACTIONS EMOJI
+  // ============================================
+
+  @Post(':taskId/comments/:commentId/reactions')
+  async addReaction(
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @CurrentUser() user: any,
+    @Body('emoji') emoji: string,
+  ) {
+    const reaction = await this.taskFeaturesService.addReaction(commentId, user.id, emoji);
+    return { success: true, data: reaction, message: 'Réaction ajoutée' };
+  }
+
+  @Delete(':taskId/comments/:commentId/reactions/:emoji')
+  async removeReaction(
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @Param('emoji') emoji: string,
+    @CurrentUser() user: any,
+  ) {
+    await this.taskFeaturesService.removeReaction(commentId, user.id, emoji);
+    return { success: true, message: 'Réaction supprimée' };
+  }
+
+  @Get(':taskId/comments/:commentId/reactions')
+  async getReactions(@Param('commentId', ParseIntPipe) commentId: number) {
+    const reactions = await this.taskFeaturesService.getReactions(commentId);
+    return { success: true, data: reactions };
+  }
+
+  // ============================================
+  // ÉPINGLER / RÉSOUDRE COMMENTAIRES
+  // ============================================
+
+  @Patch(':taskId/comments/:commentId/pin')
+  async togglePin(
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @CurrentUser() user: any,
+    @Body('is_pinned') isPinned: boolean,
+  ) {
+    const comment = await this.taskFeaturesService.togglePin(commentId, user.id, isPinned);
+    return { success: true, data: comment, message: isPinned ? 'Commentaire épinglé' : 'Commentaire désépinglé' };
+  }
+
+  @Patch(':taskId/comments/:commentId/resolve')
+  async toggleResolve(
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @CurrentUser() user: any,
+    @Body('is_resolved') isResolved: boolean,
+  ) {
+    const comment = isResolved
+      ? await this.taskFeaturesService.resolveComment(commentId, user.id)
+      : await this.taskFeaturesService.unresolveComment(commentId, user.id);
+    return { success: true, data: comment, message: isResolved ? 'Commentaire résolu' : 'Commentaire rouvert' };
+  }
+
+  @Get(':taskId/comments/:commentId/history')
+  async getCommentHistory(@Param('commentId', ParseIntPipe) commentId: number) {
+    const history = await this.taskFeaturesService.getCommentHistory(commentId);
+    return { success: true, data: history };
   }
 
   // ============================================
@@ -238,10 +300,10 @@ export class TaskFeaturesController {
   async updateSubtask(
     @Param('subtaskId', ParseIntPipe) subtaskId: number,
     @CurrentUser() user: any,
-    @Body() data: { 
-      title?: string; 
-      description?: string; 
-      priority?: string; 
+    @Body() data: {
+      title?: string;
+      description?: string;
+      priority?: string;
       status?: string;
       assignee_ids?: number[];
     },

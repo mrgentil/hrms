@@ -11,7 +11,7 @@ import { QueryDepartmentDto } from './dto/query-department.dto';
 
 @Injectable()
 export class DepartmentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createDepartmentDto: CreateDepartmentDto) {
     if (createDepartmentDto.manager_user_id) {
@@ -89,7 +89,6 @@ export class DepartmentsService {
           },
           _count: {
             select: {
-              position: true,
               user_user_department_idTodepartment: true,
             },
           },
@@ -98,11 +97,13 @@ export class DepartmentsService {
       this.prisma.department.count({ where }),
     ]);
 
-    const mapped = departments.map(({ _count, ...rest }) => ({
-      ...rest,
-      positions_count: _count.position,
-      employees_count: _count.user_user_department_idTodepartment,
-    }));
+    const mapped = departments.map((department) => {
+      const { _count, ...rest } = department;
+      return {
+        ...rest,
+        employees_count: _count.user_user_department_idTodepartment,
+      };
+    });
 
     return {
       data: mapped,
@@ -125,7 +126,6 @@ export class DepartmentsService {
         },
         _count: {
           select: {
-            position: true,
             user_user_department_idTodepartment: true,
           },
         },
@@ -140,7 +140,6 @@ export class DepartmentsService {
 
     return {
       ...rest,
-      positions_count: _count.position,
       employees_count: _count.user_user_department_idTodepartment,
     };
   }
@@ -213,7 +212,6 @@ export class DepartmentsService {
       include: {
         _count: {
           select: {
-            position: true,
             user_user_department_idTodepartment: true,
           },
         },
@@ -226,10 +224,6 @@ export class DepartmentsService {
 
     if (department._count.user_user_department_idTodepartment > 0) {
       throw new ConflictException('Impossible de supprimer un département qui possède des utilisateurs');
-    }
-
-    if (department._count.position > 0) {
-      throw new ConflictException('Impossible de supprimer un département qui possède des postes');
     }
 
     await this.prisma.department.delete({ where: { id } });

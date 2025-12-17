@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 import ComponentCard from '@/components/common/ComponentCard';
+import Pagination from '@/components/common/Pagination';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import { useToast } from '@/hooks/useToast';
 import { useUserRole, hasPermission } from '@/hooks/useUserRole';
@@ -271,29 +272,12 @@ export default function DepartmentsPage() {
             </div>
           )}
 
-          {totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-between">
-              <button
-                type="button"
-                className="rounded border border-stroke px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 dark:border-strokedark dark:text-white"
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Precedent
-              </button>
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                Page {currentPage} sur {totalPages}
-              </span>
-              <button
-                type="button"
-                className="rounded border border-stroke px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 dark:border-strokedark dark:text-white"
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage >= totalPages}
-              >
-                Suivant
-              </button>
-            </div>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            className="mt-6 border-t-0 pt-0"
+          />
         </ComponentCard>
       </div>
     </div>

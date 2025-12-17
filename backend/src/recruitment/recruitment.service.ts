@@ -20,15 +20,41 @@ export class RecruitmentService {
     ) { }
 
     // ===================== JOB OFFERS =====================
-    async findAllJobOffers() {
-        return this.prisma.job_offer.findMany({
-            include: {
-                applications: {
-                    include: { candidate: true }
+    async findAllJobOffers(params: { page?: number; limit?: number; search?: string } = {}) {
+        const { page = 1, limit = 10, search } = params;
+        const skip = (page - 1) * limit;
+        const where: Prisma.job_offerWhereInput = {};
+
+        if (search) {
+            where.OR = [
+                { title: { contains: search } },
+                { description: { contains: search } },
+                { department: { contains: search } }
+            ];
+        }
+
+        const [data, total] = await Promise.all([
+            this.prisma.job_offer.findMany({
+                where,
+                skip,
+                take: +limit,
+                include: {
+                    applications: {
+                        include: { candidate: true }
+                    },
                 },
-            },
-            orderBy: { created_at: 'desc' },
-        });
+                orderBy: { created_at: 'desc' },
+            }),
+            this.prisma.job_offer.count({ where })
+        ]);
+
+        return {
+            data,
+            total,
+            page: +page,
+            limit: +limit,
+            totalPages: Math.ceil(total / limit),
+        };
     }
 
     async findOneJobOffer(id: number) {
@@ -82,11 +108,37 @@ export class RecruitmentService {
     }
 
     // ===================== CANDIDATES =====================
-    async findAllCandidates() {
-        return this.prisma.candidate.findMany({
-            include: { applications: { include: { job_offer: true } } },
-            orderBy: { created_at: 'desc' },
-        });
+    async findAllCandidates(params: { page?: number; limit?: number; search?: string } = {}) {
+        const { page = 1, limit = 10, search } = params;
+        const skip = (page - 1) * limit;
+        const where: Prisma.candidateWhereInput = {};
+
+        if (search) {
+            where.OR = [
+                { first_name: { contains: search } },
+                { last_name: { contains: search } },
+                { email: { contains: search } }
+            ];
+        }
+
+        const [data, total] = await Promise.all([
+            this.prisma.candidate.findMany({
+                where,
+                skip,
+                take: +limit,
+                include: { applications: { include: { job_offer: true } } },
+                orderBy: { created_at: 'desc' },
+            }),
+            this.prisma.candidate.count({ where })
+        ]);
+
+        return {
+            data,
+            total,
+            page: +page,
+            limit: +limit,
+            totalPages: Math.ceil(total / limit),
+        };
     }
 
     async findOneCandidate(id: number) {

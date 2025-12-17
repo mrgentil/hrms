@@ -6,28 +6,17 @@ import { QueryPositionDto } from './dto/query-position.dto';
 
 @Injectable()
 export class PositionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createPositionDto: CreatePositionDto) {
-    if (createPositionDto.department_id) {
-      const department = await this.prisma.department.findUnique({
-        where: { id: createPositionDto.department_id },
-      });
-
-      if (!department) {
-        throw new BadRequestException('Département non trouvé');
-      }
-    }
-
     const existing = await this.prisma.position.findFirst({
       where: {
         title: createPositionDto.title,
-        department_id: createPositionDto.department_id ?? undefined,
       },
     });
 
     if (existing) {
-      throw new ConflictException('Un poste avec ce titre existe déjà pour ce département');
+      throw new ConflictException('Un poste avec ce titre existe déjà');
     }
 
     const position = await this.prisma.position.create({
@@ -35,17 +24,8 @@ export class PositionsService {
         title: createPositionDto.title,
         level: createPositionDto.level,
         description: createPositionDto.description,
-        department_id: createPositionDto.department_id,
         created_at: new Date(),
         updated_at: new Date(),
-      },
-      include: {
-        department: {
-          select: {
-            id: true,
-            department_name: true,
-          },
-        },
       },
     });
 
@@ -53,7 +33,7 @@ export class PositionsService {
   }
 
   async findAll(query: QueryPositionDto) {
-    const { page = 1, limit = 10, search, department_id } = query;
+    const { page = 1, limit = 10, search } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -66,10 +46,6 @@ export class PositionsService {
       ];
     }
 
-    if (department_id) {
-      where.department_id = department_id;
-    }
-
     const [positions, total] = await Promise.all([
       this.prisma.position.findMany({
         where,
@@ -77,12 +53,6 @@ export class PositionsService {
         take: limit,
         orderBy: { created_at: 'desc' },
         include: {
-          department: {
-            select: {
-              id: true,
-              department_name: true,
-            },
-          },
           _count: {
             select: {
               user: true,
@@ -111,12 +81,6 @@ export class PositionsService {
     const position = await this.prisma.position.findUnique({
       where: { id },
       include: {
-        department: {
-          select: {
-            id: true,
-            department_name: true,
-          },
-        },
         _count: {
           select: {
             user: true,
@@ -146,47 +110,36 @@ export class PositionsService {
       throw new NotFoundException('Poste non trouvé');
     }
 
-    if (updatePositionDto.department_id) {
-      const department = await this.prisma.department.findUnique({
-        where: { id: updatePositionDto.department_id },
-      });
-
-      if (!department) {
-        throw new BadRequestException('Département non trouvé');
-      }
-    }
-
     if (
       updatePositionDto.title &&
-      (updatePositionDto.title !== existing.title ||
-        (updatePositionDto.department_id ?? existing.department_id) !== existing.department_id)
+      updatePositionDto.title !== existing.title
     ) {
       const duplicate = await this.prisma.position.findFirst({
         where: {
           id: { not: id },
           title: updatePositionDto.title,
-          department_id: updatePositionDto.department_id ?? existing.department_id,
         },
       });
 
       if (duplicate) {
-        throw new ConflictException('Un poste avec ce titre existe déjà pour ce département');
+        throw new ConflictException('Un poste avec ce titre existe déjà');
       }
     }
 
     const updated = await this.prisma.position.update({
       where: { id },
       data: {
-        ...updatePositionDto,
+        // We handle department_id removal by ignoring it even if present in DTO in runtime (but Typescript might complain if we don't pick properties, however strict DTOs usually handle validation)
+        // Safer to spread specific properties or assume DTO is clean. 
+        // Let's assume DTO might still have it but we only pass relevant ones if mapped manually, or rely on DTO cleaning.
+        // Here I'll just map manually or spread but 'department_id' should be removed from DTO type ideally too.
+        // For now, let's just use ...updatePositionDto but usually prisma warns about unknown fields.
+        // Wait, if DTO still has department_id, passing it to prisma update will throw.
+        // I should strip it.    
+        title: updatePositionDto.title,
+        level: updatePositionDto.level,
+        description: updatePositionDto.description,
         updated_at: new Date(),
-      },
-      include: {
-        department: {
-          select: {
-            id: true,
-            department_name: true,
-          },
-        },
       },
     });
 

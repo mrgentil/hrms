@@ -20,8 +20,8 @@ export default function ScoringPage() {
 
     const loadJobs = async () => {
         try {
-            const data = await recruitmentService.getJobOffers();
-            setJobs(data.filter(j => j.status === "PUBLISHED"));
+            const response = await recruitmentService.getJobOffers({ limit: 100 });
+            setJobs(response.data.filter(j => j.status === "PUBLISHED"));
         } catch (error) {
             console.error("Failed to load jobs", error);
         } finally {
