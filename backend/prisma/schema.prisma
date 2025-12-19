@@ -620,6 +620,8 @@ model user {
   bonuses_created    bonus[]            @relation("bonus_creator")
   bonuses_approved   bonus[]            @relation("bonus_approver")
   employee_benefits  employee_benefit[]
+  fund_requests        fund_request[]
+  fund_requests_reviewed fund_request[] @relation("fund_request_reviewer")
 
   // Recruitment relations
   interviews_as_interviewer job_interview[]      @relation("Interviewer")
@@ -1060,6 +1062,39 @@ model advance_repayment {
   @@index([advance_id], map: "advance_repayment_advance_id")
 }
 
+// --- FUND REQUEST MODEL ---
+model fund_request {
+  id          Int                 @id @default(autoincrement())
+  user_id     Int
+  amount      Decimal             @db.Decimal(10, 2)
+  reason      String              @db.Text
+  project     String?             @db.VarChar(255)
+  department  String?             @db.VarChar(255)
+  needed_by   DateTime?           @db.Date
+  
+  // Workflow
+  status           fund_request_status @default(DRAFT)
+  submitted_at     DateTime?           @db.DateTime(0)
+  reviewed_by      Int?
+  reviewed_at      DateTime?           @db.DateTime(0)
+  reviewer_comment String?             @db.Text
+  
+  // Payment tracking
+  paid_at          DateTime?           @db.DateTime(0)
+  payment_method   String?             @db.VarChar(50)
+  payment_ref      String?             @db.VarChar(100)
+  
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @updatedAt @db.DateTime(0)
+  
+  user     user  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  reviewer user? @relation("fund_request_reviewer", fields: [reviewed_by], references: [id])
+  
+  @@index([user_id], map: "fund_request_user_id")
+  @@index([status], map: "fund_request_status")
+  @@index([reviewed_by], map: "fund_request_reviewer")
+}
+
 model bonus {
   id          Int        @id @default(autoincrement())
   user_id     Int
@@ -1324,6 +1359,10 @@ enum notification_type {
   MESSAGE
   MENTION
   SYSTEM
+  FUND_REQUEST_SUBMITTED
+  FUND_REQUEST_APPROVED
+  FUND_REQUEST_REJECTED
+  FUND_REQUEST_PAID
 }
 
 // Payroll enums
@@ -1342,6 +1381,15 @@ enum advance_status {
   PAID
   REPAYING
   COMPLETED
+  CANCELLED
+}
+
+enum fund_request_status {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
   CANCELLED
 }
 

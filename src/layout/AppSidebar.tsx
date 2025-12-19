@@ -635,6 +635,14 @@ const hrmsModulesNavItems: NavItem[] = [
         allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
+        name: "Demandes de Fonds",
+        path: "/payroll/fund-requests",
+        pro: false,
+        new: true,
+        requiredPermission: "payroll.fund_requests",
+        allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
         name: "Primes & Bonus",
         path: "/payroll/bonuses",
         pro: false,

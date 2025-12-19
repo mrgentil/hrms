@@ -3,12 +3,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 import { AuditService } from '../audit/audit.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/dto/create-notification.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AnnouncementsService {
   constructor(
     private prisma: PrismaService,
     private auditService: AuditService,
+    private notificationsService: NotificationsService,
+    private mailService: MailService,
   ) {}
 
   async create(createAnnouncementDto: CreateAnnouncementDto, authorId: number) {
@@ -216,19 +221,100 @@ export class AnnouncementsService {
   async publish(id: number) {
     const existing = await this.prisma.announcement.findUnique({
       where: { id },
+      include: {
+        author: {
+          select: { id: true, full_name: true },
+        },
+        department: {
+          select: { id: true, department_name: true },
+        },
+      },
     });
 
     if (!existing) {
       throw new NotFoundException('Annonce non trouvée');
     }
 
-    return this.prisma.announcement.update({
+    const published = await this.prisma.announcement.update({
       where: { id },
       data: {
         is_published: true,
         publish_date: new Date(),
       },
     });
+
+    const shouldNotifyAll = existing.target_all || existing.department_id === null;
+
+    const recipients = await this.prisma.user.findMany({
+      where: {
+        active: true,
+        ...(shouldNotifyAll
+          ? {}
+          : {
+              department_id: existing.department_id ?? undefined,
+            }),
+      },
+      select: {
+        id: true,
+        full_name: true,
+        work_email: true,
+      },
+    });
+
+    const recipientsWithoutAuthor = recipients.filter((u) => u.id !== existing.author_id);
+    const link = `/employees/announcements`;
+    const title = 'Nouvelle annonce';
+    const message = `${existing.author?.full_name ?? 'Un utilisateur'} a publié : "${existing.title}"`;
+
+    if (recipientsWithoutAuthor.length > 0) {
+      await this.notificationsService.createMany(
+        recipientsWithoutAuthor.map((user) => ({
+          user_id: user.id,
+          type: NotificationType.ANNOUNCEMENT,
+          title,
+          message,
+          link,
+          entity_type: 'announcement',
+          entity_id: existing.id,
+        })),
+      );
+    }
+
+    const emailRecipients = recipientsWithoutAuthor
+      .map((user) => ({ email: user.work_email?.trim() || null, name: user.full_name }))
+      .filter((user) => !!user.email);
+
+    if (emailRecipients.length > 0) {
+      const audienceLabel = shouldNotifyAll
+        ? 'toute l\'entreprise'
+        : existing.department?.department_name
+          ? `le département ${existing.department.department_name}`
+          : 'votre département';
+
+      const subject = `Nouvelle annonce publiée - ${existing.title}`;
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 24px;">
+          <h2 style="margin: 0 0 12px;">Nouvelle annonce</h2>
+          <p style="margin: 0 0 12px;">Une annonce a été publiée pour <strong>${audienceLabel}</strong>.</p>
+          <p style="margin: 0 0 12px;"><strong>Titre :</strong> ${existing.title}</p>
+          <p style="margin: 0 0 12px;"><strong>Auteur :</strong> ${existing.author?.full_name ?? 'n/a'}</p>
+          <p style="margin: 0 0 16px; white-space: pre-line;"><strong>Contenu :</strong><br/>${existing.content}</p>
+          <p style="margin: 0;">Consulter dans l'application : <a href="${link}">${link}</a></p>
+        </div>
+      `;
+
+      await Promise.all(
+        emailRecipients.map((recipient) =>
+          this.mailService.sendMail({
+            to: recipient.email,
+            subject,
+            html,
+          }),
+        ),
+      );
+    }
+
+    return published;
   }
 
   async unpublish(id: number) {

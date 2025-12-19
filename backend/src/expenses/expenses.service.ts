@@ -266,7 +266,7 @@ export class ExpensesService {
 
 
 
-    console.log('ExpensesService.findAll prisma WHERE:', JSON.stringify(where, null, 2));
+
 
     return this.prisma.expense_report.findMany({
       where,

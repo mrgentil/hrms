@@ -154,6 +154,82 @@ export interface ReviewAdvanceDto {
 }
 
 // ========================================
+// FUND REQUEST TYPES
+// ========================================
+
+export enum FundRequestStatus {
+    DRAFT = 'DRAFT',
+    PENDING = 'PENDING',
+    APPROVED = 'APPROVED',
+    REJECTED = 'REJECTED',
+    PAID = 'PAID',
+    CANCELLED = 'CANCELLED',
+}
+
+export interface FundRequest {
+    id: number;
+    user_id: number;
+    amount: number;
+    reason: string;
+    project?: string;
+    department?: string;
+    needed_by?: Date;
+
+    status: FundRequestStatus;
+    submitted_at?: Date;
+    reviewed_by?: number;
+    reviewed_at?: Date;
+    reviewer_comment?: string;
+
+    paid_at?: Date;
+    payment_method?: string;
+    payment_ref?: string;
+
+    created_at: Date;
+    updated_at: Date;
+
+    // Relations
+    user?: {
+        id: number;
+        full_name: string;
+        work_email?: string;
+        department_user_department_idTodepartment?: {
+            department_name: string;
+        };
+    };
+    reviewer?: {
+        id: number;
+        full_name: string;
+    };
+}
+
+export interface CreateFundRequestDto {
+    amount: number;
+    reason: string;
+    project?: string;
+    department?: string;
+    needed_by?: string;
+}
+
+export interface UpdateFundRequestDto {
+    amount?: number;
+    reason?: string;
+    project?: string;
+    department?: string;
+    needed_by?: string;
+}
+
+export interface ReviewFundRequestDto {
+    status: FundRequestStatus.APPROVED | FundRequestStatus.REJECTED;
+    reviewer_comment?: string;
+}
+
+export interface MarkAsPaidDto {
+    payment_method?: string;
+    payment_ref?: string;
+}
+
+// ========================================
 // BONUS TYPES
 // ========================================
 

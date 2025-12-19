@@ -68,6 +68,7 @@ export const PERMISSIONS = {
     PAYROLL_MANAGE: 'payroll.manage',
     PAYROLL_ADVANCES: 'payroll.advances',
     PAYROLL_BONUSES: 'payroll.bonuses',
+    PAYROLL_FUND_REQUESTS: 'payroll.fund_requests',
 
     // Performance & Évaluations
     PERFORMANCE_VIEW: 'performance.view',

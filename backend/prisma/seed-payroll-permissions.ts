@@ -11,8 +11,9 @@ async function main() {
         { name: 'payroll.view', description: 'Voir la paie (tous)' },
         { name: 'payroll.view_own', description: 'Voir sa paie' },
         { name: 'payroll.manage', description: 'Gérer la paie' },
-        { name: 'payroll.advances', description: 'Gérer les avances' },
+        { name: 'payroll.advances', description: 'Gérer les avances sur salaire' },
         { name: 'payroll.bonuses', description: 'Gérer les primes' },
+        { name: 'payroll.fund_requests', description: 'Gérer les demandes de fonds' },
 
         /* Avantages */
         { name: 'benefits.view', description: 'Voir les avantages' },

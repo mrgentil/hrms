@@ -4,7 +4,7 @@ import { CreateNotificationDto, NotificationType } from './dto/create-notificati
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(dto: CreateNotificationDto) {
     return this.prisma.notification.create({
@@ -174,8 +174,8 @@ export class NotificationsService {
       user_id: userId,
       type: NotificationType.LEAVE_REJECTED,
       title: 'Congé refusé',
-      message: reason 
-        ? `${rejectedBy} a refusé votre demande de congé: ${reason}` 
+      message: reason
+        ? `${rejectedBy} a refusé votre demande de congé: ${reason}`
         : `${rejectedBy} a refusé votre demande de congé`,
       link: `/leaves/my-leaves`,
       entity_type: 'leave',
@@ -192,6 +192,94 @@ export class NotificationsService {
       link: `/messages`,
       entity_type: 'conversation',
       entity_id: conversationId,
+    });
+  }
+
+  // Fund Request Notifications
+
+  async notifyFundRequestSubmitted(
+    reviewerUserId: number,
+    fundRequestId: number,
+    requesterName: string,
+    amount: number,
+    reason: string,
+  ) {
+    const formattedAmount = new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+
+    return this.create({
+      user_id: reviewerUserId,
+      type: NotificationType.FUND_REQUEST_SUBMITTED,
+      title: 'Nouvelle demande de fonds',
+      message: `${requesterName} a soumis une demande de ${formattedAmount} - ${reason.substring(0, 50)}${reason.length > 50 ? '...' : ''}`,
+      link: `/payroll/fund-requests`,
+      entity_type: 'fund_request',
+      entity_id: fundRequestId,
+    });
+  }
+
+  async notifyFundRequestApproved(
+    requesterUserId: number,
+    fundRequestId: number,
+    approverName: string,
+    comment?: string,
+  ) {
+    return this.create({
+      user_id: requesterUserId,
+      type: NotificationType.FUND_REQUEST_APPROVED,
+      title: 'Demande de fonds approuvée',
+      message: comment
+        ? `${approverName} a approuvé votre demande de fonds: ${comment}`
+        : `${approverName} a approuvé votre demande de fonds`,
+      link: `/payroll/fund-requests`,
+      entity_type: 'fund_request',
+      entity_id: fundRequestId,
+    });
+  }
+
+  async notifyFundRequestRejected(
+    requesterUserId: number,
+    fundRequestId: number,
+    rejectorName: string,
+    reason?: string,
+  ) {
+    return this.create({
+      user_id: requesterUserId,
+      type: NotificationType.FUND_REQUEST_REJECTED,
+      title: 'Demande de fonds refusée',
+      message: reason
+        ? `${rejectorName} a refusé votre demande de fonds: ${reason}`
+        : `${rejectorName} a refusé votre demande de fonds`,
+      link: `/payroll/fund-requests`,
+      entity_type: 'fund_request',
+      entity_id: fundRequestId,
+    });
+  }
+
+  async notifyFundRequestPaid(
+    requesterUserId: number,
+    fundRequestId: number,
+    payerName: string,
+    amount: number,
+    paymentMethod?: string,
+  ) {
+    const formattedAmount = new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+
+    return this.create({
+      user_id: requesterUserId,
+      type: NotificationType.FUND_REQUEST_PAID,
+      title: 'Demande de fonds payée',
+      message: paymentMethod
+        ? `${payerName} a effectué le paiement de ${formattedAmount} par ${paymentMethod}`
+        : `${payerName} a effectué le paiement de ${formattedAmount}`,
+      link: `/payroll/fund-requests`,
+      entity_type: 'fund_request',
+      entity_id: fundRequestId,
     });
   }
 }

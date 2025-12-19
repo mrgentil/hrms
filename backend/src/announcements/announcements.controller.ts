@@ -25,7 +25,7 @@ export class AnnouncementsController {
   constructor(private readonly announcementsService: AnnouncementsService) {}
 
   @Post()
-  @RequirePermissions(SYSTEM_PERMISSIONS.USERS_VIEW)
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE)
   create(
     @Body() createAnnouncementDto: CreateAnnouncementDto,
     @CurrentUser() user: any,
@@ -34,7 +34,7 @@ export class AnnouncementsController {
   }
 
   @Get()
-  @RequirePermissions(SYSTEM_PERMISSIONS.USERS_VIEW)
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW)
   findAll(
     @Query('is_published') isPublished?: string,
     @Query('type') type?: string,
@@ -50,6 +50,7 @@ export class AnnouncementsController {
   }
 
   @Get('my')
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW)
   findMyAnnouncements(@CurrentUser() user: any) {
     return this.announcementsService.findPublishedForUser(
       user.id,
@@ -58,18 +59,19 @@ export class AnnouncementsController {
   }
 
   @Get('stats')
-  @RequirePermissions(SYSTEM_PERMISSIONS.USERS_VIEW)
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW)
   getStats() {
     return this.announcementsService.getStats();
   }
 
   @Get(':id')
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.announcementsService.findOne(id);
   }
 
   @Patch(':id')
-  @RequirePermissions(SYSTEM_PERMISSIONS.USERS_EDIT)
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAnnouncementDto: UpdateAnnouncementDto,
@@ -78,18 +80,19 @@ export class AnnouncementsController {
   }
 
   @Patch(':id/publish')
-  @RequirePermissions(SYSTEM_PERMISSIONS.USERS_EDIT)
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE)
   publish(@Param('id', ParseIntPipe) id: number) {
     return this.announcementsService.publish(id);
   }
 
   @Patch(':id/unpublish')
-  @RequirePermissions(SYSTEM_PERMISSIONS.USERS_EDIT)
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE)
   unpublish(@Param('id', ParseIntPipe) id: number) {
     return this.announcementsService.unpublish(id);
   }
 
   @Post(':id/read')
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW)
   markAsRead(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: any,
@@ -98,7 +101,7 @@ export class AnnouncementsController {
   }
 
   @Delete(':id')
-  @RequirePermissions(SYSTEM_PERMISSIONS.USERS_DELETE)
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.announcementsService.remove(id);
   }

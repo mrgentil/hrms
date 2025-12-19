@@ -195,14 +195,12 @@ export class ExpensesController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    console.log('GET /expenses - Filters:', { status, userId, startDate, endDate });
     const expenses = await this.expensesService.findAll({
       status,
       userId: userId ? parseInt(userId) : undefined,
       startDate,
       endDate,
     });
-    console.log('GET /expenses - Found:', expenses.length);
     return { success: true, data: expenses };
   }
 

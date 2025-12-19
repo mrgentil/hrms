@@ -16,6 +16,11 @@ import type {
     CreateBenefitCatalogDto,
     UpdateBenefitCatalogDto,
     EnrollBenefitDto,
+    FundRequest,
+    CreateFundRequestDto,
+    UpdateFundRequestDto,
+    ReviewFundRequestDto,
+    MarkAsPaidDto,
     ApiResponse,
     PaginatedResponse,
     PayrollStats,
@@ -369,6 +374,97 @@ export const benefitService = {
 };
 
 // ========================================
+// FUND REQUEST SERVICE
+// ========================================
+
+export const fundRequestService = {
+    /**
+     * Get all fund requests with filters
+     */
+    getRequests: async (params?: {
+        page?: number;
+        limit?: number;
+        user_id?: number;
+        status?: string;
+    }): Promise<PaginatedResponse<FundRequest>> => {
+        const response = await apiClient.get('/payroll/fund-requests', { params });
+        return response.data;
+    },
+
+    /**
+     * Get a single fund request by ID
+     */
+    getRequest: async (id: number): Promise<ApiResponse<FundRequest>> => {
+        const response = await apiClient.get(`/payroll/fund-requests/${id}`);
+        return response.data;
+    },
+
+    /**
+     * Get current user's fund requests
+     */
+    getMyRequests: async (): Promise<ApiResponse<FundRequest[]>> => {
+        const response = await apiClient.get('/payroll/fund-requests/my');
+        return response.data;
+    },
+
+    /**
+     * Create a new fund request
+     */
+    createRequest: async (data: CreateFundRequestDto): Promise<ApiResponse<FundRequest>> => {
+        const response = await apiClient.post('/payroll/fund-requests', data);
+        return response.data;
+    },
+
+    /**
+     * Update a fund request (only in DRAFT status)
+     */
+    updateRequest: async (id: number, data: UpdateFundRequestDto): Promise<ApiResponse<FundRequest>> => {
+        const response = await apiClient.patch(`/payroll/fund-requests/${id}`, data);
+        return response.data;
+    },
+
+    /**
+     * Submit a fund request for approval
+     */
+    submitRequest: async (id: number): Promise<ApiResponse<FundRequest>> => {
+        const response = await apiClient.post(`/payroll/fund-requests/${id}/submit`);
+        return response.data;
+    },
+
+    /**
+     * Review a fund request (approve/reject)
+     */
+    reviewRequest: async (id: number, data: ReviewFundRequestDto): Promise<ApiResponse<FundRequest>> => {
+        const response = await apiClient.post(`/payroll/fund-requests/${id}/review`, data);
+        return response.data;
+    },
+
+    /**
+     * Mark a fund request as paid
+     */
+    markAsPaid: async (id: number, data: MarkAsPaidDto): Promise<ApiResponse<FundRequest>> => {
+        const response = await apiClient.post(`/payroll/fund-requests/${id}/pay`, data);
+        return response.data;
+    },
+
+    /**
+     * Cancel a fund request
+     */
+    cancelRequest: async (id: number): Promise<ApiResponse<FundRequest>> => {
+        const response = await apiClient.post(`/payroll/fund-requests/${id}/cancel`);
+        return response.data;
+    },
+
+    /**
+     * Delete a fund request
+     */
+    deleteRequest: async (id: number): Promise<ApiResponse<void>> => {
+        const response = await apiClient.delete(`/payroll/fund-requests/${id}`);
+        return response.data;
+    },
+};
+
+// ========================================
 // STATS SERVICE
 // ========================================
 
@@ -388,5 +484,6 @@ export const payrollService = {
     advances: advanceService,
     bonuses: bonusService,
     benefits: benefitService,
+    fundRequests: fundRequestService,
     stats: payrollStatsService,
 };

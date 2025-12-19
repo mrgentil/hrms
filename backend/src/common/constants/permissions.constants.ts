@@ -70,6 +70,7 @@ export const SYSTEM_PERMISSIONS = {
     PAYROLL_MANAGE: 'payroll.manage',
     PAYROLL_ADVANCES: 'payroll.advances',
     PAYROLL_BONUSES: 'payroll.bonuses',
+    PAYROLL_FUND_REQUESTS: 'payroll.fund_requests',
 
     // Performance & Évaluations
     PERFORMANCE_VIEW: 'performance.view',
@@ -188,6 +189,7 @@ export const PERMISSION_GROUPS = [
             { key: 'payroll.manage', label: 'Gérer la paie', description: 'Administrer les bulletins de paie' },
             { key: 'payroll.advances', label: 'Gérer les avances', description: 'Traiter les demandes d\'avances' },
             { key: 'payroll.bonuses', label: 'Gérer les primes', description: 'Attribuer primes et bonus' },
+            { key: 'payroll.fund_requests', label: 'Demandes de fonds', description: 'Gérer les demandes de fonds pour dépenses business' },
         ],
     },
     {

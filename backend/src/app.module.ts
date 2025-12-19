@@ -34,6 +34,7 @@ import { BenefitsModule } from './benefits/benefits.module';
 import { PayslipsModule } from './payslips/payslips.module';
 import { RecruitmentModule } from './recruitment/recruitment.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { FundRequestsModule } from './fund-requests/fund-requests.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { UploadsModule } from './uploads/uploads.module';
     PayslipsModule,
     RecruitmentModule,
     UploadsModule,
+    FundRequestsModule,
   ],
   controllers: [AppController],
   providers: [
