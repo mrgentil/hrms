@@ -35,6 +35,7 @@ import { PayslipsModule } from './payslips/payslips.module';
 import { RecruitmentModule } from './recruitment/recruitment.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { FundRequestsModule } from './fund-requests/fund-requests.module';
+import { PermissionsModule } from './permissions/permissions.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { FundRequestsModule } from './fund-requests/fund-requests.module';
     RecruitmentModule,
     UploadsModule,
     FundRequestsModule,
+    PermissionsModule,
   ],
   controllers: [AppController],
   providers: [

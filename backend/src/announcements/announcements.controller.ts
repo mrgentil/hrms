@@ -70,6 +70,12 @@ export class AnnouncementsController {
     return this.announcementsService.findOne(id);
   }
 
+  @Get(':id/readers')
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE)
+  getReaders(@Param('id', ParseIntPipe) id: number) {
+    return this.announcementsService.getReaders(id);
+  }
+
   @Patch(':id')
   @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE)
   update(

@@ -141,6 +141,27 @@ class AnnouncementsService {
     const result = await this.request<any>(`${API_BASE_URL}/announcements/stats`);
     return result.data || result;
   }
+
+  // Obtenir les lecteurs d'une annonce
+  async getReaders(id: number): Promise<{
+    announcement_id: number;
+    total_readers: number;
+    total_target: number;
+    read_percentage: number;
+    readers: Array<{
+      user: {
+        id: number;
+        full_name: string;
+        work_email: string;
+        profile_photo_url?: string;
+        department?: { id: number; department_name: string };
+      };
+      read_at: string;
+    }>;
+  }> {
+    const result = await this.request<any>(`${API_BASE_URL}/announcements/${id}/readers`);
+    return result.data || result;
+  }
 }
 
 export const announcementsService = new AnnouncementsService();

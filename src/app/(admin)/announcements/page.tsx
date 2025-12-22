@@ -48,6 +48,24 @@ export default function AnnouncementsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showReadersModal, setShowReadersModal] = useState(false);
+  const [readersData, setReadersData] = useState<{
+    announcement_id: number;
+    total_readers: number;
+    total_target: number;
+    read_percentage: number;
+    readers: Array<{
+      user: {
+        id: number;
+        full_name: string;
+        work_email: string;
+        profile_photo_url?: string;
+        department?: { id: number; department_name: string };
+      };
+      read_at: string;
+    }>;
+  } | null>(null);
+  const [loadingReaders, setLoadingReaders] = useState(false);
 
   // Filtres
   const [filterType, setFilterType] = useState("");
@@ -65,7 +83,7 @@ export default function AnnouncementsPage() {
     expire_date: undefined,
   });
 
-  const isAdmin = userRole?.role === "ROLE_ADMIN" || userRole?.role === "ROLE_SUPER_ADMIN" || userRole?.role === "ROLE_RH";
+  const isAdmin = userRole?.role === "ROLE_ADMIN" || userRole?.role === "ROLE_SUPER_ADMIN" || userRole?.role === "ROLE_RH" || userRole?.role === "ROLE_MANAGER";
 
   useEffect(() => {
     loadData();
@@ -180,6 +198,20 @@ export default function AnnouncementsPage() {
     return new Date(date) < new Date();
   };
 
+  const handleViewReaders = async (id: number) => {
+    try {
+      setLoadingReaders(true);
+      setShowReadersModal(true);
+      const data = await announcementsService.getReaders(id);
+      setReadersData(data);
+    } catch (error: any) {
+      toast.error(error?.message || "Erreur lors du chargement des lecteurs");
+      setShowReadersModal(false);
+    } finally {
+      setLoadingReaders(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageBreadcrumb pageTitle="Annonces" />
@@ -256,13 +288,12 @@ export default function AnnouncementsPage() {
           {announcements.map((announcement) => (
             <div
               key={announcement.id}
-              className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border-l-4 ${
-                announcement.type === "URGENT" ? "border-red-500" :
-                announcement.type === "EVENT" ? "border-purple-500" :
-                announcement.type === "CELEBRATION" ? "border-yellow-500" :
-                announcement.type === "MAINTENANCE" ? "border-orange-500" :
-                "border-blue-500"
-              } ${isExpired(announcement.expire_date) ? "opacity-60" : ""}`}
+              className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border-l-4 ${announcement.type === "URGENT" ? "border-red-500" :
+                  announcement.type === "EVENT" ? "border-purple-500" :
+                    announcement.type === "CELEBRATION" ? "border-yellow-500" :
+                      announcement.type === "MAINTENANCE" ? "border-orange-500" :
+                        "border-blue-500"
+                } ${isExpired(announcement.expire_date) ? "opacity-60" : ""}`}
             >
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="flex-1">
@@ -286,15 +317,15 @@ export default function AnnouncementsPage() {
                       </span>
                     )}
                   </div>
-                  
+
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                     {announcement.title}
                   </h3>
-                  
+
                   <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
                     {announcement.content}
                   </p>
-                  
+
                   <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                     <span>Par {announcement.author?.full_name || "Admin"}</span>
                     <span>•</span>
@@ -314,13 +345,20 @@ export default function AnnouncementsPage() {
 
                 {isAdmin && (
                   <div className="flex sm:flex-col gap-2">
+                    {announcement.is_published && (
+                      <button
+                        onClick={() => handleViewReaders(announcement.id)}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200"
+                      >
+                        👁️ Lecteurs
+                      </button>
+                    )}
                     <button
                       onClick={() => handlePublish(announcement.id, !announcement.is_published)}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg ${
-                        announcement.is_published
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg ${announcement.is_published
                           ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
                           : "bg-green-100 text-green-700 hover:bg-green-200"
-                      }`}
+                        }`}
                     >
                       {announcement.is_published ? "Dépublier" : "Publier"}
                     </button>
@@ -353,7 +391,7 @@ export default function AnnouncementsPage() {
                 {editingAnnouncement ? "Modifier l'annonce" : "Nouvelle annonce"}
               </h2>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -473,6 +511,119 @@ export default function AnnouncementsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal lecteurs */}
+      {showReadersModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden m-4">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                👁️ Statistiques de lecture
+              </h2>
+              <button
+                onClick={() => {
+                  setShowReadersModal(false);
+                  setReadersData(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {loadingReaders ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : readersData ? (
+                <div className="space-y-6">
+                  {/* Statistiques */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center">
+                      <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                        {readersData.total_readers}
+                      </div>
+                      <div className="text-sm text-blue-600/70 dark:text-blue-400/70">Ont lu</div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
+                      <div className="text-3xl font-bold text-gray-600 dark:text-gray-300">
+                        {readersData.total_target}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Destinataires</div>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center">
+                      <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                        {readersData.read_percentage}%
+                      </div>
+                      <div className="text-sm text-green-600/70 dark:text-green-400/70">Taux de lecture</div>
+                    </div>
+                  </div>
+
+                  {/* Barre de progression */}
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                    <div
+                      className="bg-green-500 h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${readersData.read_percentage}%` }}
+                    ></div>
+                  </div>
+
+                  {/* Liste des lecteurs */}
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      Personnes ayant lu l'annonce ({readersData.readers.length})
+                    </h3>
+                    {readersData.readers.length === 0 ? (
+                      <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+                        Aucune lecture pour le moment
+                      </p>
+                    ) : (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {readersData.readers.map((reader) => (
+                          <div
+                            key={reader.user.id}
+                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                                {reader.user.profile_photo_url ? (
+                                  <img
+                                    src={reader.user.profile_photo_url}
+                                    alt={reader.user.full_name}
+                                    className="w-10 h-10 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  reader.user.full_name?.charAt(0) || "?"
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900 dark:text-white">
+                                  {reader.user.full_name}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  {reader.user.department?.department_name || "Sans département"}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {new Date(reader.read_at).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "short",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       )}

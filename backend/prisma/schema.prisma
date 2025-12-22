@@ -198,9 +198,35 @@ model permission {
   id              Int               @id @default(autoincrement())
   name            String            @unique(map: "name") @db.VarChar(255)
   description     String?           @db.Text
+  group_name      String?           @db.VarChar(100)
+  group_icon      String?           @db.VarChar(10)
+  label           String?           @db.VarChar(255)
+  sort_order      Int               @default(0)
   created_at      DateTime          @db.DateTime(0)
   updated_at      DateTime          @db.DateTime(0)
   role_permission role_permission[]
+  menu_items      menu_item[]
+}
+
+model menu_item {
+  id            Int         @id @default(autoincrement())
+  name          String      @db.VarChar(255)
+  path          String?     @db.VarChar(255)
+  icon          String?     @db.VarChar(50)
+  parent_id     Int?
+  permission_id Int?
+  sort_order    Int         @default(0)
+  is_active     Boolean     @default(true)
+  section       String      @default("main") @db.VarChar(100)
+  description   String?     @db.VarChar(255)
+  created_at    DateTime    @db.DateTime(0)
+  updated_at    DateTime    @db.DateTime(0)
+  parent        menu_item?  @relation("menu_hierarchy", fields: [parent_id], references: [id], onDelete: SetNull)
+  children      menu_item[] @relation("menu_hierarchy")
+  permission    permission? @relation(fields: [permission_id], references: [id], onDelete: SetNull)
+
+  @@index([parent_id], map: "menu_item_parent_id")
+  @@index([permission_id], map: "menu_item_permission_id")
 }
 
 model position {

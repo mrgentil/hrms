@@ -233,6 +233,21 @@ const mainNavItems: NavItem[] = [
         allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
       },
       {
+        name: "Permissions",
+        path: "/users/permissions",
+        pro: false,
+        requiredPermission: "roles.manage",
+        allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
+        name: "Configuration Menus",
+        path: "/users/menus",
+        pro: false,
+        new: true,
+        requiredPermission: "roles.manage",
+        allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+      },
+      {
         name: "Documents",
         path: "/users/documents",
         pro: false,

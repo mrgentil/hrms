@@ -9,7 +9,9 @@ const Toaster = () => {
       reverseOrder={false}
       gutter={8}
       containerClassName=""
-      containerStyle={{}}
+      containerStyle={{
+        zIndex: 99999,
+      }}
       toastOptions={{
         // Styles par défaut
         className: "",

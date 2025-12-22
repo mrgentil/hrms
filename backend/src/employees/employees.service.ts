@@ -11,7 +11,7 @@ import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class EmployeesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createEmployeeDto: CreateEmployeeDto) {
     const {
@@ -28,7 +28,7 @@ export class EmployeesService {
       hire_date,
       profile_photo_url,
       active,
-      
+
       // Informations personnelles
       date_of_birth,
       gender,
@@ -41,7 +41,7 @@ export class EmployeesService {
       mobile,
       phone,
       email_address,
-      
+
       // Informations financières
       employment_type,
       salary_basic,
@@ -75,16 +75,16 @@ export class EmployeesService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Calculer les totaux
-    const allowance_total = (allowance_house_rent || 0) + 
-                           (allowance_medical || 0) + 
-                           (allowance_special || 0) + 
-                           (allowance_fuel || 0) + 
-                           (allowance_phone_bill || 0) + 
-                           (allowance_other || 0);
+    const allowance_total = (allowance_house_rent || 0) +
+      (allowance_medical || 0) +
+      (allowance_special || 0) +
+      (allowance_fuel || 0) +
+      (allowance_phone_bill || 0) +
+      (allowance_other || 0);
 
-    const deduction_total = (deduction_provident_fund || 0) + 
-                           (deduction_tax || 0) + 
-                           (deduction_other || 0);
+    const deduction_total = (deduction_provident_fund || 0) +
+      (deduction_tax || 0) +
+      (deduction_other || 0);
 
     return this.prisma.$transaction(async (prisma) => {
       // Créer l'utilisateur principal
@@ -108,8 +108,8 @@ export class EmployeesService {
       });
 
       // Créer les informations personnelles si fournies
-      if (date_of_birth || gender || marital_status || father_name || id_number || 
-          address || city || country || mobile || phone || email_address) {
+      if (date_of_birth || gender || marital_status || father_name || id_number ||
+        address || city || country || mobile || phone || email_address) {
         await prisma.user_personal_info.create({
           data: {
             user_id: user.id,
@@ -129,11 +129,11 @@ export class EmployeesService {
       }
 
       // Créer les informations financières si fournies
-      if (employment_type || salary_basic || salary_gross || salary_net || 
-          allowance_house_rent || allowance_medical || allowance_special || 
-          allowance_fuel || allowance_phone_bill || allowance_other || 
-          deduction_provident_fund || deduction_tax || deduction_other || 
-          bank_name || account_name || account_number || iban) {
+      if (employment_type || salary_basic || salary_gross || salary_net ||
+        allowance_house_rent || allowance_medical || allowance_special ||
+        allowance_fuel || allowance_phone_bill || allowance_other ||
+        deduction_provident_fund || deduction_tax || deduction_other ||
+        bank_name || account_name || account_number || iban) {
         await prisma.user_financial_info.create({
           data: {
             user_id: user.id,
@@ -166,9 +166,9 @@ export class EmployeesService {
 
   async findAll(page = 1, limit = 10, search?: string, department_id?: number) {
     const skip = (page - 1) * limit;
-    
+
     const where: any = {};
-    
+
     if (search) {
       where.OR = [
         { full_name: { contains: search } },
@@ -176,7 +176,7 @@ export class EmployeesService {
         { work_email: { contains: search } },
       ];
     }
-    
+
     if (department_id) {
       where.department_id = department_id;
     }
@@ -279,7 +279,7 @@ export class EmployeesService {
       hire_date,
       profile_photo_url,
       active,
-      
+
       // Informations personnelles
       date_of_birth,
       gender,
@@ -292,7 +292,7 @@ export class EmployeesService {
       mobile,
       phone,
       email_address,
-      
+
       // Informations financières
       employment_type,
       salary_basic,
@@ -347,9 +347,9 @@ export class EmployeesService {
       });
 
       // Mettre à jour les informations personnelles
-      if (date_of_birth || gender || marital_status || father_name || id_number || 
-          address || city || country || mobile || phone || email_address) {
-        
+      if (date_of_birth || gender || marital_status || father_name || id_number ||
+        address || city || country || mobile || phone || email_address) {
+
         const personalData: any = {};
         if (date_of_birth) personalData.date_of_birth = new Date(date_of_birth);
         if (gender) personalData.gender = gender;
@@ -383,14 +383,14 @@ export class EmployeesService {
       }
 
       // Mettre à jour les informations financières
-      if (employment_type || salary_basic !== undefined || salary_gross !== undefined || 
-          salary_net !== undefined || allowance_house_rent !== undefined || 
-          allowance_medical !== undefined || allowance_special !== undefined || 
-          allowance_fuel !== undefined || allowance_phone_bill !== undefined || 
-          allowance_other !== undefined || deduction_provident_fund !== undefined || 
-          deduction_tax !== undefined || deduction_other !== undefined || 
-          bank_name || account_name || account_number || iban) {
-        
+      if (employment_type || salary_basic !== undefined || salary_gross !== undefined ||
+        salary_net !== undefined || allowance_house_rent !== undefined ||
+        allowance_medical !== undefined || allowance_special !== undefined ||
+        allowance_fuel !== undefined || allowance_phone_bill !== undefined ||
+        allowance_other !== undefined || deduction_provident_fund !== undefined ||
+        deduction_tax !== undefined || deduction_other !== undefined ||
+        bank_name || account_name || account_number || iban) {
+
         const financialData: any = {};
         if (employment_type) financialData.employment_type = employment_type;
         if (salary_basic !== undefined) financialData.salary_basic = salary_basic;
@@ -415,16 +415,16 @@ export class EmployeesService {
           where: { user_id: id },
         });
 
-        const allowance_total = (financialData.allowance_house_rent ?? currentFinancial?.allowance_house_rent ?? 0) + 
-                               (financialData.allowance_medical ?? currentFinancial?.allowance_medical ?? 0) + 
-                               (financialData.allowance_special ?? currentFinancial?.allowance_special ?? 0) + 
-                               (financialData.allowance_fuel ?? currentFinancial?.allowance_fuel ?? 0) + 
-                               (financialData.allowance_phone_bill ?? currentFinancial?.allowance_phone_bill ?? 0) + 
-                               (financialData.allowance_other ?? currentFinancial?.allowance_other ?? 0);
+        const allowance_total = (financialData.allowance_house_rent ?? currentFinancial?.allowance_house_rent ?? 0) +
+          (financialData.allowance_medical ?? currentFinancial?.allowance_medical ?? 0) +
+          (financialData.allowance_special ?? currentFinancial?.allowance_special ?? 0) +
+          (financialData.allowance_fuel ?? currentFinancial?.allowance_fuel ?? 0) +
+          (financialData.allowance_phone_bill ?? currentFinancial?.allowance_phone_bill ?? 0) +
+          (financialData.allowance_other ?? currentFinancial?.allowance_other ?? 0);
 
-        const deduction_total = (financialData.deduction_provident_fund ?? currentFinancial?.deduction_provident_fund ?? 0) + 
-                               (financialData.deduction_tax ?? currentFinancial?.deduction_tax ?? 0) + 
-                               (financialData.deduction_other ?? currentFinancial?.deduction_other ?? 0);
+        const deduction_total = (financialData.deduction_provident_fund ?? currentFinancial?.deduction_provident_fund ?? 0) +
+          (financialData.deduction_tax ?? currentFinancial?.deduction_tax ?? 0) +
+          (financialData.deduction_other ?? currentFinancial?.deduction_other ?? 0);
 
         financialData.allowance_total = allowance_total;
         financialData.deduction_total = deduction_total;
@@ -507,7 +507,7 @@ export class EmployeesService {
     }
 
     const data: any = { updated_at: new Date() };
-    
+
     if (updateData.contract_type) data.contract_type = updateData.contract_type;
     if (updateData.start_date) data.start_date = new Date(updateData.start_date);
     if (updateData.end_date) data.end_date = new Date(updateData.end_date);
@@ -848,35 +848,53 @@ export class EmployeesService {
   }
 
   async getMyAnnouncements(userId: number) {
+    console.log(`🔍 getMyAnnouncements called for user ${userId}`);
     const employee = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { department_id: true },
     });
 
     if (!employee) {
-      throw new NotFoundException('Employ� non trouv�');
+      console.error(`❌ Employee not found for user ${userId}`);
+      throw new NotFoundException('Employé non trouvé');
     }
 
-    const orConditions: Array<{ department_id: number | null }> = [{ department_id: null }];
+    const now = new Date();
+    console.log(`📊 Searching for announcements. Dept: ${employee.department_id}, Now: ${now.toISOString()}`);
 
-    if (employee.department_id !== null && employee.department_id !== undefined) {
-      orConditions.push({ department_id: employee.department_id });
-    }
-
-    return this.prisma.department_announcement.findMany({
+    const announcements = await this.prisma.announcement.findMany({
       where: {
-        OR: orConditions,
+        is_published: true,
+        OR: [
+          { expire_date: null },
+          { expire_date: { gte: now } },
+        ],
+        AND: [
+          {
+            OR: [
+              { target_all: true },
+              { department_id: employee.department_id || 0 }, // If no department, only target_all matches (0 won't match any valid department usually)
+            ],
+          },
+        ],
       },
       include: {
-        user: {
-          select: { id: true, full_name: true },
+        author: {
+          select: { id: true, full_name: true, profile_photo_url: true },
         },
         department: {
           select: { id: true, department_name: true },
         },
       },
-      orderBy: { created_at: 'desc' },
+      orderBy: [
+        { priority: 'desc' }, // High priority first
+        { publish_date: 'desc' }, // Then most recent
+        { created_at: 'desc' },
+      ],
     });
+
+    console.log(`✅ Found ${announcements.length} announcements`);
+    return announcements;
   }
 
   async deleteDocument(documentId: number) {
@@ -972,11 +990,11 @@ export class EmployeesService {
 
     // Organiser par département et hiérarchie
     const organizationMap = new Map();
-    
+
     employees.forEach(employee => {
       const deptId = employee.department_id || 0;
       const deptName = employee.department_user_department_idTodepartment?.department_name || 'Sans département';
-      
+
       if (!organizationMap.has(deptId)) {
         organizationMap.set(deptId, {
           id: deptId,
@@ -986,7 +1004,7 @@ export class EmployeesService {
           subordinates: []
         });
       }
-      
+
       const dept = organizationMap.get(deptId);
       dept.employees.push({
         id: employee.id,
@@ -1169,4 +1187,3 @@ export class EmployeesService {
     };
   }
 }
-

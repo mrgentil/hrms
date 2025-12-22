@@ -144,6 +144,8 @@ export const PREDEFINED_ROLES = [
       SYSTEM_PERMISSIONS.LEAVES_MANAGE_TYPES,
       SYSTEM_PERMISSIONS.PAYROLL_VIEW,
       SYSTEM_PERMISSIONS.PAYROLL_MANAGE,
+      SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW,
+      SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE,
       SYSTEM_PERMISSIONS.REPORTS_VIEW,
       SYSTEM_PERMISSIONS.REPORTS_CREATE,
       SYSTEM_PERMISSIONS.ANALYTICS_VIEW,
@@ -518,10 +520,30 @@ export class RolesService {
   }
 
   async getAvailablePermissions() {
-    // Utiliser PERMISSION_GROUPS depuis le fichier de constantes
-    // qui contient toutes les permissions groupées par module
+    // Récupérer les permissions depuis la base de données
+    const dbPermissions = await this.prisma.permission.findMany({
+      orderBy: [{ group_name: 'asc' }, { sort_order: 'asc' }, { name: 'asc' }],
+    });
 
-    // Convertir en format attendu par le frontend
+    // Si des permissions existent en DB, les utiliser
+    if (dbPermissions.length > 0) {
+      const permissionsByModule: Record<string, Array<{ name: string; description: string }>> = {};
+
+      for (const perm of dbPermissions) {
+        const moduleName = perm.group_name || 'Autre';
+        if (!permissionsByModule[moduleName]) {
+          permissionsByModule[moduleName] = [];
+        }
+        permissionsByModule[moduleName].push({
+          name: perm.name,
+          description: perm.label || perm.description || perm.name,
+        });
+      }
+
+      return permissionsByModule;
+    }
+
+    // Fallback: utiliser PERMISSION_GROUPS depuis le fichier de constantes
     const permissionsByModule: Record<string, Array<{ name: string; description: string }>> = {};
 
     for (const group of PERMISSION_GROUPS) {
@@ -615,6 +637,9 @@ export class RolesService {
     if (user.role_relation?.permissions && Array.isArray(user.role_relation.permissions)) {
       jsonPermissions = user.role_relation.permissions as string[];
     }
+
+    console.log(`[RolesService] Legacy perms for ${user.role}:`, legacy);
+    console.log(`[RolesService] Relation perms:`, relationPermissions);
 
     // Merge all sources of permissions: Legacy + Relation Table + JSON Field
     return Array.from(new Set([...legacy, ...relationPermissions, ...jsonPermissions]));
@@ -710,6 +735,8 @@ export class RolesService {
           SYSTEM_PERMISSIONS.LEAVES_MANAGE_TYPES,
           SYSTEM_PERMISSIONS.PAYROLL_VIEW,
           SYSTEM_PERMISSIONS.PAYROLL_MANAGE,
+          SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW,
+          SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE,
           SYSTEM_PERMISSIONS.REPORTS_VIEW,
           SYSTEM_PERMISSIONS.REPORTS_CREATE,
           SYSTEM_PERMISSIONS.PROFILE_VIEW_OWN,
@@ -718,6 +745,8 @@ export class RolesService {
       case UserRole.ROLE_MANAGER:
         return [
           SYSTEM_PERMISSIONS.USERS_VIEW,
+          SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW,
+          SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE,
           SYSTEM_PERMISSIONS.USERS_EDIT,
           SYSTEM_PERMISSIONS.REPORTS_VIEW,
           SYSTEM_PERMISSIONS.REPORTS_CREATE,
@@ -734,6 +763,7 @@ export class RolesService {
       case UserRole.ROLE_EMPLOYEE:
         return [
           SYSTEM_PERMISSIONS.USERS_VIEW,
+          SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW,
           SYSTEM_PERMISSIONS.LEAVES_VIEW_OWN,
           SYSTEM_PERMISSIONS.LEAVES_CREATE,
           SYSTEM_PERMISSIONS.PROFILE_VIEW_OWN,

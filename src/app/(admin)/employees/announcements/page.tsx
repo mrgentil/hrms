@@ -8,16 +8,20 @@ import { useToast } from '@/hooks/useToast';
 
 type Announcement = {
   id: number;
-  announcement_title: string;
-  announcement_description?: string | null;
+  title: string;
+  content: string;
+  type?: string;
+  priority?: string;
   created_at: string;
+  publish_date?: string;
   department?: {
     id: number;
     department_name: string;
   } | null;
-  user?: {
+  author?: {
     id: number;
     full_name: string;
+    profile_photo_url?: string | null;
   } | null;
 };
 
@@ -34,6 +38,29 @@ const defaultFilters: FilterState = {
 const formatDateTime = (value: string) =>
   new Date(value).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
 
+// Mappe les types d'annonce vers des libellés et couleurs
+const getTypeLabel = (type: string) => {
+  const map: Record<string, { label: string; color: string }> = {
+    INFO: { label: 'Information', color: 'text-blue-500 bg-blue-100' },
+    EVENT: { label: 'Événement', color: 'text-purple-500 bg-purple-100' },
+    POLICY: { label: 'Politique', color: 'text-gray-500 bg-gray-100' },
+    CELEBRATION: { label: 'Célébration', color: 'text-yellow-500 bg-yellow-100' },
+    URGENT: { label: 'Urgent', color: 'text-red-500 bg-red-100' },
+    MAINTENANCE: { label: 'Maintenance', color: 'text-orange-500 bg-orange-100' },
+  };
+  return map[type] || { label: type, color: 'text-gray-500 bg-gray-100' };
+};
+
+const getPriorityBadge = (priority: string) => {
+  const map: Record<string, { label: string; color: string }> = {
+    LOW: { label: 'Basse', color: 'text-gray-500 bg-gray-100' },
+    NORMAL: { label: 'Normale', color: 'text-blue-500 bg-blue-100' },
+    HIGH: { label: 'Haute', color: 'text-orange-500 bg-orange-100' },
+    CRITICAL: { label: 'Critique', color: 'text-red-500 bg-red-100' },
+  };
+  return map[priority] || { label: priority, color: 'text-gray-500 bg-gray-100' };
+};
+
 export default function EmployeeAnnouncementsPage() {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
@@ -44,12 +71,22 @@ export default function EmployeeAnnouncementsPage() {
     const fetchAnnouncements = async () => {
       try {
         setLoading(true);
+        console.log('🔍 [Frontend] Fetching announcements...');
+        // Note: employeesService.getMyAnnouncements now returns the main Announcement model
         const response = await employeesService.getMyAnnouncements();
-        if (!response?.success) {
-          throw new Error(response?.message || 'Impossible de récupérer les annonces.');
+        console.log('✅ [Frontend] Response received:', response);
+        // @ts-ignore - Response handling wrapper might vary, adjusting for generic response
+        const data = response?.success ? response.data : response;
+
+        if (Array.isArray(data)) {
+          console.log(`📊 [Frontend] Got ${data.length} announcements`);
+          setAnnouncements(data);
+        } else {
+          console.error("❌ [Frontend] Unexpected response format:", response);
+          setAnnouncements([]);
         }
-        setAnnouncements(response.data || []);
       } catch (error: any) {
+        console.error("❌ [Frontend] Error fetching announcements:", error);
         const message =
           error?.response?.data?.message ||
           error?.message ||
@@ -68,20 +105,21 @@ export default function EmployeeAnnouncementsPage() {
     const searchValue = filters.search.trim().toLowerCase();
 
     return announcements.filter((announcement) => {
+      // Filter by scope
       if (filters.scope === 'department' && !announcement.department) {
         return false;
       }
-
       if (filters.scope === 'global' && announcement.department) {
         return false;
       }
 
+      // Filter by search
       if (searchValue.length > 0) {
         const haystack = [
-          announcement.announcement_title,
-          announcement.announcement_description,
+          announcement.title,
+          announcement.content,
           announcement.department?.department_name,
-          announcement.user?.full_name,
+          announcement.author?.full_name,
         ]
           .filter(Boolean)
           .join(' ')
@@ -196,41 +234,69 @@ export default function EmployeeAnnouncementsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredAnnouncements.map((announcement) => (
-                <div
-                  key={announcement.id}
-                  className="rounded-lg border border-stroke bg-white p-4 transition-shadow hover:shadow-md dark:border-strokedark dark:bg-boxdark"
-                >
-                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-black dark:text-white">
-                        {announcement.announcement_title}
-                      </h3>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                        <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-primary">
-                          {announcement.department?.department_name || 'Annonce générale'}
-                        </span>
-                        {announcement.user?.full_name && (
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                            Par {announcement.user.full_name}
+              {filteredAnnouncements.map((announcement) => {
+                const typeStyle = getTypeLabel(announcement.type || 'INFO');
+                const priorityStyle = getPriorityBadge(announcement.priority || 'NORMAL');
+
+                return (
+                  <div
+                    key={announcement.id}
+                    className="rounded-lg border border-stroke bg-white p-4 transition-shadow hover:shadow-md dark:border-strokedark dark:bg-boxdark"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${typeStyle.color}`}>
+                            {typeStyle.label}
                           </span>
-                        )}
+                          {announcement.priority && announcement.priority !== 'NORMAL' && (
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${priorityStyle.color}`}>
+                              {priorityStyle.label}
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-500">•</span>
+                          <span className="text-xs text-gray-500">
+                            {formatDateTime(announcement.publish_date || announcement.created_at)}
+                          </span>
+                        </div>
+
+                        <h3 className="text-lg font-semibold text-black dark:text-white mb-2">
+                          {announcement.title}
+                        </h3>
+
+                        <div className="prose prose-sm max-w-none text-gray-600 dark:text-gray-400 whitespace-pre-line mb-3">
+                          {announcement.content}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400 border-t border-stroke dark:border-strokedark pt-3 mt-1">
+                          <div className="flex items-center gap-1.5">
+                            {announcement.author?.profile_photo_url ? (
+                              <img
+                                src={announcement.author.profile_photo_url}
+                                alt={announcement.author.full_name}
+                                className="w-5 h-5 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600">
+                                {announcement.author?.full_name?.charAt(0) || 'A'}
+                              </div>
+                            )}
+                            <span>Par {announcement.author?.full_name || 'Inconnu'}</span>
+                          </div>
+
+                          <span className="text-gray-300">•</span>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center rounded-sm bg-primary/5 px-1.5 py-0.5 text-primary">
+                              {announcement.department?.department_name || '🏢 Toute l\'entreprise'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      {announcement.announcement_description && (
-                        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
-                          {announcement.announcement_description}
-                        </p>
-                      )}
-                    </div>
-                    <div className="shrink-0 text-sm text-gray-500 dark:text-gray-400">
-                      Publié le{' '}
-                      <span className="font-medium text-black dark:text-white">
-                        {formatDateTime(announcement.created_at)}
-                      </span>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </ComponentCard>

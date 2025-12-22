@@ -34,6 +34,10 @@ export const SYSTEM_PERMISSIONS = {
     LEAVES_MANAGE: 'leaves.manage',
     LEAVES_APPROVE: 'leaves.approve',
 
+    // Annonces
+    ANNOUNCEMENTS_VIEW: 'announcements.view',
+    ANNOUNCEMENTS_MANAGE: 'announcements.manage',
+
     // Rapports
     REPORTS_VIEW: 'reports.view',
 
@@ -156,6 +160,14 @@ export const PERMISSION_GROUPS = [
             { key: 'leaves.view', label: 'Voir les congés', description: 'Accéder à la liste des congés' },
             { key: 'leaves.manage', label: 'Gérer les congés', description: 'Créer et modifier les types de congés' },
             { key: 'leaves.approve', label: 'Approuver les congés', description: 'Valider ou refuser les demandes de congés' },
+        ],
+    },
+    {
+        name: 'Annonces',
+        icon: '📢',
+        permissions: [
+            { key: 'announcements.view', label: 'Voir les annonces', description: 'Accéder aux annonces d\'équipe' },
+            { key: 'announcements.manage', label: 'Gérer les annonces', description: 'Créer, modifier et publier des annonces d\'équipe' },
         ],
     },
     {

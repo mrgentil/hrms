@@ -6,8 +6,8 @@ const prisma = new PrismaClient();
 async function main() {
     console.log('Update Role Permissions...');
 
-    const permissionsToAdd = ['expenses.approve', 'users.view'];
-    const rolesToUpdate = ['Directeur Finance', 'Financier', 'Administrateur', 'Super Administrateur'];
+    const permissionsToAdd = ['expenses.approve', 'users.view', 'announcements.view', 'announcements.manage'];
+    const rolesToUpdate = ['Directeur Finance', 'Financier', 'Administrateur', 'Super Administrateur', 'RH', 'Manager', 'Employé'];
 
     for (const permissionName of permissionsToAdd) {
         // 1. Ensure Permission exists

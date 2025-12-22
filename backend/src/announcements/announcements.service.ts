@@ -17,10 +17,14 @@ export class AnnouncementsService {
   ) {}
 
   async create(createAnnouncementDto: CreateAnnouncementDto, authorId: number) {
+    // Si aucun département n'est sélectionné, l'annonce est pour tous
+    const targetAll = !createAnnouncementDto.department_id;
+    
     const announcement = await this.prisma.announcement.create({
       data: {
         ...createAnnouncementDto,
         author_id: authorId,
+        target_all: targetAll,
         publish_date: createAnnouncementDto.publish_date 
           ? new Date(createAnnouncementDto.publish_date) 
           : createAnnouncementDto.is_published ? new Date() : null,
@@ -361,6 +365,75 @@ export class AnnouncementsService {
     return this.prisma.announcement.delete({
       where: { id },
     });
+  }
+
+  // Obtenir la liste des lecteurs d'une annonce
+  async getReaders(announcementId: number) {
+    const announcement = await this.prisma.announcement.findUnique({
+      where: { id: announcementId },
+    });
+
+    if (!announcement) {
+      throw new NotFoundException('Annonce non trouvée');
+    }
+
+    // Récupérer les lectures
+    const reads = await this.prisma.announcement_read.findMany({
+      where: { announcement_id: announcementId },
+      orderBy: { read_at: 'desc' },
+    });
+
+    // Récupérer les utilisateurs correspondants
+    const userIds = reads.map((r) => r.user_id);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: {
+        id: true,
+        full_name: true,
+        work_email: true,
+        profile_photo_url: true,
+        department_id: true,
+      },
+    });
+
+    // Récupérer les départements
+    const deptIds = users.map((u) => u.department_id).filter(Boolean) as number[];
+    const departments = await this.prisma.department.findMany({
+      where: { id: { in: deptIds } },
+      select: { id: true, department_name: true },
+    });
+    const deptMap = new Map(departments.map((d) => [d.id, d]));
+
+    // Compter le nombre total de destinataires potentiels
+    const targetCount = await this.prisma.user.count({
+      where: {
+        active: true,
+        ...(announcement.target_all || !announcement.department_id
+          ? {}
+          : { department_id: announcement.department_id }),
+      },
+    });
+
+    // Construire la réponse
+    const userMap = new Map(users.map((u) => [u.id, u]));
+    const readersData = reads.map((r) => {
+      const user = userMap.get(r.user_id);
+      return {
+        user: user ? {
+          ...user,
+          department: user.department_id ? deptMap.get(user.department_id) : null,
+        } : null,
+        read_at: r.read_at,
+      };
+    }).filter((r) => r.user !== null);
+
+    return {
+      announcement_id: announcementId,
+      total_readers: reads.length,
+      total_target: targetCount,
+      read_percentage: targetCount > 0 ? Math.round((reads.length / targetCount) * 100) : 0,
+      readers: readersData,
+    };
   }
 
   // Statistiques
