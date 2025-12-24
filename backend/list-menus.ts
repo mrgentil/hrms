@@ -2,59 +2,79 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function main() {
+async function listMenus() {
+  console.log('📋 Liste de tous les menus dans la base de données\n');
+  console.log('═'.repeat(80));
+
   const menus = await prisma.menu_item.findMany({
-    where: { parent_id: null },
-    orderBy: [{ section: 'asc' }, { sort_order: 'asc' }],
+    orderBy: [
+      { section: 'asc' },
+      { sort_order: 'asc' },
+    ],
     include: {
-      permission: { select: { name: true } },
-      children: {
-        orderBy: { sort_order: 'asc' },
-        include: { permission: { select: { name: true } } },
+      permission: {
+        select: {
+          name: true,
+          label: true,
+        },
+      },
+      parent: {
+        select: {
+          name: true,
+        },
       },
     },
   });
 
-  console.log('\n=== MENUS CONFIGURÉS ===\n');
+  console.log(`Total de menus trouvés : ${menus.length}\n`);
 
-  const sections: Record<string, typeof menus> = {};
-  menus.forEach((m) => {
-    const sec = m.section || 'main';
-    if (!sections[sec]) sections[sec] = [];
-    sections[sec].push(m);
+  // Grouper par section
+  const sections: Record<string, any[]> = {};
+  menus.forEach(menu => {
+    const section = menu.section || 'unknown';
+    if (!sections[section]) sections[section] = [];
+    sections[section].push(menu);
   });
 
-  const sectionLabels: Record<string, string> = {
-    main: '📋 MENU PRINCIPAL',
-    advanced: '⚙️ MODULES AVANCÉS',
-    hrms: '🏢 MODULES HRMS',
-    employee: '👤 ESPACE EMPLOYÉ',
+  // Afficher par section
+  Object.entries(sections).forEach(([section, items]) => {
+    console.log(`\n📂 SECTION: ${section.toUpperCase()}`);
+    console.log('─'.repeat(80));
+
+    items.forEach(menu => {
+      const indent = menu.parent_id ? '   └─ ' : '├─ ';
+      const icon = menu.icon || '•';
+      const permission = menu.permission?.name || 'Aucune permission';
+      const active = menu.is_active ? '✓' : '✗';
+
+      console.log(`${active} ${indent}${icon} ${menu.name}`);
+      console.log(`      Path: ${menu.path || 'N/A'}`);
+      console.log(`      Permission: ${permission}`);
+      console.log(`      ID: ${menu.id}, Parent: ${menu.parent_id || 'N/A'}`);
+      console.log('');
+    });
+  });
+
+  console.log('═'.repeat(80));
+
+  // Statistiques
+  const stats = {
+    total: menus.length,
+    active: menus.filter(m => m.is_active).length,
+    withPermission: menus.filter(m => m.permission_id).length,
+    parents: menus.filter(m => !m.parent_id).length,
+    children: menus.filter(m => m.parent_id).length,
   };
 
-  for (const [sec, items] of Object.entries(sections)) {
-    console.log(`\n${sectionLabels[sec] || sec.toUpperCase()}`);
-    console.log('─'.repeat(50));
-
-    items.forEach((menu) => {
-      const perm = menu.permission?.name || '(aucune)';
-      const status = menu.is_active ? '✅' : '❌';
-      console.log(`${status} ${menu.icon || '📄'} ${menu.name}`);
-      console.log(`   Path: ${menu.path || '(parent)'} | Permission: ${perm}`);
-
-      if (menu.children && menu.children.length > 0) {
-        menu.children.forEach((child: any) => {
-          const childPerm = child.permission?.name || '(aucune)';
-          const childStatus = child.is_active ? '✅' : '❌';
-          console.log(`   ${childStatus} └─ ${child.icon || '📄'} ${child.name}`);
-          console.log(`      Path: ${child.path} | Permission: ${childPerm}`);
-        });
-      }
-    });
-  }
-
-  console.log('\n=== FIN ===\n');
+  console.log('\n📊 STATISTIQUES:');
+  console.log(`   Total de menus: ${stats.total}`);
+  console.log(`   Menus actifs: ${stats.active}`);
+  console.log(`   Avec permission: ${stats.withPermission}`);
+  console.log(`   Menus parents: ${stats.parents}`);
+  console.log(`   Sous-menus: ${stats.children}`);
+  console.log('');
 }
 
-main()
+listMenus()
   .catch(console.error)
   .finally(() => prisma.$disconnect());
