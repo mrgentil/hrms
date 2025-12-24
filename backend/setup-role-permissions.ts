@@ -28,6 +28,12 @@ const NEW_PERMISSIONS = [
   { name: 'budget.recommend', label: 'Recommander une demande', group_name: 'Budget', group_icon: '💵' },
   { name: 'budget.approve', label: 'Approuver les demandes de budget', group_name: 'Budget', group_icon: '💵' },
   { name: 'budget.stats', label: 'Voir les statistiques budget', group_name: 'Budget', group_icon: '💵' },
+
+  // Planning
+  { name: 'planning.rooms', label: 'Réserver des salles', group_name: 'Planification', group_icon: '📅' },
+
+  // Congés vue équipe
+  { name: 'leaves.view_team', label: 'Voir les congés de l\'équipe', group_name: 'Congés', group_icon: '🏖️' },
 ];
 
 // Permissions par rôle
@@ -170,18 +176,19 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   ],
 
   'Employé': [
-    // Même permissions que Employee
     'profile.view_own', 'profile.edit_own',
-    'leaves.view', 'leaves.view_own', 'leaves.create', 'leaves.cancel',
-    'projects.view', 'tasks.view', 'tasks.create', 'tasks.edit',
+    'departments.view', 'positions.view',
+    'leaves.view_own', 'leaves.view_team', 'leaves.create', 'leaves.cancel',
+    'projects.view',
+    'tasks.view', 'tasks.create', 'tasks.edit',
     'announcements.view',
     'performance.view_own', 'performance.recognition',
     'training.view', 'training.register',
     'payroll.view_own',
     'assets.view_own', 'assets.request',
-    'planning.view', 'planning.remote_work',
+    'planning.view', 'planning.remote_work', 'planning.rooms',
     'wellbeing.view',
-    'attendance.view_own', 'attendance.clock',
+    'attendance.view_own', 'attendance.clock', 'attendance.correct',
     'expenses.view_own', 'expenses.create',
     'budget.view_own', 'budget.request',
   ],

@@ -29,6 +29,7 @@ export const PERMISSIONS = {
 
     // Congés
     LEAVES_VIEW: 'leaves.view',
+    LEAVES_VIEW_TEAM: 'leaves.view_team',
     LEAVES_MANAGE: 'leaves.manage',
     LEAVES_APPROVE: 'leaves.approve',
 
@@ -95,6 +96,14 @@ export const PERMISSIONS = {
     PLANNING_MANAGE: 'planning.manage',
     PLANNING_ROOMS: 'planning.rooms',
     PLANNING_REMOTE_WORK: 'planning.remote_work',
+
+    // Pointage
+    ATTENDANCE_VIEW_OWN: 'attendance.view_own',
+    ATTENDANCE_VIEW_TEAM: 'attendance.view_team',
+    ATTENDANCE_VIEW_ALL: 'attendance.view_all',
+    ATTENDANCE_CLOCK: 'attendance.clock',
+    ATTENDANCE_CORRECT: 'attendance.correct',
+    ATTENDANCE_STATS: 'attendance.stats',
 
     // Bien-être & Engagement
     WELLBEING_VIEW: 'wellbeing.view',

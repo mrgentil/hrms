@@ -37,7 +37,14 @@ export const SYSTEM_PERMISSIONS = {
   POSITIONS_EDIT: 'positions.edit',
   POSITIONS_DELETE: 'positions.delete',
 
+  // Projets & Tâches
+  PROJECTS_VIEW: 'projects.view',
+  TASKS_VIEW: 'tasks.view',
+  TASKS_CREATE: 'tasks.create',
+  TASKS_EDIT: 'tasks.edit',
+
   // Gestion des congés
+  LEAVES_VIEW: 'leaves.view',
   LEAVES_VIEW_OWN: 'leaves.view_own',
   LEAVES_VIEW_TEAM: 'leaves.view_team',
   LEAVES_VIEW_ALL: 'leaves.view_all',
@@ -47,12 +54,25 @@ export const SYSTEM_PERMISSIONS = {
   LEAVES_CANCEL: 'leaves.cancel',
   LEAVES_MANAGE_TYPES: 'leaves.manage_types',
 
+  // Pointage
+  ATTENDANCE_VIEW_OWN: 'attendance.view_own',
+  ATTENDANCE_VIEW_TEAM: 'attendance.view_team',
+  ATTENDANCE_VIEW_ALL: 'attendance.view_all',
+  ATTENDANCE_CLOCK: 'attendance.clock',
+  ATTENDANCE_CORRECT: 'attendance.correct',
+  ATTENDANCE_STATS: 'attendance.stats',
+
   // Gestion financière
   PAYROLL_VIEW: 'payroll.view',
+  PAYROLL_VIEW_OWN: 'payroll.view_own',
   PAYROLL_MANAGE: 'payroll.manage',
   EXPENSES_VIEW: 'expenses.view',
+  EXPENSES_VIEW_OWN: 'expenses.view_own',
+  EXPENSES_CREATE: 'expenses.create',
   EXPENSES_APPROVE: 'expenses.approve',
   BUDGET_VIEW: 'budget.view',
+  BUDGET_VIEW_OWN: 'budget.view_own',
+  BUDGET_REQUEST: 'budget.request',
   BUDGET_MANAGE: 'budget.manage',
 
   // Rapports et analytics
@@ -71,6 +91,26 @@ export const SYSTEM_PERMISSIONS = {
   // Profil personnel
   PROFILE_VIEW_OWN: 'profile.view_own',
   PROFILE_EDIT_OWN: 'profile.edit_own',
+
+  // Performance & Reconnaissance
+  PERFORMANCE_VIEW_OWN: 'performance.view_own',
+  PERFORMANCE_RECOGNITION: 'performance.recognition',
+
+  // Formation
+  TRAINING_VIEW: 'training.view',
+  TRAINING_REGISTER: 'training.register',
+
+  // Assets
+  ASSETS_VIEW_OWN: 'assets.view_own',
+  ASSETS_REQUEST: 'assets.request',
+
+  // Planning
+  PLANNING_VIEW: 'planning.view',
+  PLANNING_REMOTE_WORK: 'planning.remote_work',
+  PLANNING_ROOMS: 'planning.rooms',
+
+  // Bien-être
+  WELLBEING_VIEW: 'wellbeing.view',
 } as const;
 
 // Rôles prédéfinis avec leurs permissions
@@ -238,11 +278,37 @@ export const PREDEFINED_ROLES = [
     color: '#6b7280',
     icon: '👤',
     permissions: [
-      SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW,
-      SYSTEM_PERMISSIONS.LEAVES_VIEW_OWN,
-      SYSTEM_PERMISSIONS.LEAVES_CREATE,
       SYSTEM_PERMISSIONS.PROFILE_VIEW_OWN,
       SYSTEM_PERMISSIONS.PROFILE_EDIT_OWN,
+      SYSTEM_PERMISSIONS.DEPARTMENTS_VIEW,
+      SYSTEM_PERMISSIONS.POSITIONS_VIEW,
+      SYSTEM_PERMISSIONS.LEAVES_VIEW_OWN,
+      SYSTEM_PERMISSIONS.LEAVES_VIEW_TEAM,
+      SYSTEM_PERMISSIONS.LEAVES_CREATE,
+      SYSTEM_PERMISSIONS.LEAVES_CANCEL,
+      SYSTEM_PERMISSIONS.PROJECTS_VIEW,
+      SYSTEM_PERMISSIONS.TASKS_VIEW,
+      SYSTEM_PERMISSIONS.TASKS_CREATE,
+      SYSTEM_PERMISSIONS.TASKS_EDIT,
+      SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW,
+      SYSTEM_PERMISSIONS.PERFORMANCE_VIEW_OWN,
+      SYSTEM_PERMISSIONS.PERFORMANCE_RECOGNITION,
+      SYSTEM_PERMISSIONS.TRAINING_VIEW,
+      SYSTEM_PERMISSIONS.TRAINING_REGISTER,
+      SYSTEM_PERMISSIONS.PAYROLL_VIEW_OWN,
+      SYSTEM_PERMISSIONS.ASSETS_VIEW_OWN,
+      SYSTEM_PERMISSIONS.ASSETS_REQUEST,
+      SYSTEM_PERMISSIONS.PLANNING_VIEW,
+      SYSTEM_PERMISSIONS.PLANNING_REMOTE_WORK,
+      SYSTEM_PERMISSIONS.PLANNING_ROOMS,
+      SYSTEM_PERMISSIONS.WELLBEING_VIEW,
+      SYSTEM_PERMISSIONS.ATTENDANCE_VIEW_OWN,
+      SYSTEM_PERMISSIONS.ATTENDANCE_CLOCK,
+      SYSTEM_PERMISSIONS.ATTENDANCE_CORRECT,
+      SYSTEM_PERMISSIONS.EXPENSES_VIEW_OWN,
+      SYSTEM_PERMISSIONS.EXPENSES_CREATE,
+      SYSTEM_PERMISSIONS.BUDGET_VIEW_OWN,
+      SYSTEM_PERMISSIONS.BUDGET_REQUEST,
     ],
   },
 ];

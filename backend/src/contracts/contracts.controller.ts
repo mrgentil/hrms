@@ -22,7 +22,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @Controller('contracts')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ContractsController {
-  constructor(private readonly contractsService: ContractsService) {}
+  constructor(private readonly contractsService: ContractsService) { }
 
   @Post()
   @RequirePermissions(SYSTEM_PERMISSIONS.USERS_CREATE)
@@ -40,13 +40,17 @@ export class ContractsController {
     @Query('status') status?: string,
     @Query('contract_type') contractType?: string,
     @Query('expiring_soon') expiringSoon?: string,
+    @CurrentUser() user?: any,
   ) {
-    return this.contractsService.findAll({
-      user_id: userId ? parseInt(userId) : undefined,
-      status: status as any,
-      contract_type: contractType,
-      expiring_soon: expiringSoon === 'true',
-    });
+    return this.contractsService.findAll(
+      {
+        user_id: userId ? parseInt(userId) : undefined,
+        status: status as any,
+        contract_type: contractType,
+        expiring_soon: expiringSoon === 'true',
+      },
+      user,
+    );
   }
 
   @Get('stats')

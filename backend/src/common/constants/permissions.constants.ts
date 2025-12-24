@@ -31,6 +31,7 @@ export const SYSTEM_PERMISSIONS = {
 
     // Congés
     LEAVES_VIEW: 'leaves.view',
+    LEAVES_VIEW_TEAM: 'leaves.view_team',
     LEAVES_MANAGE: 'leaves.manage',
     LEAVES_APPROVE: 'leaves.approve',
 
@@ -102,6 +103,14 @@ export const SYSTEM_PERMISSIONS = {
     PLANNING_ROOMS: 'planning.rooms',
     PLANNING_REMOTE_WORK: 'planning.remote_work',
 
+    // Pointage
+    ATTENDANCE_VIEW_OWN: 'attendance.view_own',
+    ATTENDANCE_VIEW_TEAM: 'attendance.view_team',
+    ATTENDANCE_VIEW_ALL: 'attendance.view_all',
+    ATTENDANCE_CLOCK: 'attendance.clock',
+    ATTENDANCE_CORRECT: 'attendance.correct',
+    ATTENDANCE_STATS: 'attendance.stats',
+
     // Bien-être & Engagement
     WELLBEING_VIEW: 'wellbeing.view',
     WELLBEING_MANAGE: 'wellbeing.manage',
@@ -158,6 +167,7 @@ export const PERMISSION_GROUPS = [
         icon: '🏖️',
         permissions: [
             { key: 'leaves.view', label: 'Voir les congés', description: 'Accéder à la liste des congés' },
+            { key: 'leaves.view_team', label: 'Voir les congés d\'équipe', description: 'Lecture calendrier d\'équipe' },
             { key: 'leaves.manage', label: 'Gérer les congés', description: 'Créer et modifier les types de congés' },
             { key: 'leaves.approve', label: 'Approuver les congés', description: 'Valider ou refuser les demandes de congés' },
         ],
@@ -244,6 +254,18 @@ export const PERMISSION_GROUPS = [
             { key: 'planning.manage', label: 'Gérer le planning', description: 'Administrer les plannings' },
             { key: 'planning.rooms', label: 'Réserver des salles', description: 'Gérer les réservations de salles' },
             { key: 'planning.remote_work', label: 'Télétravail', description: 'Déclarer ses jours de télétravail' },
+        ],
+    },
+    {
+        name: 'Pointage',
+        icon: '⏰',
+        permissions: [
+            { key: 'attendance.view_own', label: 'Voir son pointage', description: 'Consulter ses entrées/sorties' },
+            { key: 'attendance.clock', label: 'Pointer', description: 'Pointer ses entrées/sorties' },
+            { key: 'attendance.view_team', label: 'Pointage équipe (lecture)', description: 'Voir le pointage de son équipe' },
+            { key: 'attendance.view_all', label: 'Pointage global', description: 'Voir tous les pointages' },
+            { key: 'attendance.correct', label: 'Demander/faire une correction', description: 'Soumettre ou corriger un pointage' },
+            { key: 'attendance.stats', label: 'Stats pointage', description: 'Consulter les statistiques de pointage' },
         ],
     },
     {

@@ -2,10 +2,11 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateContractDto, ContractStatus } from './dto/create-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class ContractsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createContractDto: CreateContractDto, createdBy: number) {
     // Vérifier que l'utilisateur existe
@@ -39,15 +40,22 @@ export class ContractsService {
     });
   }
 
-  async findAll(params?: {
-    user_id?: number;
-    status?: ContractStatus;
-    contract_type?: string;
-    expiring_soon?: boolean;
-  }) {
+  async findAll(
+    params?: {
+      user_id?: number;
+      status?: ContractStatus;
+      contract_type?: string;
+      expiring_soon?: boolean;
+    },
+    currentUser?: { id: number; role: UserRole }
+  ) {
     const where: any = {};
 
-    if (params?.user_id) {
+    // Si l'utilisateur est un employé, il ne peut voir que ses propres contrats
+    if (currentUser?.role === UserRole.ROLE_EMPLOYEE) {
+      where.user_id = currentUser.id;
+    } else if (params?.user_id) {
+      // Les autres utilisateurs (RH, Admin) peuvent filtrer par user_id
       where.user_id = params.user_id;
     }
 
