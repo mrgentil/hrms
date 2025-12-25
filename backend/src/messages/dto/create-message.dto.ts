@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsInt, IsArray, IsBoolean } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
 export class CreateConversationDto {
   @IsOptional()
@@ -15,11 +16,23 @@ export class CreateConversationDto {
 }
 
 export class SendMessageDto {
+  @IsOptional()
   @IsString()
-  content: string;
+  content?: string;
 
+  @Type(() => Number)
   @IsInt()
   conversation_id: number;
+
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map(Number);
+    }
+    return value;
+  })
+  mentioned_user_ids?: number[];
 }
 
 export class AddParticipantDto {

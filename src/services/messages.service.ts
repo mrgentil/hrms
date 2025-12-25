@@ -19,6 +19,12 @@ export interface Message {
   created_at: string;
   updated_at: string;
   user_user_message_sender_user_idTouser?: User;
+  attachments?: Array<{
+    id: number;
+    file_path: string;
+    file_type: string;
+    file_name: string;
+  }>;
 }
 
 export interface Conversation {
@@ -46,6 +52,8 @@ export interface CreateConversationPayload {
 export interface SendMessagePayload {
   content: string;
   conversation_id: number;
+  file?: File | Blob;
+  mentioned_user_ids?: number[];
 }
 
 class MessagesService {
@@ -95,6 +103,22 @@ class MessagesService {
   }
 
   async sendMessage(data: SendMessagePayload): Promise<Message> {
+    const headers = this.getAuthHeaders();
+
+    if (data.file) {
+      const formData = new FormData();
+      formData.append('content', data.content);
+      formData.append('conversation_id', data.conversation_id.toString());
+      formData.append('file', data.file);
+
+      delete headers['Content-Type']; // Let browser set multipart/form-data with boundary
+
+      const response = await axios.post(`${API_BASE_URL}/messages/send`, formData, {
+        headers,
+      });
+      return response.data.data;
+    }
+
     const response = await axios.post(`${API_BASE_URL}/messages/send`, data, {
       headers: this.getAuthHeaders(),
     });

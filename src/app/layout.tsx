@@ -9,36 +9,39 @@ import { AppSettingsProvider } from '@/contexts/AppSettingsContext';
 import Toaster from '@/components/common/Toaster';
 import DynamicHead from '@/components/common/DynamicHead';
 import QueryProvider from '@/providers/QueryProvider';
+import { SocketProvider } from '@/contexts/SocketContext';
+import ChatWidget from '@/components/Chat/ChatWidget';
 import CommandSearchWrapper from '@/components/ui/CommandSearchWrapper';
 
-const outfit = Outfit({
-  subsets: ["latin"],
-});
+const outfit = Outfit({ subsets: ['latin'] });
+
+// ... other imports ...
+
+// ...
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${outfit.className} dark:bg-gray-900`} suppressHydrationWarning>
-        <QueryProvider>
-          <AppSettingsProvider>
-            <DynamicHead />
-            <AuthProvider>
-              <PermissionsProvider>
-                <ThemeProvider>
-                  <SidebarProvider>
-                    {children}
-                  </SidebarProvider>
-                  <Toaster />
-                  <CommandSearchWrapper />
-                </ThemeProvider>
-              </PermissionsProvider>
-            </AuthProvider>
-          </AppSettingsProvider>
-        </QueryProvider>
+    <html lang="fr" className={outfit.className}>
+      <body suppressHydrationWarning={true}>
+        <DynamicHead />
+        <AuthProvider>
+          <SocketProvider>
+            <PermissionsProvider>
+              <ThemeProvider>
+                <SidebarProvider>
+                  {children}
+                </SidebarProvider>
+                <ChatWidget />
+                <Toaster />
+                <CommandSearchWrapper />
+              </ThemeProvider>
+            </PermissionsProvider>
+          </SocketProvider>
+        </AuthProvider>
       </body>
     </html>
   );

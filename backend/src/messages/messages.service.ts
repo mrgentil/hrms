@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateConversationDto, SendMessageDto, AddParticipantDto } from './dto/create-message.dto';
+import { Express } from 'express';
+import { Multer } from 'multer'; // Just to be safe, though Express.Multer.File is usually global or under Express namespace
 
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async createConversation(userId: number, dto: CreateConversationDto) {
     // Pour une conversation privée (2 personnes), vérifier si elle existe déjà
@@ -115,6 +117,7 @@ export class MessagesService {
             user_user_message_sender_user_idTouser: {
               select: { id: true, full_name: true },
             },
+            attachments: true,
           },
         },
       },
@@ -186,45 +189,113 @@ export class MessagesService {
             profile_photo_url: true,
           },
         },
+        attachments: true,
       },
       orderBy: { created_at: 'desc' },
       take: limit,
       skip: offset,
     });
 
-    return messages.reverse();
+    return messages.reverse().map(m => ({
+      ...m,
+      content: m.text,
+    }));
   }
 
-  async sendMessage(userId: number, dto: SendMessageDto) {
-    // Vérifier l'accès à la conversation
-    await this.getConversation(dto.conversation_id, userId);
+  async sendMessage(userId: number, dto: SendMessageDto, file?: Express.Multer.File) {
+    // Vérifier l'accès à la conversation et récupérer les participants
+    const conversation = await this.getConversation(Number(dto.conversation_id), userId);
+    const participantIds = conversation.participants.map(p => p.id);
 
-    const message = await this.prisma.user_message.create({
-      data: {
-        text: dto.content,
-        conversation_id: dto.conversation_id,
-        sender_user_id: userId,
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-      include: {
-        user_user_message_sender_user_idTouser: {
-          select: {
-            id: true,
-            full_name: true,
-            profile_photo_url: true,
+    const transaction = await this.prisma.$transaction(async (prisma) => {
+      const message = await prisma.user_message.create({
+        data: {
+          text: dto.content || '', // Content allowed to be empty if file present
+          conversation_id: Number(dto.conversation_id),
+          sender_user_id: userId,
+          recipient_user_id: !conversation.is_group && participantIds.length === 2
+            ? participantIds.find(id => id !== userId)
+            : null,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+        include: {
+          user_user_message_sender_user_idTouser: {
+            select: {
+              id: true,
+              full_name: true,
+              profile_photo_url: true,
+            },
           },
         },
+      });
+
+      let attachment: any = null;
+      if (file) {
+        let fileType = 'DOCUMENT';
+        const mime = file.mimetype;
+        if (mime.startsWith('image/')) fileType = 'IMAGE';
+        else if (mime.startsWith('video/')) fileType = 'VIDEO';
+        else if (mime.startsWith('audio/')) fileType = 'AUDIO';
+
+        // Fix path for public URL access (relative to public folder)
+        // Saved in ./public/uploads/chat -> URL /uploads/chat/...
+        const relativePath = `/uploads/chat/${file.filename}`;
+
+        attachment = await prisma.message_attachment.create({
+          data: {
+            message_id: message.id,
+            file_name: file.originalname,
+            file_path: relativePath,
+            file_type: fileType,
+            mime_type: file.mimetype,
+            file_size: file.size,
+          },
+        });
+      }
+
+      if (file) {
+        // ... (existing file logic)
+        // ...
+      }
+
+      // Handle Mentions
+      if (dto.mentioned_user_ids && dto.mentioned_user_ids.length > 0) {
+        // Retrieve valid users validation if needed
+        const mentionData = dto.mentioned_user_ids.map(uid => ({
+          message_id: message.id,
+          user_id: uid,
+        }));
+        await prisma.message_mention.createMany({
+          data: mentionData,
+        });
+      }
+
+      // Mettre à jour la date de la conversation
+      await prisma.conversation.update({
+        where: { id: Number(dto.conversation_id) },
+        data: { updated_at: new Date() },
+      });
+
+      return {
+        ...message,
+        content: message.text,
+        attachments: attachment ? [attachment] : [],
+        conversationParticipants: participantIds,
+      };
+    });
+
+    return transaction;
+  }
+
+  async getUnreadCount(userId: number) {
+    const count = await this.prisma.user_message.count({
+      where: {
+        recipient_user_id: userId,
+        is_read: false,
       },
     });
-
-    // Mettre à jour la date de la conversation
-    await this.prisma.conversation.update({
-      where: { id: dto.conversation_id },
-      data: { updated_at: new Date() },
-    });
-
-    return message;
+    return { count };
   }
 
   async addParticipant(conversationId: number, userId: number, dto: AddParticipantDto) {

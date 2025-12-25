@@ -10,6 +10,8 @@ import {
   Message,
   User,
 } from "@/services/messages.service";
+import AudioRecorder from "@/components/Chat/AudioRecorder";
+import { useSocket } from "@/contexts/SocketContext";
 
 const SendIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -31,6 +33,7 @@ const SearchIcon = () => (
 
 export default function MessagesPage() {
   const { user } = useAuth();
+  const { socket } = useSocket(); // Use socket
   const toast = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +48,43 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [searching, setSearching] = useState(false);
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showRecorder, setShowRecorder] = useState(false);
+
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionedIds, setMentionedIds] = useState<number[]>([]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewMessage(value);
+
+    // Detect mention trigger
+    const lastWord = value.split(" ").pop();
+    if (lastWord && lastWord.startsWith("@")) {
+      setMentionQuery(lastWord.slice(1));
+    } else {
+      setMentionQuery(null);
+    }
+  };
+
+  const handleMentionSelect = (user: User) => {
+    if (!mentionQuery) return;
+    const words = newMessage.split(" ");
+    words.pop(); // Remove the partial mention query
+    const newText = [...words, `@${user.full_name} `].join(" ");
+    setNewMessage(newText);
+    setMentionQuery(null);
+    setMentionedIds(prev => [...prev, user.id]);
+  };
+
+  const getFileUrl = (path: string) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    return `${apiUrl}${path}`;
+  };
 
   const loadConversations = useCallback(async () => {
     try {
@@ -61,6 +101,62 @@ export default function MessagesPage() {
   useEffect(() => {
     loadConversations();
   }, [loadConversations]);
+
+  // Global socket listener for sidebar updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleGlobalMessage = (msg: Message) => {
+      setConversations(prev => {
+        const index = prev.findIndex(c => c.id === msg.conversation_id);
+        if (index !== -1) {
+          // Move to top and update last message
+          const updatedConv = { ...prev[index], lastMessage: msg };
+          const newConvs = [...prev];
+          newConvs.splice(index, 1);
+          return [updatedConv, ...newConvs];
+        } else {
+          // New conversation? Reload list or partial add if we had logic
+          loadConversations(); // Fallback
+          return prev;
+        }
+      });
+    };
+
+    socket.on('newMessage', handleGlobalMessage);
+    return () => {
+      socket.off('newMessage', handleGlobalMessage);
+    };
+  }, [socket, loadConversations]);
+
+  // Real-time: Join Room & Listen for Messages
+  useEffect(() => {
+    if (socket && selectedConversation) {
+      const roomName = `conversation_${selectedConversation.id}`;
+      socket.emit('joinRoom', roomName);
+
+      const handleNewMessage = (msg: Message) => {
+        // Ensure message belongs to current convo and not dup (sender already adds it locally)
+        if (msg.conversation_id === selectedConversation.id) {
+          setMessages((prev) => {
+            // Check if message already exists (optimistic UI or double event)
+            if (prev.some(m => m.id === msg.id)) return prev;
+            return [...prev, msg];
+          });
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          }, 100);
+        }
+      };
+
+      socket.on('newMessage', handleNewMessage);
+
+      return () => {
+        socket.emit('leaveRoom', roomName);
+        socket.off('newMessage', handleNewMessage);
+      };
+    }
+  }, [socket, selectedConversation]);
 
   const loadMessages = useCallback(async (conversationId: number) => {
     try {
@@ -82,24 +178,58 @@ export default function MessagesPage() {
     await loadMessages(conv.id);
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation) return;
+
+
+  // Update existing handleSendMessage to restart/clear vars
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if ((!newMessage.trim() && !selectedFile) || !selectedConversation) return;
 
     try {
       setSending(true);
       const message = await messagesService.sendMessage({
         content: newMessage.trim(),
         conversation_id: selectedConversation.id,
+        file: selectedFile || undefined,
+        mentioned_user_ids: mentionedIds.length > 0 ? mentionedIds : undefined,
       });
-      setMessages([...messages, message]);
+      setMessages((prev) => [...prev, message]);
       setNewMessage("");
+      setSelectedFile(null);
+      setMentionedIds([]); // Clear mentions
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
       loadConversations();
     } catch (error) {
       toast.error("Erreur lors de l'envoi du message");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleAudioStop = async (blob: Blob) => {
+    setShowRecorder(false);
+    if (!selectedConversation) return;
+
+    try {
+      setSending(true);
+      const audioFile = new File([blob], "voice-message.webm", { type: "audio/webm" });
+      const message = await messagesService.sendMessage({
+        content: "",
+        conversation_id: selectedConversation.id,
+        file: audioFile,
+      });
+      setMessages((prev) => [...prev, message]);
+      loadConversations();
+    } catch (error) {
+      toast.error("Erreur lors de l'envoi du message vocal");
     } finally {
       setSending(false);
     }
@@ -303,11 +433,10 @@ export default function MessagesPage() {
                   <button
                     key={conv.id}
                     onClick={() => selectConversation(conv)}
-                    className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 ${
-                      selectedConversation?.id === conv.id
-                        ? "bg-primary/5 border-l-2 border-l-primary"
-                        : ""
-                    }`}
+                    className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 ${selectedConversation?.id === conv.id
+                      ? "bg-primary/5 border-l-2 border-l-primary"
+                      : ""
+                      }`}
                   >
                     {getConversationAvatar(conv)}
                     <div className="flex-1 min-w-0 text-left">
@@ -323,7 +452,14 @@ export default function MessagesPage() {
                       </div>
                       {conv.lastMessage && (
                         <p className="text-sm text-gray-500 truncate">
-                          {conv.lastMessage.content}
+                          {conv.lastMessage.content || (
+                            conv.lastMessage.attachments && conv.lastMessage.attachments.length > 0
+                              ? (conv.lastMessage.attachments[0].file_type === 'AUDIO' ? '🎤 Message vocal'
+                                : conv.lastMessage.attachments[0].file_type === 'IMAGE' ? '📷 Photo'
+                                  : conv.lastMessage.attachments[0].file_type === 'VIDEO' ? '🎥 Vidéo'
+                                    : '📎 Fichier')
+                              : '...'
+                          )}
                         </p>
                       )}
                     </div>
@@ -371,18 +507,43 @@ export default function MessagesPage() {
                           className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                              isOwn
-                                ? "bg-primary text-white rounded-br-md"
-                                : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-md"
-                            }`}
+                            className={`max-w-[70%] rounded-2xl px-4 py-2 ${isOwn
+                              ? "bg-primary text-white rounded-br-md"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-md"
+                              }`}
                           >
                             {!isOwn && message.user_user_message_sender_user_idTouser && (
                               <div className="text-xs font-medium mb-1 opacity-75">
                                 {message.user_user_message_sender_user_idTouser.full_name}
                               </div>
                             )}
-                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+
+                            {/* Attachments */}
+                            {message.attachments && message.attachments.length > 0 && (
+                              <div className="space-y-2 mb-2">
+                                {message.attachments.map(att => (
+                                  <div key={att.id}>
+                                    {att.file_type === 'IMAGE' && (
+                                      <img src={getFileUrl(att.file_path)} alt="Attachment" className="max-w-full rounded-lg max-h-60 object-cover" />
+                                    )}
+                                    {att.file_type === 'AUDIO' && (
+                                      <audio controls src={getFileUrl(att.file_path)} className="w-full min-w-[200px]" />
+                                    )}
+                                    {att.file_type === 'VIDEO' && (
+                                      <video controls src={getFileUrl(att.file_path)} className="max-w-full rounded-lg max-h-60" />
+                                    )}
+                                    {att.file_type === 'DOCUMENT' && (
+                                      <a href={getFileUrl(att.file_path)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 bg-black/10 rounded hover:bg-black/20 transition-colors">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                        <span className="text-sm underline truncate">{att.file_name}</span>
+                                      </a>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {message.content && <p className="text-sm whitespace-pre-wrap">{message.content}</p>}
                             <div className={`text-xs mt-1 ${isOwn ? "text-white/70" : "text-gray-500"}`}>
                               {formatTime(message.created_at)}
                             </div>
@@ -396,21 +557,88 @@ export default function MessagesPage() {
 
                 {/* Input */}
                 <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-2">
+                  {selectedFile && (
+                    <div className="flex items-center gap-2 mb-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg max-w-fit">
+                      <span className="text-sm truncate max-w-[200px] text-gray-700 dark:text-gray-300">{selectedFile.name}</span>
+                      <button type="button" onClick={() => setSelectedFile(null)} className="text-red-500 hover:text-red-700">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 relative">
+                    {/* Mentions Popup */}
+                    {mentionQuery !== null && selectedConversation && (
+                      <div className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 max-h-48 overflow-y-auto z-10">
+                        {selectedConversation.participants
+                          .filter(p => p.id !== user?.id && p.full_name.toLowerCase().includes(mentionQuery.toLowerCase()))
+                          .map(p => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => handleMentionSelect(p)}
+                              className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                            >
+                              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs text-primary font-bold">
+                                {p.full_name.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="text-sm text-gray-900 dark:text-white">{p.full_name}</span>
+                            </button>
+                          ))}
+                      </div>
+                    )}
+
                     <input
-                      type="text"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Écrivez votre message..."
-                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      onChange={handleFileSelect}
                     />
+
                     <button
-                      type="submit"
-                      disabled={!newMessage.trim() || sending}
-                      className="p-3 bg-primary text-white rounded-full hover:bg-primary/90 disabled:opacity-50"
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary transition-colors"
+                      title="Joindre un fichier"
                     >
-                      <SendIcon />
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
                     </button>
+
+                    {showRecorder ? (
+                      <AudioRecorder onRecordingComplete={handleAudioStop} onCancel={() => setShowRecorder(false)} />
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setShowRecorder(true)}
+                          className="p-2 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-500 transition-colors"
+                          title="Message vocal"
+                        >
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                        </button>
+
+                        <input
+                          type="text"
+                          value={newMessage}
+                          onChange={handleInputChange}
+                          onKeyDown={(e) => {
+                            if (mentionQuery !== null && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Enter')) {
+                              // Add keyboard navigation if possible, for now just prevent default if enter to avoid submitting form?
+                              // Actually Enter submits form, keep simple click for MVP.
+                            }
+                          }}
+                          placeholder="Écrivez votre message..."
+                          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        />
+                        <button
+                          type="submit"
+                          disabled={(!newMessage.trim() && !selectedFile) || sending}
+                          className="p-3 bg-primary text-white rounded-full hover:bg-primary/90 disabled:opacity-50 transition-all transform hover:scale-105"
+                        >
+                          <SendIcon />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </form>
               </>

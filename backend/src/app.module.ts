@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { resolve } from 'path';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -46,6 +47,10 @@ import { PermissionsModule } from './permissions/permissions.module';
         resolve(process.cwd(), '..', '.env'),
         '.env',
       ],
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: resolve(__dirname, '..', '..', 'public'), // Point to backend/public
+      serveRoot: '/',
     }),
     ScheduleModule.forRoot(),
     PrismaModule,

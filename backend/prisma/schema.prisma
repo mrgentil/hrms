@@ -653,6 +653,7 @@ model user {
   interviews_as_interviewer job_interview[]      @relation("Interviewer")
   onboarding_as_employee    onboarding_process?  @relation("OnboardingEmployee")
   onboarding_as_mentor      onboarding_process[] @relation("OnboardingMentor")
+  mentions                  message_mention[]
 
   @@index([department_id], map: "department_id")
   @@index([manager_user_id], map: "manager_user_id")
@@ -736,6 +737,34 @@ model user_message {
   @@index([conversation_id], map: "conversation_id")
   @@index([recipient_user_id], map: "recipient_user_id")
   @@index([sender_user_id], map: "sender_user_id")
+  attachments                               message_attachment[]
+  mentions                                  message_mention[]
+}
+
+model message_attachment {
+  id          Int          @id @default(autoincrement())
+  message_id  Int
+  file_name   String       @db.VarChar(255)
+  file_path   String       @db.VarChar(500)
+  file_type   String       @db.VarChar(100)
+  mime_type   String       @db.VarChar(100)
+  file_size   Int
+  created_at  DateTime     @default(now())
+  message     user_message @relation(fields: [message_id], references: [id], onDelete: Cascade)
+
+  @@index([message_id])
+}
+
+model message_mention {
+  id          Int          @id @default(autoincrement())
+  message_id  Int
+  user_id     Int
+  created_at  DateTime     @default(now())
+  message     user_message @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  user        user         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([message_id])
 }
 
 model user_personal_event {

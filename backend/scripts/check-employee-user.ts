@@ -12,12 +12,12 @@ async function checkEmployeeUser() {
     // 1. Trouver un utilisateur avec le rôle Employé
     const employee = await prisma.user.findFirst({
         where: {
-            role: {
+            role_relation: {
                 name: 'Employé',
             },
         },
         include: {
-            role: {
+            role_relation: {
                 include: {
                     role_permission: {
                         include: {
@@ -36,12 +36,18 @@ async function checkEmployeeUser() {
     }
 
     console.log(`✅ Utilisateur trouvé: ${employee.full_name} (${employee.work_email})`);
-    console.log(`   Rôle: ${employee.role.name}`);
+    console.log(`   Rôle: ${employee.role_relation?.name}`);
     console.log(`   ID: ${employee.id}\n`);
 
+    if (!employee.role_relation) {
+        console.error('❌ Relation rôle manquante');
+        return;
+    }
+
     // 2. Lister ses permissions
-    const permissions = employee.role.role_permission
-        .map(rp => rp.permission.name)
+    const permissions = employee.role_relation.role_permission
+        .filter(rp => rp.permission)
+        .map(rp => rp.permission!.name)
         .sort();
 
     console.log(`📋 PERMISSIONS (${permissions.length}):`);

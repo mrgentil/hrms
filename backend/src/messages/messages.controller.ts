@@ -10,15 +10,23 @@ import {
   ValidationPipe,
   Query,
 } from '@nestjs/common';
+import { MessagesGateway } from './messages.gateway';
+
 import { MessagesService } from './messages.service';
 import { CreateConversationDto, SendMessageDto, AddParticipantDto } from './dto/create-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UseInterceptors, UploadedFile } from '@nestjs/common';
+import type { Express } from 'express';
 
 @Controller('messages')
 @UseGuards(JwtAuthGuard)
 export class MessagesController {
-  constructor(private readonly messagesService: MessagesService) {}
+  constructor(
+    private readonly messagesService: MessagesService,
+    private readonly messagesGateway: MessagesGateway,
+  ) { }
 
   @Post('conversations')
   async createConversation(
@@ -29,7 +37,6 @@ export class MessagesController {
     return {
       success: true,
       data: conversation,
-      message: 'Conversation créée',
     };
   }
 
@@ -58,27 +65,45 @@ export class MessagesController {
   async getMessages(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: any,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('offset', new ParseIntPipe({ optional: true })) offset?: number,
   ) {
-    const messages = await this.messagesService.getMessages(
-      id,
-      user.id,
-      limit ? parseInt(limit) : 50,
-      offset ? parseInt(offset) : 0,
-    );
+    const messages = await this.messagesService.getMessages(id, user.id, limit, offset);
     return {
       success: true,
       data: messages,
     };
   }
 
+  @Get('unread-count')
+  async getUnreadCount(@CurrentUser() user: any) {
+    const result = await this.messagesService.getUnreadCount(user.id);
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
   @Post('send')
+  @UseInterceptors(FileInterceptor('file'))
   async sendMessage(
     @CurrentUser() user: any,
-    @Body(ValidationPipe) dto: SendMessageDto,
+    @Body() dto: SendMessageDto, // ValidationPipe might be tricky with FormData, ensure DTO handles string transformation if needed
+    @UploadedFile() file: Express.Multer.File,
   ) {
-    const message = await this.messagesService.sendMessage(user.id, dto);
+    const message = await this.messagesService.sendMessage(user.id, dto, file);
+
+    // Emettre l'événement temps réel via le gateway
+    // Emettre à la room de la conversation (pour ceux qui l'ont ouverte)
+    this.messagesGateway.server.to(`conversation_${dto.conversation_id}`).emit('newMessage', message);
+
+    // Notifier CHAQUE participant via sa room personnelle
+    if (message.conversationParticipants) {
+      message.conversationParticipants.forEach((pId: number) => {
+        this.messagesGateway.server.to(`user_${pId}`).emit('newMessage', message);
+      });
+    }
+
     return {
       success: true,
       data: message,

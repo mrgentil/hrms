@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSocket } from '@/contexts/SocketContext';
 
 interface NavigationItem {
   title: string;
@@ -139,9 +140,15 @@ const employeeNavigation: NavigationItem[] = [
     description: "Communications de l'entreprise"
   },
   {
+    title: 'Messagerie',
+    href: '/messages',
+    icon: '💬',
+    description: 'Discussions en temps réel'
+  },
+  {
     title: 'Bien-être & Événements',
     href: '/wellbeing/wellness',
-    icon: '💬',
+    icon: '🧘',
     description: 'Ressources et événements'
   },
   // === AUTRES ===
@@ -169,8 +176,10 @@ interface EmployeeNavigationProps {
   className?: string;
 }
 
+
 export default function EmployeeNavigation({ className = '' }: EmployeeNavigationProps) {
   const pathname = usePathname();
+  const { unreadCount } = useSocket();
 
   return (
     <nav className={`space-y-2 ${className}`}>
@@ -193,15 +202,22 @@ export default function EmployeeNavigation({ className = '' }: EmployeeNavigatio
               }`}
           >
             <span className="mr-3 text-lg">{item.icon}</span>
-            <div className="flex-1">
-              <div className="font-medium">{item.title}</div>
-              {item.description && (
-                <div className={`text-xs ${isActive
-                  ? 'text-white/80'
-                  : 'text-gray-500 dark:text-gray-400'
-                  }`}>
-                  {item.description}
-                </div>
+            <div className="flex-1 flex justify-between items-center">
+              <div>
+                <div className="font-medium">{item.title}</div>
+                {item.description && (
+                  <div className={`text-xs ${isActive
+                    ? 'text-white/80'
+                    : 'text-gray-500 dark:text-gray-400'
+                    }`}>
+                    {item.description}
+                  </div>
+                )}
+              </div>
+              {item.href === '/messages' && unreadCount > 0 && (
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {unreadCount}
+                </span>
               )}
             </div>
           </Link>
@@ -209,6 +225,7 @@ export default function EmployeeNavigation({ className = '' }: EmployeeNavigatio
       })}
 
       {/* Séparateur */}
+      {/* ... (rest of component) */}
       <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
 
       {/* Liens d'aide */}
