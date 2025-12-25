@@ -146,10 +146,10 @@ const employeeNavigation: NavigationItem[] = [
     description: 'Discussions en temps réel'
   },
   {
-    title: 'Bien-être & Événements',
+    title: 'Bien-être',
     href: '/wellbeing/wellness',
     icon: '🧘',
-    description: 'Ressources et événements'
+    description: 'Ressources bien-être'
   },
   // === AUTRES ===
   {

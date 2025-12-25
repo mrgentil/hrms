@@ -27,6 +27,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 
 import EmployeeNavigation from "@/components/Sidebar/EmployeeNavigation";
+import { useSocket } from "@/contexts/SocketContext";
 
 import {
 
@@ -51,6 +52,8 @@ import {
   DollarLineIcon,
 
   ChatIcon,
+
+  ShootingStarIcon,
 
 } from "../icons/index";
 
@@ -415,41 +418,10 @@ const mainNavItems: NavItem[] = [
 const advancedNavItems: NavItem[] = [
 
   {
-
     icon: <ChatIcon />,
-
-    name: "Communication",
-
+    name: "Messagerie",
+    path: "/messages",
     allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
-    subItems: [
-
-      {
-
-        name: "Messagerie",
-
-        path: "/messages",
-
-        pro: false,
-
-        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
-      },
-
-      {
-
-        name: "Événements Personnels",
-
-        path: "/personal-events",
-
-        pro: false,
-
-        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
-      },
-
-    ],
-
   },
 
   {
@@ -817,7 +789,7 @@ const hrmsModulesNavItems: NavItem[] = [
     ],
   },
   {
-    icon: <ChatIcon />,
+    icon: <ShootingStarIcon />,
     name: "Bien-être & Engagement",
     requiredPermission: "wellbeing.view",
     allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
@@ -832,12 +804,6 @@ const hrmsModulesNavItems: NavItem[] = [
       {
         name: "Boîte à Idées",
         path: "/wellbeing/ideas",
-        pro: false,
-        requiredPermission: "wellbeing.view",
-      },
-      {
-        name: "Événements",
-        path: "/wellbeing/events",
         pro: false,
         requiredPermission: "wellbeing.view",
       },
@@ -862,6 +828,7 @@ const AppSidebar: React.FC = () => {
   const { role: userRole, loading: roleLoading } = useUserRole();
 
   const { settings, getImageUrl } = useAppSettings();
+  const { unreadCount } = useSocket();
 
   // Un utilisateur est "employé seulement" s'il a le rôle EMPLOYEE ET aucune permission admin
   const isEmployeeOnly = useMemo(() => {
@@ -1261,11 +1228,15 @@ const AppSidebar: React.FC = () => {
                 </span>
 
                 {(isExpanded || isHovered || isMobileOpen) && (
-
-                  <span className="menu-item-text">{nav.name}</span>
-
+                  <>
+                    <span className="menu-item-text">{nav.name}</span>
+                    {nav.path === "/messages" && unreadCount > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-white dark:ring-gray-900">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </>
                 )}
-
               </Link>
 
             )
