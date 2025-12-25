@@ -104,11 +104,10 @@ function ImageUploadInput({
       {/* Zone d'upload */}
       <div className="flex items-center gap-3">
         <label
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
-            uploading
-              ? 'border-gray-300 bg-gray-100 dark:bg-gray-700'
-              : 'border-gray-300 dark:border-gray-600 hover:border-primary hover:bg-primary/5'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${uploading
+            ? 'border-gray-300 bg-gray-100 dark:bg-gray-700'
+            : 'border-gray-300 dark:border-gray-600 hover:border-primary hover:bg-primary/5'
+            }`}
         >
           <input
             ref={fileInputRef}
@@ -167,28 +166,34 @@ export default function SettingsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       // Initialiser les paramètres par défaut d'abord
       try {
         await settingsService.initialize();
       } catch (e) {
         // Ignorer si déjà initialisé
       }
-      
+
       const [settingsData, categoriesData] = await Promise.all([
         settingsService.getAll(),
         settingsService.getCategories(),
       ]);
-      
+
       setSettings(settingsData);
       setCategories(categoriesData);
-      
-      // Initialiser les valeurs éditées
-      const values: Record<string, string | null> = {};
-      settingsData.forEach((s) => {
-        values[s.key] = s.value;
+
+      // Initialiser les valeurs éditées seulement si c'est le premier chargement
+      // ou si on veut forcer un reset total
+      setEditedValues((prev) => {
+        const newValues: Record<string, string | null> = { ...prev };
+        settingsData.forEach((s) => {
+          // Si la clé n'est pas encore dans les modifs, on prend la valeur de la DB
+          if (!(s.key in newValues)) {
+            newValues[s.key] = s.value;
+          }
+        });
+        return newValues;
       });
-      setEditedValues(values);
     } catch (error: any) {
       console.error("Settings error:", error);
       const message = error?.response?.data?.message || error?.message || "Erreur inconnue";
@@ -206,7 +211,7 @@ export default function SettingsPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      
+
       // Trouver les paramètres modifiés (comparer correctement les valeurs null/undefined/empty)
       const changedSettings = settings
         .filter((s) => {
@@ -215,20 +220,20 @@ export default function SettingsPage() {
           return edited !== original;
         })
         .map((s) => ({ key: s.key, value: editedValues[s.key] ?? null }));
-      
+
       console.log('Changed settings:', changedSettings);
-      
+
       if (changedSettings.length === 0) {
         toast.info("Aucune modification à enregistrer");
         setSaving(false);
         return;
       }
-      
+
       const result = await settingsService.updateMany(changedSettings);
       console.log('Update result:', result);
-      
+
       toast.success(`${changedSettings.length} paramètre(s) mis à jour`);
-      
+
       // Recharger les paramètres locaux
       await loadData();
       // Rafraîchir les paramètres globaux de l'application
@@ -266,7 +271,7 @@ export default function SettingsPage() {
 
   const renderSettingInput = (setting: AppSetting) => {
     const value = editedValues[setting.key] ?? "";
-    
+
     switch (setting.type) {
       case "boolean":
         return (
@@ -280,7 +285,7 @@ export default function SettingsPage() {
             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
           </label>
         );
-      
+
       case "number":
         return (
           <input
@@ -290,7 +295,7 @@ export default function SettingsPage() {
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm"
           />
         );
-      
+
       case "image":
         return (
           <ImageUploadInput
@@ -299,12 +304,16 @@ export default function SettingsPage() {
             label={setting.label}
             onValueChange={handleValueChange}
             onUploadSuccess={(url) => {
+              // Mettre à jour localement sans recharger tout
+              setSettings(prev => prev.map(s =>
+                s.key === setting.key ? { ...s, value: url } : s
+              ));
               handleValueChange(setting.key, url);
-              loadData(); // Refresh to get updated value
+              refreshSettings(); // Notifier les autres composants
             }}
           />
         );
-      
+
       default:
         // Utiliser textarea pour les descriptions longues
         if (setting.key.includes("description") || setting.key.includes("address")) {
@@ -317,7 +326,7 @@ export default function SettingsPage() {
             />
           );
         }
-        
+
         // Input couleur pour les couleurs
         if (setting.key.includes("color")) {
           return (
@@ -338,7 +347,7 @@ export default function SettingsPage() {
             </div>
           );
         }
-        
+
         return (
           <input
             type="text"
@@ -359,11 +368,10 @@ export default function SettingsPage() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setSelectedCategory("all")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              selectedCategory === "all"
-                ? "bg-primary text-white"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedCategory === "all"
+              ? "bg-primary text-white"
+              : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+              }`}
           >
             Tout ({settings.length})
           </button>
@@ -371,17 +379,16 @@ export default function SettingsPage() {
             <button
               key={cat.key}
               onClick={() => setSelectedCategory(cat.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === cat.key
-                  ? "bg-primary text-white"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedCategory === cat.key
+                ? "bg-primary text-white"
+                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
             >
               {CATEGORY_ICONS[cat.key] || "📁"} {CATEGORY_LABELS[cat.key] || cat.key} ({cat.count})
             </button>
           ))}
         </div>
-        
+
         <div className="flex gap-2">
           {hasChanges && (
             <button
@@ -394,11 +401,10 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving || !hasChanges}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              hasChanges 
-                ? 'text-white bg-primary hover:bg-primary/90' 
-                : 'text-gray-400 bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
-            } disabled:opacity-50`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${hasChanges
+              ? 'text-white bg-primary hover:bg-primary/90'
+              : 'text-gray-400 bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
+              } disabled:opacity-50`}
           >
             {saving ? "Enregistrement..." : hasChanges ? "Enregistrer les modifications" : "Aucune modification"}
           </button>

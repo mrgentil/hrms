@@ -27,20 +27,22 @@ export default function RootLayout({
   return (
     <html lang="fr" className={outfit.className}>
       <body suppressHydrationWarning={true}>
-        <DynamicHead />
         <AuthProvider>
-          <SocketProvider>
-            <PermissionsProvider>
-              <ThemeProvider>
-                <SidebarProvider>
-                  {children}
-                </SidebarProvider>
-                <ChatWidget />
-                <Toaster />
-                <CommandSearchWrapper />
-              </ThemeProvider>
-            </PermissionsProvider>
-          </SocketProvider>
+          <AppSettingsProvider>
+            <SocketProvider>
+              <PermissionsProvider>
+                <ThemeProvider>
+                  <SidebarProvider>
+                    <DynamicHead />
+                    {children}
+                  </SidebarProvider>
+                  <ChatWidget />
+                  <Toaster />
+                  <CommandSearchWrapper />
+                </ThemeProvider>
+              </PermissionsProvider>
+            </SocketProvider>
+          </AppSettingsProvider>
         </AuthProvider>
       </body>
     </html>

@@ -117,7 +117,7 @@ const mainNavItems: NavItem[] = [
 
     icon: <GridIcon />,
 
-    name: "Dashboard",
+    name: "Tableau de Bord RH",
 
     path: "/",
 
@@ -425,47 +425,11 @@ const advancedNavItems: NavItem[] = [
   },
 
   {
-
-    icon: <PieChartIcon />,
-    name: "Rapports & Analytics",
-    requiredPermission: "reports.view",
-    allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
-    subItems: [
-      {
-        name: "Tableau de Bord RH",
-        path: "/reports/hr",
-        pro: false,
-        requiredPermission: "reports.view",
-        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-      },
-      {
-        name: "Statistiques Congés",
-        path: "/reports/leave",
-        pro: false,
-        requiredPermission: "reports.view",
-        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-      },
-      {
-        name: "Performance Projets",
-        path: "/reports/projects",
-        pro: false,
-        requiredPermission: "reports.view",
-        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-      },
-    ],
-
-  },
-
-  {
-
     icon: <PlugInIcon />,
     name: "Administration",
     requiredPermission: "system.admin",
     allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
     subItems: [
-
       {
         name: "Paramètres Application",
         path: "/settings",
@@ -830,6 +794,13 @@ const AppSidebar: React.FC = () => {
   const { settings, getImageUrl } = useAppSettings();
   const { unreadCount } = useSocket();
 
+
+
+
+
+
+
+
   // Un utilisateur est "employé seulement" s'il a le rôle EMPLOYEE ET aucune permission admin
   const isEmployeeOnly = useMemo(() => {
     if (!userRole) return true;
@@ -989,21 +960,13 @@ const AppSidebar: React.FC = () => {
 
 
   const visibleMainNavItems = useMemo(
-
     () => filterNavItems(mainNavItems),
-
     [filterNavItems],
-
   );
 
-
-
   const visibleAdvancedNavItems = useMemo(
-
     () => filterNavItems(advancedNavItems),
-
     [filterNavItems],
-
   );
 
   const visibleHrmsModulesNavItems = useMemo(
@@ -1407,7 +1370,7 @@ const AppSidebar: React.FC = () => {
                 <Image
                   className="dark:hidden"
                   src="/images/logo/logo.svg"
-                  alt="Logo"
+                  alt={settings.app_name || "Logo"}
                   width={150}
                   height={40}
                   priority
@@ -1424,7 +1387,7 @@ const AppSidebar: React.FC = () => {
                 <Image
                   className="hidden dark:block"
                   src="/images/logo/logo-dark.svg"
-                  alt="Logo"
+                  alt={settings.app_name || "Logo"}
                   width={150}
                   height={40}
                   priority
@@ -1443,7 +1406,7 @@ const AppSidebar: React.FC = () => {
               ) : (
                 <Image
                   src="/images/logo/logo-icon.svg"
-                  alt="Logo"
+                  alt={settings.app_name || "Logo"}
                   width={32}
                   height={32}
                   style={{ height: 'auto', width: 'auto' }}

@@ -7,12 +7,12 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  
+
   // Configuration CORS EN PREMIER
   app.enableCors({
     origin: [
       'http://localhost:3000',
-      'http://localhost:3001', 
+      'http://localhost:3001',
       'http://localhost:3002',
       'http://localhost:3003',
       'http://127.0.0.1:3000',
@@ -22,13 +22,14 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     credentials: true,
   });
-  
+
   // Augmenter la limite de taille des requêtes (50MB pour les pièces jointes)
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-  
+
   // Servir les fichiers statiques (uploads)
-  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+  const uploadsDir = join(process.cwd(), '..', 'uploads');
+  app.useStaticAssets(uploadsDir, {
     prefix: '/uploads/',
   });
 
