@@ -426,7 +426,7 @@ const advancedNavItems: NavItem[] = [
 
       {
 
-        name: "Messages",
+        name: "Messagerie",
 
         path: "/messages",
 
@@ -438,19 +438,7 @@ const advancedNavItems: NavItem[] = [
 
       {
 
-        name: "Conversations",
-
-        path: "/conversations",
-
-        pro: false,
-
-        allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
-
-      },
-
-      {
-
-        name: "vnements Personnels",
+        name: "Événements Personnels",
 
         path: "/personal-events",
 
