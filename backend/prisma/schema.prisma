@@ -622,7 +622,7 @@ model user {
   task_dependencies_created                             task_dependency[]
   task_templates_created                                task_template[]
   task_time_entries                                     task_time_entry[]
-  department_user_department_idTodepartment             department?                @relation("user_department_idTodepartment", fields: [department_id], references: [id], map: "user_ibfk_517")
+  department                                            department?                @relation("user_department_idTodepartment", fields: [department_id], references: [id], map: "user_ibfk_517")
   user                                                  user?                      @relation("userTouser", fields: [manager_user_id], references: [id], map: "user_ibfk_518")
   other_user                                            user[]                     @relation("userTouser")
   position                                              position?                  @relation(fields: [position_id], references: [id], map: "user_ibfk_519")
@@ -654,6 +654,15 @@ model user {
   onboarding_as_employee    onboarding_process?  @relation("OnboardingEmployee")
   onboarding_as_mentor      onboarding_process[] @relation("OnboardingMentor")
   mentions                  message_mention[]
+
+  // Training & Development relations
+  trainings_created            training[]              @relation("training_creator")
+  training_registrations       training_registration[] @relation("training_participant")
+  training_registrations_approved training_registration[] @relation("training_approver")
+  user_certifications          user_certification[]    @relation("user_certifications")
+  development_plans            development_plan[]      @relation("development_plan_user")
+  development_plans_created    development_plan[]      @relation("development_plan_creator")
+  elearning_progress           elearning_progress[]    @relation("elearning_user")
 
   @@index([department_id], map: "department_id")
   @@index([manager_user_id], map: "manager_user_id")
@@ -1418,6 +1427,10 @@ enum notification_type {
   FUND_REQUEST_APPROVED
   FUND_REQUEST_REJECTED
   FUND_REQUEST_PAID
+  TRAINING_APPROVED
+  TRAINING_REJECTED
+  ELEARNING_BADGE_EARNED
+  TRAINING_REGISTERED
 }
 
 // Payroll enums
@@ -1599,4 +1612,264 @@ model onboarding_process {
   mentor   user? @relation("OnboardingMentor", fields: [mentor_id], references: [id])
 
   @@index([mentor_id])
+}
+
+// ============================================
+// TRAINING & DEVELOPMENT MODULE
+// ============================================
+
+model training_category {
+  id          Int                @id @default(autoincrement())
+  name        String             @db.VarChar(255)
+  description String?            @db.Text
+  icon        String?            @db.VarChar(10)
+  color       String?            @db.VarChar(7)
+  is_active   Boolean            @default(true)
+  created_at  DateTime           @default(now()) @db.DateTime(0)
+  updated_at  DateTime           @updatedAt @db.DateTime(0)
+  trainings   training[]
+  elearning_modules elearning_module[]
+}
+
+model training {
+  id                 Int                     @id @default(autoincrement())
+  title              String                  @db.VarChar(255)
+  description        String?                 @db.Text
+  category_id        Int
+  level              training_level          @default(BEGINNER)
+  duration_hours     Int
+  max_participants   Int?
+  is_mandatory       Boolean                 @default(false)
+  is_online          Boolean                 @default(false)
+  is_active          Boolean                 @default(true)
+  instructor_name    String?                 @db.VarChar(255)
+  location           String?                 @db.VarChar(255)
+  prerequisites      String?                 @db.Text
+  objectives         String?                 @db.Text
+  image_url          String?                 @db.VarChar(500)
+  created_by_user_id Int
+  created_at         DateTime                @default(now()) @db.DateTime(0)
+  updated_at         DateTime                @updatedAt @db.DateTime(0)
+  category           training_category       @relation(fields: [category_id], references: [id])
+  creator            user                    @relation("training_creator", fields: [created_by_user_id], references: [id])
+  sessions           training_session[]
+  registrations      training_registration[]
+
+  @@index([category_id])
+  @@index([created_by_user_id])
+}
+
+model training_session {
+  id            Int                     @id @default(autoincrement())
+  training_id   Int
+  start_date    DateTime                @db.DateTime(0)
+  end_date      DateTime                @db.DateTime(0)
+  location      String?                 @db.VarChar(255)
+  max_participants Int?
+  status        session_status          @default(SCHEDULED)
+  notes         String?                 @db.Text
+  created_at    DateTime                @default(now()) @db.DateTime(0)
+  updated_at    DateTime                @updatedAt @db.DateTime(0)
+  training      training                @relation(fields: [training_id], references: [id], onDelete: Cascade)
+  registrations training_registration[]
+
+  @@index([training_id])
+}
+
+model training_registration {
+  id             Int                 @id @default(autoincrement())
+  user_id        Int
+  training_id    Int
+  session_id     Int?
+  status         registration_status @default(PENDING)
+  requested_at   DateTime            @default(now()) @db.DateTime(0)
+  approved_at    DateTime?           @db.DateTime(0)
+  approved_by_id Int?
+  completed_at   DateTime?           @db.DateTime(0)
+  score          Decimal?            @db.Decimal(5, 2)
+  feedback       String?             @db.Text
+  certificate_id Int?
+  notes          String?             @db.Text
+  created_at     DateTime            @default(now()) @db.DateTime(0)
+  updated_at     DateTime            @updatedAt @db.DateTime(0)
+  user           user                @relation("training_participant", fields: [user_id], references: [id], onDelete: Cascade)
+  training       training            @relation(fields: [training_id], references: [id])
+  session        training_session?   @relation(fields: [session_id], references: [id])
+  approved_by    user?               @relation("training_approver", fields: [approved_by_id], references: [id])
+  certificate    certification?      @relation(fields: [certificate_id], references: [id])
+
+  @@unique([user_id, training_id, session_id])
+  @@index([training_id])
+  @@index([session_id])
+  @@index([approved_by_id])
+  @@index([certificate_id])
+}
+
+model certification {
+  id                  Int                     @id @default(autoincrement())
+  name                String                  @db.VarChar(255)
+  issuing_org         String?                 @db.VarChar(255)
+  description         String?                 @db.Text
+  validity_months     Int?
+  is_active           Boolean                 @default(true)
+  created_at          DateTime                @default(now()) @db.DateTime(0)
+  updated_at          DateTime                @updatedAt @db.DateTime(0)
+  user_certifications user_certification[]
+  registrations       training_registration[]
+}
+
+model user_certification {
+  id               Int           @id @default(autoincrement())
+  user_id          Int
+  certification_id Int
+  obtained_date    DateTime      @db.DateTime(0)
+  expiry_date      DateTime?     @db.DateTime(0)
+  credential_id    String?       @db.VarChar(255)
+  credential_url   String?       @db.VarChar(500)
+  status           cert_status   @default(ACTIVE)
+  notes            String?       @db.Text
+  created_at       DateTime      @default(now()) @db.DateTime(0)
+  updated_at       DateTime      @updatedAt @db.DateTime(0)
+  user             user          @relation("user_certifications", fields: [user_id], references: [id], onDelete: Cascade)
+  certification    certification @relation(fields: [certification_id], references: [id])
+
+  @@unique([user_id, certification_id, obtained_date])
+  @@index([certification_id])
+}
+
+model development_plan {
+  id            Int                     @id @default(autoincrement())
+  user_id       Int
+  title         String                  @db.VarChar(255)
+  description   String?                 @db.Text
+  start_date    DateTime                @db.DateTime(0)
+  target_date   DateTime?               @db.DateTime(0)
+  status        plan_status             @default(DRAFT)
+  created_by_id Int
+  created_at    DateTime                @default(now()) @db.DateTime(0)
+  updated_at    DateTime                @updatedAt @db.DateTime(0)
+  user          user                    @relation("development_plan_user", fields: [user_id], references: [id], onDelete: Cascade)
+  creator       user                    @relation("development_plan_creator", fields: [created_by_id], references: [id])
+  objectives    development_objective[]
+
+  @@index([user_id])
+  @@index([created_by_id])
+}
+
+model development_objective {
+  id           Int                @id @default(autoincrement())
+  plan_id      Int
+  title        String             @db.VarChar(255)
+  description  String?            @db.Text
+  skill_area   String?            @db.VarChar(255)
+  priority     objective_priority @default(MEDIUM)
+  target_date  DateTime?          @db.DateTime(0)
+  completed_at DateTime?          @db.DateTime(0)
+  progress     Int                @default(0)
+  status       objective_status   @default(NOT_STARTED)
+  created_at   DateTime           @default(now()) @db.DateTime(0)
+  updated_at   DateTime           @updatedAt @db.DateTime(0)
+  plan         development_plan   @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+
+  @@index([plan_id])
+}
+
+model elearning_module {
+  id               Int                  @id @default(autoincrement())
+  title            String               @db.VarChar(255)
+  description      String?              @db.Text
+  content_url      String?              @db.VarChar(500)
+  thumbnail_url    String?              @db.VarChar(500)
+  duration_minutes Int
+  level            training_level       @default(BEGINNER)
+  category_id      Int?
+  is_active        Boolean              @default(true)
+  badge_name       String?              @db.VarChar(100)
+  badge_icon       String?              @db.VarChar(10)
+  created_at       DateTime             @default(now()) @db.DateTime(0)
+  updated_at       DateTime             @updatedAt @db.DateTime(0)
+  category         training_category?   @relation(fields: [category_id], references: [id])
+  progress         elearning_progress[]
+
+  @@index([category_id])
+}
+
+model elearning_progress {
+  id               Int              @id @default(autoincrement())
+  user_id          Int
+  module_id        Int
+  progress_percent Int              @default(0)
+  status           elearning_status @default(NOT_STARTED)
+  started_at       DateTime?        @db.DateTime(0)
+  completed_at     DateTime?        @db.DateTime(0)
+  last_accessed_at DateTime?        @db.DateTime(0)
+  score            Decimal?         @db.Decimal(5, 2)
+  badge_earned     Boolean          @default(false)
+  created_at       DateTime         @default(now()) @db.DateTime(0)
+  updated_at       DateTime         @updatedAt @db.DateTime(0)
+  user             user             @relation("elearning_user", fields: [user_id], references: [id], onDelete: Cascade)
+  module           elearning_module @relation(fields: [module_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, module_id])
+  @@index([module_id])
+}
+
+// ============================================
+// TRAINING MODULE ENUMS
+// ============================================
+
+enum training_level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum session_status {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum registration_status {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum cert_status {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum plan_status {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum objective_status {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum objective_priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum elearning_status {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
 }

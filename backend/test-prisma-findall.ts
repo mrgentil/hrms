@@ -15,7 +15,7 @@ async function main() {
                     select: {
                         id: true,
                         full_name: true,
-                        department_user_department_idTodepartment: { select: { department_name: true } },
+                        department: { select: { department_name: true } },
                     },
                 },
                 approver: { select: { id: true, full_name: true } },

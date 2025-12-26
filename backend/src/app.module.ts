@@ -37,6 +37,7 @@ import { RecruitmentModule } from './recruitment/recruitment.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { FundRequestsModule } from './fund-requests/fund-requests.module';
 import { PermissionsModule } from './permissions/permissions.module';
+import { TrainingModule } from './training/training.module';
 
 @Module({
   imports: [
@@ -87,6 +88,7 @@ import { PermissionsModule } from './permissions/permissions.module';
     UploadsModule,
     FundRequestsModule,
     PermissionsModule,
+    TrainingModule,
   ],
   controllers: [AppController],
   providers: [

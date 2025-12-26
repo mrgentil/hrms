@@ -10,7 +10,7 @@ export class NotificationsService {
     return this.prisma.notification.create({
       data: {
         user_id: dto.user_id,
-        type: dto.type,
+        type: dto.type as any,
         title: dto.title,
         message: dto.message,
         link: dto.link,
@@ -24,7 +24,7 @@ export class NotificationsService {
     return this.prisma.notification.createMany({
       data: notifications.map(n => ({
         user_id: n.user_id,
-        type: n.type,
+        type: n.type as any,
         title: n.title,
         message: n.message,
         link: n.link,
@@ -281,5 +281,63 @@ export class NotificationsService {
       entity_type: 'fund_request',
       entity_id: fundRequestId,
     });
+  }
+
+  async notifyTrainingApproved(userId: number, trainingId: number, trainingTitle: string, approvedBy: string) {
+    return this.create({
+      user_id: userId,
+      type: NotificationType.TRAINING_APPROVED,
+      title: 'Inscription Approuvée',
+      message: `${approvedBy} a approuvé votre inscription à la formation "${trainingTitle}"`,
+      link: `/training/my-trainings`,
+      entity_type: 'training',
+      entity_id: trainingId,
+    });
+  }
+
+  async notifyTrainingRejected(userId: number, trainingId: number, trainingTitle: string, rejectedBy: string, reason?: string) {
+    return this.create({
+      user_id: userId,
+      type: NotificationType.TRAINING_REJECTED,
+      title: 'Inscription Refusée',
+      message: reason
+        ? `${rejectedBy} a refusé votre inscription à "${trainingTitle}": ${reason}`
+        : `${rejectedBy} a refusé votre inscription à "${trainingTitle}"`,
+      link: `/training/my-trainings`,
+      entity_type: 'training',
+      entity_id: trainingId,
+    });
+  }
+
+  async notifyBadgeEarned(userId: number, moduleId: number, moduleTitle: string) {
+    return this.create({
+      user_id: userId,
+      type: NotificationType.ELEARNING_BADGE_EARNED,
+      title: 'Nouveau Badge ! 🏆',
+      message: `Félicitations ! Vous avez terminé le module "${moduleTitle}" et gagné un nouveau badge.`,
+      link: `/training/elearning`,
+      entity_type: 'elearning_module',
+      entity_id: moduleId,
+    });
+  }
+
+  async notifyNewTrainingRegistration(userId: number, trainingId: number, trainingTitle: string, userName: string) {
+    const admins = await this.prisma.user.findMany({
+      where: {
+        role: { in: ['ROLE_SUPER_ADMIN' as any, 'ROLE_RH' as any] },
+      },
+    });
+
+    const notifications = admins.map(admin => ({
+      user_id: admin.id,
+      type: NotificationType.TRAINING_REGISTERED,
+      title: 'Nouvelle Inscription',
+      message: `${userName} s'est inscrit à la formation "${trainingTitle}"`,
+      link: `/training/registrations`,
+      entity_type: 'training',
+      entity_id: trainingId,
+    }));
+
+    return this.createMany(notifications);
   }
 }

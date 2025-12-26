@@ -56,7 +56,7 @@ export class FundRequestsService {
                         id: true,
                         full_name: true,
                         work_email: true,
-                        department_user_department_idTodepartment: {
+                        department: {
                             select: {
                                 department_name: true,
                             },
@@ -102,7 +102,7 @@ export class FundRequestsService {
                             id: true,
                             full_name: true,
                             work_email: true,
-                            department_user_department_idTodepartment: {
+                            department: {
                                 select: {
                                     department_name: true,
                                 },

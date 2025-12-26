@@ -240,7 +240,7 @@ export class ExpensesService {
             id: true,
             full_name: true,
             work_email: true,
-            department_user_department_idTodepartment: { select: { department_name: true } },
+            department: { select: { department_name: true } },
           },
         },
       },
@@ -276,7 +276,7 @@ export class ExpensesService {
           select: {
             id: true,
             full_name: true,
-            department_user_department_idTodepartment: { select: { department_name: true } },
+            department: { select: { department_name: true } },
           },
         },
         approver: { select: { id: true, full_name: true } },

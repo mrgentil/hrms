@@ -1,0 +1,60 @@
+=== ALL MENU ITEMS ===
+[ID:1] Dashboard | Section: main | Permission: reports.view
+[ID:29] Rapports & Analytics | Section: advanced | Permission: reports.view
+   └─ [ID:30] Tableau de Bord RH | Path: /reports/hr | Permission: SET
+   └─ [ID:31] Statistiques Congés | Path: /reports/leave | Permission: SET
+[ID:2] Pointage | Section: main | Permission: NONE
+[ID:32] Administration | Section: advanced | Permission: system.admin
+   └─ [ID:33] Paramètres | Path: /settings | Permission: SET
+   └─ [ID:34] Logs & Audit | Path: /admin/logs | Permission: SET
+[ID:3] Notes de Frais | Section: main | Permission: expenses.view
+[ID:4] Gestion d'équipe | Section: main | Permission: departments.view
+   └─ [ID:5] Annuaire des employés | Path: /employees | Permission: SET
+   └─ [ID:6] Organigramme | Path: /employees/organigramme | Permission: SET
+   └─ [ID:7] Recherche collaborateurs | Path: /employees/search | Permission: SET
+   └─ [ID:8] Annonces d'équipe | Path: /employees/announcements | Permission: SET
+[ID:9] Gestion Utilisateurs | Section: main | Permission: users.view
+   └─ [ID:10] Liste Utilisateurs | Path: /users | Permission: SET
+   └─ [ID:11] Rôles & Permissions | Path: /users/roles | Permission: SET
+   └─ [ID:12] Permissions | Path: /users/permissions | Permission: SET
+   └─ [ID:13] Configuration Menus | Path: /users/menus | Permission: SET
+[ID:14] Organisation | Section: main | Permission: departments.view
+   └─ [ID:15] Départements | Path: /departments | Permission: SET
+   └─ [ID:16] Postes | Path: /positions | Permission: SET
+   └─ [ID:17] Contrats | Path: /contracts | Permission: SET
+   └─ [ID:18] Annonces | Path: /announcements | Permission: SET
+[ID:19] Congés & Absences | Section: main | Permission: leaves.view
+   └─ [ID:20] Mes Congés | Path: /leaves/my-leaves | Permission: SET
+   └─ [ID:21] Tous les Congés | Path: /leaves/all | Permission: SET
+   └─ [ID:22] Validation des Congés | Path: /leaves/review | Permission: SET
+   └─ [ID:23] Types de Congés | Path: /leaves/types | Permission: SET
+[ID:24] Projets & Tâches | Section: main | Permission: projects.view
+   └─ [ID:25] Mes Projets | Path: /employees/projects | Permission: SET
+   └─ [ID:26] Mes Tâches | Path: /my-tasks | Permission: SET
+   └─ [ID:27] Tous les Projets | Path: /projects | Permission: SET
+   └─ [ID:28] Toutes les Tâches | Path: /tasks | Permission: SET
+[ID:35] Formation & Développement | Section: main | Permission: training.view
+   └─ [ID:36] Catalogue de Formations | Path: /training/catalog | Permission: SET
+   └─ [ID:37] Mes Formations | Path: /training/my-trainings | Permission: SET
+   └─ [ID:38] E-Learning | Path: /training/elearning | Permission: SET
+   └─ [ID:39] Mes Certifications | Path: /training/certifications | Permission: SET
+[ID:40] Ma Paie | Section: main | Permission: payroll.view_own
+   └─ [ID:41] Mes Bulletins de Paie | Path: /payroll/my-payslips | Permission: SET
+   └─ [ID:42] Demander une Avance | Path: /payroll/advances | Permission: SET
+   └─ [ID:43] Demandes de Fonds | Path: /payroll/fund-requests | Permission: SET
+   └─ [ID:44] Simulateur de Salaire | Path: /payroll/simulator | Permission: SET
+[ID:45] Ma Performance | Section: main | Permission: performance.view_own
+   └─ [ID:46] Mes Objectifs | Path: /performance/my-goals | Permission: SET
+   └─ [ID:47] Mes Évaluations | Path: /performance/my-reviews | Permission: SET
+   └─ [ID:48] Reconnaissance | Path: /performance/recognition | Permission: SET
+[ID:49] Mon Matériel | Section: main | Permission: assets.view_own
+   └─ [ID:50] Mon Équipement | Path: /assets/my-assets | Permission: SET
+   └─ [ID:51] Demander du Matériel | Path: /assets/requests | Permission: SET
+[ID:52] Planning & Réservations | Section: main | Permission: planning.view
+   └─ [ID:53] Planning d'Équipe | Path: /planning/team | Permission: SET
+   └─ [ID:54] Réserver une Salle | Path: /planning/rooms | Permission: SET
+   └─ [ID:55] Mon Télétravail | Path: /planning/remote-work | Permission: SET
+[ID:56] Bien-être & Engagement | Section: main | Permission: wellbeing.view
+   └─ [ID:57] Ressources Bien-être | Path: /wellbeing/resources | Permission: SET
+   └─ [ID:58] Sondages | Path: /wellbeing/surveys | Permission: SET
+   └─ [ID:59] Événements d'Entreprise | Path: /wellbeing/events | Permission: SET

@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { useDynamicMenus } from "@/hooks/useDynamicMenus";
 import { MenuItem } from "@/services/permissions.service";
 import { ChevronDownIcon } from "@/icons/index";
+import TrainingService from "@/services/training.service";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DynamicSidebarProps {
   isExpanded: boolean;
@@ -21,8 +23,20 @@ const SECTION_LABELS: Record<string, string> = {
 
 export default function DynamicSidebar({ isExpanded, isHovered, isMobileOpen }: DynamicSidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
   const { menusBySection, loading, error } = useDynamicMenus();
   const [openSubmenu, setOpenSubmenu] = useState<number | null>(null);
+  const [trainingCount, setTrainingCount] = useState(0);
+
+  const isAdmin = user?.role === 'ROLE_SUPER_ADMIN' || user?.role_info?.name === 'Super Admin' || user?.role === 'ROLE_RH';
+
+  useEffect(() => {
+    if (isAdmin) {
+      TrainingService.getPendingRegistrationsCount().then(data => {
+        setTrainingCount(data.count || 0);
+      }).catch(() => { });
+    }
+  }, [isAdmin]);
 
   const isActive = useCallback((path: string) => pathname === path, [pathname]);
 
@@ -69,9 +83,8 @@ export default function DynamicSidebar({ isExpanded, isHovered, isMobileOpen }: 
         <li key={menu.id}>
           <button
             onClick={() => handleSubmenuToggle(menu.id)}
-            className={`menu-item group w-full ${
-              isSubmenuOpen || hasActiveChild ? "menu-item-active" : "menu-item-inactive"
-            } cursor-pointer ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"}`}
+            className={`menu-item group w-full ${isSubmenuOpen || hasActiveChild ? "menu-item-active" : "menu-item-inactive"
+              } cursor-pointer ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"}`}
           >
             <span className={`text-xl ${isSubmenuOpen || hasActiveChild ? "menu-item-icon-active" : "menu-item-icon-inactive"}`}>
               {menu.icon || "📋"}
@@ -79,10 +92,14 @@ export default function DynamicSidebar({ isExpanded, isHovered, isMobileOpen }: 
             {(isExpanded || isHovered || isMobileOpen) && (
               <>
                 <span className="menu-item-text flex-1 text-left">{menu.name}</span>
+                {menu.name.includes("Formation") && trainingCount > 0 && (
+                  <span className="mr-2 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                    {trainingCount}
+                  </span>
+                )}
                 <ChevronDownIcon
-                  className={`ml-auto h-5 w-5 transition-transform duration-200 ${
-                    isSubmenuOpen ? "rotate-180 text-brand-500" : ""
-                  }`}
+                  className={`ml-auto h-5 w-5 transition-transform duration-200 ${isSubmenuOpen ? "rotate-180 text-brand-500" : ""
+                    }`}
                 />
               </>
             )}
@@ -95,14 +112,18 @@ export default function DynamicSidebar({ isExpanded, isHovered, isMobileOpen }: 
                 <li key={child.id}>
                   <Link
                     href={child.path || "#"}
-                    className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
-                      child.path && isActive(child.path)
-                        ? "bg-primary text-white"
-                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
-                    }`}
+                    className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${child.path && isActive(child.path)
+                      ? "bg-primary text-white"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+                      }`}
                   >
                     <span className="text-base">{child.icon || "📄"}</span>
-                    <span>{child.name}</span>
+                    <span className="flex-1">{child.name}</span>
+                    {child.name.includes("Inscriptions") && trainingCount > 0 && (
+                      <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        {trainingCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
               ))}
@@ -117,9 +138,8 @@ export default function DynamicSidebar({ isExpanded, isHovered, isMobileOpen }: 
       <li key={menu.id}>
         <Link
           href={menu.path || "#"}
-          className={`menu-item group ${
-            itemIsActive ? "menu-item-active" : "menu-item-inactive"
-          } ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"}`}
+          className={`menu-item group ${itemIsActive ? "menu-item-active" : "menu-item-inactive"
+            } ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"}`}
         >
           <span className={`text-xl ${itemIsActive ? "menu-item-icon-active" : "menu-item-icon-inactive"}`}>
             {menu.icon || "📋"}
@@ -141,9 +161,8 @@ export default function DynamicSidebar({ isExpanded, isHovered, isMobileOpen }: 
         return (
           <div key={sectionKey}>
             <h2
-              className={`mb-4 flex text-xs uppercase leading-[20px] text-gray-400 ${
-                !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-              }`}
+              className={`mb-4 flex text-xs uppercase leading-[20px] text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+                }`}
             >
               {isExpanded || isHovered || isMobileOpen ? sectionLabel : "•••"}
             </h2>

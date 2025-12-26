@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   ForbiddenException,
   Injectable,
@@ -111,15 +111,15 @@ export class LeavesService {
 
       case application_status.Approved:
 
-        return 'Approuvée';
+        return 'Approuv�e';
 
       case application_status.Rejected:
 
-        return 'Refusée';
+        return 'Refus�e';
 
       case application_status.Cancelled:
 
-        return 'Annulée';
+        return 'Annul�e';
 
       default:
 
@@ -205,7 +205,7 @@ export class LeavesService {
     const { userId, leaveTypeId, startDate, endDate, direction } = params;
 
     if (!leaveTypeId) {
-      this.logger.warn(`Impossible de mettre à jour le solde : aucun type de congé associé (user=${userId}).`);
+      this.logger.warn(`Impossible de mettre � jour le solde : aucun type de cong� associ� (user=${userId}).`);
       return;
     }
 
@@ -428,7 +428,7 @@ export class LeavesService {
     } = params;
 
 
-    const subject = `Nouvelle demande de congé - ${employeeName ?? 'Employé'}`;
+    const subject = `Nouvelle demande de cong� - ${employeeName ?? 'Employ�'}`;
 
     const greeting = approverName ? `Bonjour ${approverName},` : 'Bonjour,';
 
@@ -440,17 +440,17 @@ export class LeavesService {
 
       '',
 
-      `${employeeName ?? 'Un employé'} a soumis une nouvelle demande de congé (n°${leaveId}).`,
+      `${employeeName ?? 'Un employ�'} a soumis une nouvelle demande de cong� (n�${leaveId}).`,
 
       leaveType ? `Type : ${leaveType}` : null,
 
-      `Période : du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}`,
+      `P�riode : du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}`,
 
       formattedReason ? `Motif : ${formattedReason}` : null,
 
       '',
 
-      'Connectez-vous à HRMS pour valider ou commenter cette demande.',
+      'Connectez-vous � HRMS pour valider ou commenter cette demande.',
 
     ].filter(Boolean);
 
@@ -510,7 +510,7 @@ export class LeavesService {
 
     const statusLabel = this.getStatusLabel(status);
 
-    const subject = `Votre demande de congé (n°${leaveId}) est ${statusLabel.toLowerCase()}`;
+    const subject = `Votre demande de cong� (n�${leaveId}) est ${statusLabel.toLowerCase()}`;
 
     const greeting = employeeName ? `Bonjour ${employeeName},` : 'Bonjour,';
 
@@ -520,17 +520,17 @@ export class LeavesService {
 
       '',
 
-      `Votre demande de congé${leaveType ? ` (${leaveType})` : ''} a été ${statusLabel.toLowerCase()}.`,
+      `Votre demande de cong�${leaveType ? ` (${leaveType})` : ''} a �t� ${statusLabel.toLowerCase()}.`,
 
-      `Période : du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}`,
+      `P�riode : du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}`,
 
-      approverName ? `Validée par : ${approverName}` : null,
+      approverName ? `Valid�e par : ${approverName}` : null,
 
       comment ? `Commentaire : ${comment}` : null,
 
       '',
 
-      'Connectez-vous à HRMS pour consulter les détails.',
+      'Connectez-vous � HRMS pour consulter les d�tails.',
 
     ].filter(Boolean);
 
@@ -557,7 +557,7 @@ export class LeavesService {
 
     const { recipients, authorName, leaveId, message } = params;
 
-    const subject = `Nouveau commentaire sur la demande de congé n°${leaveId}`;
+    const subject = `Nouveau commentaire sur la demande de cong� n�${leaveId}`;
 
     await Promise.all(
 
@@ -575,7 +575,7 @@ export class LeavesService {
 
             '',
 
-            `${authorName ?? 'Un membre de votre Ã©quipe'} a laissÃ© un commentaire sur la demande #${leaveId}.`,
+            `${authorName ?? 'Un membre de votre équipe'} a laissé un commentaire sur la demande #${leaveId}.`,
 
             '',
 
@@ -585,7 +585,7 @@ export class LeavesService {
 
             '',
 
-            'Connectez-vous à HRMS pour répondre.',
+            'Connectez-vous � HRMS pour r�pondre.',
 
           ];
 
@@ -1026,7 +1026,7 @@ export class LeavesService {
 
         this.logger.warn(
 
-          `Impossible d'envoyer l'email de commentaire : aucun email trouvÃ© pour l'employÃ© (ID ${leaveAccess.user_id}).`,
+          `Impossible d'envoyer l'email de commentaire : aucun email trouvé pour l'employé (ID ${leaveAccess.user_id}).`,
 
         );
 
@@ -1052,7 +1052,7 @@ export class LeavesService {
 
         this.logger.warn(
 
-          `Impossible d'envoyer l'email de commentaire : aucun email trouvÃ© pour le responsable (ID ${leaveAccess.approver_user_id}).`,
+          `Impossible d'envoyer l'email de commentaire : aucun email trouvé pour le responsable (ID ${leaveAccess.approver_user_id}).`,
 
         );
 
@@ -1167,7 +1167,7 @@ export class LeavesService {
             id: true,
             full_name: true,
             work_email: true,
-            department_user_department_idTodepartment: {
+            department: {
               select: { department_name: true },
             },
           },
@@ -1182,7 +1182,7 @@ export class LeavesService {
     return balances.map((balance) => ({
       ...balance,
       days_remaining: (balance.days_accrued || 0) - (balance.days_used || 0),
-      days_pending: 0, // À calculer si nécessaire
+      days_pending: 0, // � calculer si n�cessaire
     }));
   }
 
@@ -1376,7 +1376,7 @@ export class LeavesService {
             department_id: true,
             position_id: true,
             manager_user_id: true,
-            department_user_department_idTodepartment: {
+            department: {
               select: { department_name: true },
             },
             position: {
@@ -1573,7 +1573,7 @@ export class LeavesService {
 
     if (!dto || Object.keys(dto).length === 0) {
 
-      throw new BadRequestException('Aucune modification n\'a Ã©tÃ© fournie.');
+      throw new BadRequestException('Aucune modification n\'a été fournie.');
 
     }
 
@@ -1589,7 +1589,7 @@ export class LeavesService {
 
     if (!existing || existing.user_id !== userId) {
 
-      throw new NotFoundException('Demande de congÃ© introuvable.');
+      throw new NotFoundException('Demande de congé introuvable.');
 
     }
 
@@ -1607,7 +1607,7 @@ export class LeavesService {
 
     if (existing.start_date <= now) {
 
-      throw new BadRequestException('Impossible de modifier une demande dont la date de dÃ©but est passÃ©e.');
+      throw new BadRequestException('Impossible de modifier une demande dont la date de début est passée.');
 
     }
 
@@ -1621,7 +1621,7 @@ export class LeavesService {
 
     if (targetEnd < targetStart) {
 
-      throw new BadRequestException('La date de fin doit Ãªtre postÃ©rieure Ã  la date de dÃ©but.');
+      throw new BadRequestException('La date de fin doit être postérieure à la date de début.');
 
     }
 
@@ -1629,7 +1629,7 @@ export class LeavesService {
 
     if (targetStart <= now) {
 
-      throw new BadRequestException('La date de dÃ©but doit Ãªtre postÃ©rieure Ã  la date du jour.');
+      throw new BadRequestException('La date de début doit être postérieure à la date du jour.');
 
     }
 
@@ -1651,7 +1651,7 @@ export class LeavesService {
 
       if (!approver || !approver.active) {
 
-        throw new NotFoundException('Le responsable sÃ©lectionnÃ© est introuvable ou inactif.');
+        throw new NotFoundException('Le responsable sélectionné est introuvable ou inactif.');
 
       }
 
@@ -1677,7 +1677,7 @@ export class LeavesService {
 
       if (!leaveTypeExists) {
 
-        throw new NotFoundException('Le type de congÃ© sÃ©lectionnÃ© est introuvable.');
+        throw new NotFoundException('Le type de congé sélectionné est introuvable.');
 
       }
 
@@ -1745,7 +1745,7 @@ export class LeavesService {
 
     if (!existing || existing.user_id !== userId) {
 
-      throw new NotFoundException('Demande de congÃ© introuvable.');
+      throw new NotFoundException('Demande de congé introuvable.');
 
     }
 
@@ -1753,7 +1753,7 @@ export class LeavesService {
 
     if (existing.status !== application_status.Pending) {
 
-      throw new BadRequestException('Seules les demandes en attente peuvent Ãªtre annulÃ©es.');
+      throw new BadRequestException('Seules les demandes en attente peuvent être annulées.');
 
     }
 
@@ -1763,7 +1763,7 @@ export class LeavesService {
 
     if (existing.start_date <= now) {
 
-      throw new BadRequestException('Impossible d\'annuler une demande dont la date de dÃ©but est passÃ©e.');
+      throw new BadRequestException('Impossible d\'annuler une demande dont la date de début est passée.');
 
     }
 
@@ -1816,7 +1816,7 @@ export class LeavesService {
   async createLeaveType(dto: CreateLeaveTypeDto) {
     const trimmedName = dto.name.trim();
     if (trimmedName.length === 0) {
-      throw new BadRequestException('Le nom du type de congé ne peut pas être vide.');
+      throw new BadRequestException('Le nom du type de cong� ne peut pas �tre vide.');
     }
 
     const existing = await this.prisma.leave_type.findFirst({
@@ -1826,7 +1826,7 @@ export class LeavesService {
     });
 
     if (existing) {
-      throw new BadRequestException('Un type de congé portant ce nom existe déjà.');
+      throw new BadRequestException('Un type de cong� portant ce nom existe d�j�.');
     }
 
     const trimmedDescription = dto.description?.trim();
@@ -1861,7 +1861,7 @@ export class LeavesService {
     });
 
     if (!existing) {
-      throw new NotFoundException('Type de congé introuvable.');
+      throw new NotFoundException('Type de cong� introuvable.');
     }
 
     const data: Prisma.leave_typeUpdateInput = {
@@ -1871,7 +1871,7 @@ export class LeavesService {
     if (dto.name !== undefined) {
       const trimmedName = dto.name.trim();
       if (trimmedName.length === 0) {
-        throw new BadRequestException('Le nom du type de congé ne peut pas être vide.');
+        throw new BadRequestException('Le nom du type de cong� ne peut pas �tre vide.');
       }
       data.name = trimmedName;
     }

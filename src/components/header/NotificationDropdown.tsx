@@ -238,14 +238,14 @@ export default function NotificationDropdown() {
   // Polling automatique toutes les 30 secondes pour les nouvelles notifications
   useEffect(() => {
     if (authLoading || roleLoading) return;
-    
+
     const interval = setInterval(() => {
       // Rafraîchir seulement les notifications système (silencieux)
       notificationsService.getNotifications(10).then((sysNotifs) => {
         setSystemNotifications(sysNotifs);
         const sysUnread = sysNotifs.filter(n => !n.is_read).length;
         setUnreadSystemCount(sysUnread);
-      }).catch(() => {});
+      }).catch(() => { });
     }, 30000); // 30 secondes
 
     return () => clearInterval(interval);
@@ -325,7 +325,7 @@ export default function NotificationDropdown() {
       <section>
         <header className="flex items-center justify-between pb-2">
           <h6 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-            Demandes a valider
+            Validations de congés
           </h6>
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {pendingCount} en attente
@@ -386,7 +386,7 @@ export default function NotificationDropdown() {
       <section>
         <header className="flex items-center justify-between pb-2">
           <h6 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-            Mes demandes
+            Mes congés
           </h6>
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {unreadUpdates} notification{unreadUpdates > 1 ? "s" : ""} non lue{unreadUpdates > 1 ? "s" : ""}
@@ -444,11 +444,11 @@ export default function NotificationDropdown() {
 
   const handleSystemNotificationClick = async (notification: Notification) => {
     closeDropdown();
-    
+
     if (!notification.is_read) {
       try {
         await notificationsService.markAsRead([notification.id]);
-        setSystemNotifications(systemNotifications.map(n => 
+        setSystemNotifications(systemNotifications.map(n =>
           n.id === notification.id ? { ...n, is_read: true } : n
         ));
         setUnreadSystemCount(Math.max(0, unreadSystemCount - 1));
@@ -466,7 +466,7 @@ export default function NotificationDropdown() {
     const now = new Date();
     const notifDate = new Date(date);
     const diff = now.getTime() - notifDate.getTime();
-    
+
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
@@ -488,7 +488,7 @@ export default function NotificationDropdown() {
       <section>
         <header className="flex items-center justify-between pb-2">
           <h6 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-            Projets & Tâches
+            Notifications & Formations
           </h6>
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {unreadSystemCount} non lue{unreadSystemCount > 1 ? "s" : ""}
@@ -499,11 +499,10 @@ export default function NotificationDropdown() {
             <li key={`sys-${notification.id}`}>
               <button
                 onClick={() => handleSystemNotificationClick(notification)}
-                className={`w-full flex gap-3 rounded-lg border px-4 py-3 hover:bg-gray-100 dark:hover:bg-white/5 text-left ${
-                  !notification.is_read 
-                    ? "border-primary/30 bg-primary/5" 
+                className={`w-full flex gap-3 rounded-lg border px-4 py-3 hover:bg-gray-100 dark:hover:bg-white/5 text-left ${!notification.is_read
+                    ? "border-primary/30 bg-primary/5"
                     : "border-gray-100 dark:border-gray-800"
-                }`}
+                  }`}
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg">
                   {NOTIFICATION_TYPE_ICONS[notification.type] || "📌"}

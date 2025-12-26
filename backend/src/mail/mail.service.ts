@@ -193,4 +193,44 @@ export class MailService {
       html,
     });
   }
+  async sendTrainingStatusEmail(
+    user: { email: string; firstName: string; lastName: string },
+    training: { title: string; status: 'APPROVED' | 'REJECTED'; reason?: string }
+  ): Promise<void> {
+    const isApproved = training.status === 'APPROVED';
+    const subject = isApproved
+      ? `Objet : Inscription approuvée - Formation ${training.title}`
+      : `Objet : Mise à jour de votre inscription - ${training.title}`;
+
+    const html = `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
+        <p style="font-size: 16px; color: #374151;">Bonjour <strong>${user.firstName} ${user.lastName}</strong>,</p>
+        
+        <p style="font-size: 16px; color: #374151;">
+            ${isApproved
+        ? `Nous avons le plaisir de vous informer que votre demande d'inscription pour la formation <strong>"${training.title}"</strong> a été <strong>approuvée</strong>.`
+        : `Nous vous informons qu'après étude de votre dossier, nous ne pouvons pas donner suite à votre demande d'inscription pour la formation <strong>"${training.title}"</strong> pour le moment.`
+      }
+        </p>
+
+        ${!isApproved && training.reason ? `<p style="font-size: 16px; color: #374151; background: #f9fafb; padding: 15px; border-radius: 8px;"><strong>Motif :</strong> ${training.reason}</p>` : ''}
+        
+        ${isApproved ? `<p style="font-size: 16px; color: #374151;">Vous pouvez dès maintenant consulter les détails de cette formation et votre planning depuis votre espace collaborateur.</p>` : ''}
+        
+        <br/>
+        <p style="font-size: 16px; color: #374151;">Cordialement,</p>
+        
+        <div style="margin-top: 20px; border-left: 4px solid #4f46e5; padding-left: 15px;">
+            <p style="font-size: 16px; font-weight: bold; color: #111827; margin: 0;">Service Formation & Développement</p>
+            <p style="font-size: 14px; color: #6b7280; margin: 4px 0 0 0;">Groupe Gentil</p>
+        </div>
+      </div>
+    `;
+
+    await this.sendMail({
+      to: user.email,
+      subject,
+      html,
+    });
+  }
 }

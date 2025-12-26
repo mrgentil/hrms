@@ -185,7 +185,7 @@ export class EmployeesService {
       this.prisma.user.findMany({
         where,
         include: {
-          department_user_department_idTodepartment: {
+          department: {
             select: { id: true, department_name: true },
           },
           position: {
@@ -223,7 +223,7 @@ export class EmployeesService {
     const employee = await this.prisma.user.findUnique({
       where: { id },
       include: {
-        department_user_department_idTodepartment: {
+        department: {
           select: { id: true, department_name: true },
         },
         position: {
@@ -723,7 +723,7 @@ export class EmployeesService {
             level: true,
           },
         },
-        department_user_department_idTodepartment: {
+        department: {
           select: {
             id: true,
             department_name: true,
@@ -932,7 +932,7 @@ export class EmployeesService {
             }
           },
           {
-            department_user_department_idTodepartment: {
+            department: {
               department_name: { contains: query }
             }
           },
@@ -944,7 +944,7 @@ export class EmployeesService {
         ]
       },
       include: {
-        department_user_department_idTodepartment: {
+        department: {
           select: { id: true, department_name: true },
         },
         position: {
@@ -968,7 +968,7 @@ export class EmployeesService {
     const employees = await this.prisma.user.findMany({
       where: { active: true },
       include: {
-        department_user_department_idTodepartment: {
+        department: {
           select: { id: true, department_name: true },
         },
         position: {
@@ -993,7 +993,7 @@ export class EmployeesService {
 
     employees.forEach(employee => {
       const deptId = employee.department_id || 0;
-      const deptName = employee.department_user_department_idTodepartment?.department_name || 'Sans département';
+      const deptName = employee.department?.department_name || 'Sans département';
 
       if (!organizationMap.has(deptId)) {
         organizationMap.set(deptId, {

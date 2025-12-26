@@ -225,7 +225,7 @@ export class AuthService {
         profile_photo_url: true,
         created_at: true,
         updated_at: true,
-        department_user_department_idTodepartment: {
+        department: {
           select: {
             id: true,
             department_name: true,
@@ -264,7 +264,7 @@ export class AuthService {
 
     return {
       ...user,
-      department: user.department_user_department_idTodepartment,
+      department: user.department,
       role_info: user.role_relation, // Nouveau système de rôles
       current_role: user.role_relation?.name || user.role, // Fallback vers l'ancien système
       permissions: user.role_relation?.role_permission?.map(rp => rp.permission?.name).filter(Boolean) || [],

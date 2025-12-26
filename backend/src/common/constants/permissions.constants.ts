@@ -57,6 +57,7 @@ export const SYSTEM_PERMISSIONS = {
 
     // Formation & Développement
     TRAINING_VIEW: 'training.view',
+    TRAINING_VIEW_OWN: 'training.view_own', // NEW
     TRAINING_CREATE: 'training.create',
     TRAINING_MANAGE: 'training.manage',
     TRAINING_REGISTER: 'training.register',
@@ -185,6 +186,7 @@ export const PERMISSION_GROUPS = [
         icon: '📚',
         permissions: [
             { key: 'training.view', label: 'Voir les formations', description: 'Accéder au catalogue de formations' },
+            { key: 'training.view_own', label: 'Voir ses formations', description: 'Accéder à ses formations' },
             { key: 'training.create', label: 'Créer des formations', description: 'Ajouter de nouvelles formations' },
             { key: 'training.manage', label: 'Gérer les formations', description: 'Administrer les formations et inscriptions' },
             { key: 'training.register', label: 'S\'inscrire aux formations', description: 'Demander des inscriptions' },

@@ -99,7 +99,7 @@ export class UsersService {
         updated_at: new Date(),
       },
       include: {
-        department_user_department_idTodepartment: {
+        department: {
           select: {
             id: true,
             department_name: true,
@@ -172,7 +172,7 @@ export class UsersService {
           hire_date: true,
           created_at: true,
           updated_at: true,
-          department_user_department_idTodepartment: {
+          department: {
             select: {
               id: true,
               department_name: true,
@@ -205,7 +205,7 @@ export class UsersService {
     return {
       data: users.map(user => ({
         ...user,
-        department: user.department_user_department_idTodepartment,
+        department: user.department,
         role_info: user.role_relation, // Nouveau système de rôles
         current_role: user.role_relation?.name || user.role, // Fallback vers l'ancien système
       })),
@@ -231,7 +231,7 @@ export class UsersService {
         profile_photo_url: true,
         created_at: true,
         updated_at: true,
-        department_user_department_idTodepartment: {
+        department: {
           select: {
             id: true,
             department_name: true,
@@ -325,7 +325,7 @@ export class UsersService {
 
     return {
       ...user,
-      department: user.department_user_department_idTodepartment,
+      department: user.department,
       manager: user.user,
     };
   }
@@ -411,7 +411,7 @@ export class UsersService {
       where: { id },
       data: updateData,
       include: {
-        department_user_department_idTodepartment: {
+        department: {
           select: {
             id: true,
             department_name: true,
@@ -514,7 +514,7 @@ export class UsersService {
     const { password, ...userWithoutPassword } = user;
     return {
       ...userWithoutPassword,
-      department: user.department_user_department_idTodepartment,
+      department: user.department,
     };
   }
 
@@ -639,7 +639,7 @@ export class UsersService {
         position_id: true,
         created_at: true,
         updated_at: true,
-        department_user_department_idTodepartment: {
+        department: {
           select: {
             id: true,
             department_name: true,
@@ -833,7 +833,7 @@ export class UsersService {
         active: true,
         hire_date: true,
         created_at: true,
-        department_user_department_idTodepartment: {
+        department: {
           select: { department_name: true },
         },
         position: {
@@ -851,7 +851,7 @@ export class UsersService {
         user.role,
         user.work_email || '',
         user.active ? 'Actif' : 'Inactif',
-        user.department_user_department_idTodepartment?.department_name || '',
+        user.department?.department_name || '',
         user.position?.title || '',
         user.hire_date ? user.hire_date.toISOString().split('T')[0] : '',
       ]);

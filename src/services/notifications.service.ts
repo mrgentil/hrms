@@ -31,6 +31,10 @@ export const NOTIFICATION_TYPE_ICONS: Record<string, string> = {
   ANNOUNCEMENT: '📢',
   MESSAGE: '💬',
   MENTION: '🔔',
+  TRAINING_APPROVED: '🎓',
+  TRAINING_REJECTED: '❌',
+  TRAINING_REGISTERED: '📝',
+  ELEARNING_BADGE_EARNED: '🏆',
   SYSTEM: '⚙️',
 };
 
