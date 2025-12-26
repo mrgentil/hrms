@@ -794,6 +794,10 @@ const AppSidebar: React.FC = () => {
   const { settings, getImageUrl } = useAppSettings();
   const { unreadCount } = useSocket();
 
+  useEffect(() => {
+    console.log('[AppSidebar] Current unreadCount:', unreadCount);
+  }, [unreadCount]);
+
 
 
 
@@ -1175,27 +1179,26 @@ const AppSidebar: React.FC = () => {
               >
 
                 <span
-
-                  className={`${isActive(nav.path)
-
+                  className={`relative ${isActive(nav.path)
                     ? "menu-item-icon-active"
-
                     : "menu-item-icon-inactive"
-
                     }`}
-
                 >
-
                   {nav.icon}
-
+                  {nav.path === "/messages" && unreadCount > 0 && !(isExpanded || isHovered || isMobileOpen) && (
+                    <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                    </span>
+                  )}
                 </span>
 
                 {(isExpanded || isHovered || isMobileOpen) && (
                   <>
                     <span className="menu-item-text">{nav.name}</span>
                     {nav.path === "/messages" && unreadCount > 0 && (
-                      <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-white dark:ring-gray-900">
-                        {unreadCount}
+                      <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-white dark:ring-gray-900 animate-pulse">
+                        {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     )}
                   </>

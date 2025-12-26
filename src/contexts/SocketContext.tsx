@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { authService } from '@/lib/auth';
 
 interface SocketContextType {
     socket: Socket | null;
@@ -21,24 +22,34 @@ const SocketContext = createContext<SocketContextType>({
 export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { user, token } = useAuth();
+    const { user } = useAuth();
+    const token = authService.getAccessToken();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
 
     const fetchUnreadCount = async () => {
+        if (!token) return;
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/messages/unread-count`, {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+            const response = await fetch(`${apiUrl}/messages/unread-count`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
             if (response.ok) {
                 const data = await response.json();
-                setUnreadCount(data.data.count);
+                console.log('[SocketContext] Unread Count Response:', data);
+                if (data && data.data && typeof data.data.count === 'number') {
+                    setUnreadCount(data.data.count);
+                } else if (data && typeof data.count === 'number') {
+                    setUnreadCount(data.count);
+                }
+            } else {
+                console.error('[SocketContext] Failed to fetch unread count:', response.status);
             }
         } catch (error) {
-            console.error('Failed to fetch unread count', error);
+            console.error('[SocketContext] Fetch Error:', error);
         }
     };
 
@@ -66,15 +77,24 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
 
             socketInstance.on('newMessage', (message: any) => {
+                console.log('[SocketContext] Received newMessage event:', message);
                 // Skip if current user is the sender
-                if (message.sender_user_id === user.id) return;
+                if (message.sender_user_id === user.id) {
+                    console.log('[SocketContext] Message is from current user, skipping update');
+                    return;
+                }
 
                 // Check if user is a recipient (either direct or in participants list)
                 const isRecipient = message.recipient_user_id === user.id ||
                     (message.conversationParticipants && message.conversationParticipants.includes(user.id));
 
+                console.log('[SocketContext] Is current user recipient?', isRecipient);
+
                 if (isRecipient) {
-                    setUnreadCount(prev => prev + 1);
+                    setUnreadCount(prev => {
+                        console.log('[SocketContext] Incrementing unread count from', prev);
+                        return prev + 1;
+                    });
                 }
             });
 
@@ -90,7 +110,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 setIsConnected(false);
             }
         }
-    }, [user, token]);
+    }, [user]);
 
     return (
         <SocketContext.Provider value={{ socket, isConnected, unreadCount, markAsRead: fetchUnreadCount }}>

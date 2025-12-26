@@ -36,6 +36,7 @@ export interface Conversation {
   updated_at: string;
   participants: User[];
   lastMessage?: Message;
+  unread_count?: number;
   conversation_participant?: Array<{
     id: number;
     user_id: number;
@@ -145,6 +146,13 @@ class MessagesService {
       { user_id: userId },
       { headers: this.getAuthHeaders() }
     );
+    return response.data;
+  }
+
+  async markAsRead(id: number) {
+    const response = await axios.post(`${API_BASE_URL}/messages/conversations/${id}/read`, {}, {
+      headers: this.getAuthHeaders(),
+    });
     return response.data;
   }
 

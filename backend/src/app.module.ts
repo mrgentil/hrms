@@ -52,6 +52,10 @@ import { PermissionsModule } from './permissions/permissions.module';
       rootPath: resolve(__dirname, '..', '..', 'public'), // Point to backend/public
       serveRoot: '/',
     }),
+    ServeStaticModule.forRoot({
+      rootPath: resolve(__dirname, '..', '..', 'uploads'), // Point to backend/uploads
+      serveRoot: '/uploads',
+    }),
     ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,

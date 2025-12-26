@@ -124,13 +124,28 @@ export class MessagesService {
       orderBy: { updated_at: 'desc' },
     });
 
-    return conversations.map(conv => ({
-      ...conv,
-      lastMessage: conv.user_message[0] || null,
-      participants: conv.conversation_participant
-        .filter(p => p.user_id !== userId)
-        .map(p => p.user),
-    }));
+    const conversationsWithCounts = await Promise.all(
+      conversations.map(async (conv) => {
+        const unreadCount = await this.prisma.user_message.count({
+          where: {
+            conversation_id: conv.id,
+            recipient_user_id: userId,
+            is_read: false,
+          },
+        });
+
+        return {
+          ...conv,
+          lastMessage: conv.user_message[0] || null,
+          participants: conv.conversation_participant
+            .filter(p => p.user_id !== userId)
+            .map(p => p.user),
+          unread_count: unreadCount,
+        };
+      }),
+    );
+
+    return conversationsWithCounts;
   }
 
   async getConversation(conversationId: number, userId: number) {
@@ -366,6 +381,22 @@ export class MessagesService {
 
     await this.prisma.user_message.delete({ where: { id: messageId } });
     return { message: 'Message supprimé' };
+  }
+
+  async markAsRead(conversationId: number, userId: number) {
+    await this.prisma.user_message.updateMany({
+      where: {
+        conversation_id: conversationId,
+        recipient_user_id: userId,
+        is_read: false,
+      },
+      data: {
+        is_read: true,
+        read_at: new Date(),
+      },
+    });
+
+    return { message: 'Messages marqués comme lus' };
   }
 
   async searchUsers(query: string, userId: number) {

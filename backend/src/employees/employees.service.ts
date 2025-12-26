@@ -1065,7 +1065,12 @@ export class EmployeesService {
         userUpdateData.work_email = work_email;
       }
       if (profilePhotoPath) {
-        userUpdateData.profile_photo_url = profilePhotoPath.replace(/\\/g, '/');
+        // Ensure path starts with / for proper URL construction
+        let photoUrl = profilePhotoPath.replace(/\\/g, '/');
+        if (!photoUrl.startsWith('/')) {
+          photoUrl = '/' + photoUrl;
+        }
+        userUpdateData.profile_photo_url = photoUrl;
       }
 
       if (Object.keys(userUpdateData).length > 1 || profilePhotoPath) {

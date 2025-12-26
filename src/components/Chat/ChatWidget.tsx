@@ -33,7 +33,9 @@ export default function ChatWidget() {
         }
     }, [socket, user]);
 
-    if (!user) return null;
+    const isMessagesPage = typeof window !== 'undefined' && window.location.pathname === '/messages';
+
+    if (!user || isMessagesPage) return null;
 
     const handleClick = () => {
         // Reset count when opening/navigating

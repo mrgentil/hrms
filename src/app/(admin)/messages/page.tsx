@@ -33,7 +33,7 @@ const SearchIcon = () => (
 
 export default function MessagesPage() {
   const { user } = useAuth();
-  const { socket } = useSocket(); // Use socket
+  const { socket, markAsRead: refreshGlobalCount } = useSocket(); // Use socket and refresh global count
   const toast = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -129,31 +129,71 @@ export default function MessagesPage() {
     };
   }, [socket, loadConversations]);
 
-  // Real-time: Join Room & Listen for Messages
+  // Global message listener for conversation list updates and messages if selected
   useEffect(() => {
-    if (socket && selectedConversation) {
-      const roomName = `conversation_${selectedConversation.id}`;
-      socket.emit('joinRoom', roomName);
+    if (socket) {
+      const handleGlobalNewMessage = (msg: Message) => {
+        setConversations(prev => {
+          const exists = prev.some(c => c.id === msg.conversation_id);
+          if (!exists) {
+            // If it's a new conversation, we might need to refresh the list
+            loadConversations();
+            return prev;
+          }
 
-      const handleNewMessage = (msg: Message) => {
-        // Ensure message belongs to current convo and not dup (sender already adds it locally)
-        if (msg.conversation_id === selectedConversation.id) {
+          const updated = prev.map(conv => {
+            if (conv.id === msg.conversation_id) {
+              const isSelected = selectedConversation?.id === conv.id;
+              return {
+                ...conv,
+                lastMessage: msg,
+                unread_count: isSelected ? 0 : (conv.unread_count || 0) + 1,
+                updated_at: msg.created_at || new Date().toISOString()
+              };
+            }
+            return conv;
+          });
+
+          // Sort by updated_at desc
+          return [...updated].sort((a, b) => {
+            const dateA = new Date(a.updated_at).getTime();
+            const dateB = new Date(b.updated_at).getTime();
+            return dateB - dateA;
+          });
+        });
+
+        // Update current messages if it's the selected conversation
+        if (selectedConversation && msg.conversation_id === selectedConversation.id) {
           setMessages((prev) => {
-            // Check if message already exists (optimistic UI or double event)
             if (prev.some(m => m.id === msg.id)) return prev;
             return [...prev, msg];
           });
+
+          // Mark as read immediately
+          messagesService.markAsRead(selectedConversation.id)
+            .then(() => refreshGlobalCount())
+            .catch(console.error);
+
           setTimeout(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
           }, 100);
         }
       };
 
-      socket.on('newMessage', handleNewMessage);
+      socket.on('newMessage', handleGlobalNewMessage);
+      return () => {
+        socket.off('newMessage', handleGlobalNewMessage);
+      };
+    }
+  }, [socket, selectedConversation, refreshGlobalCount, loadConversations]);
 
+  // Per-conversation room joining
+  useEffect(() => {
+    if (socket && selectedConversation) {
+      const roomName = `conversation_${selectedConversation.id}`;
+      socket.emit('joinRoom', roomName);
       return () => {
         socket.emit('leaveRoom', roomName);
-        socket.off('newMessage', handleNewMessage);
       };
     }
   }, [socket, selectedConversation]);
@@ -175,7 +215,15 @@ export default function MessagesPage() {
 
   const selectConversation = async (conv: Conversation) => {
     setSelectedConversation(conv);
+    // Reset unread count locally
+    setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, unread_count: 0 } : c));
     await loadMessages(conv.id);
+    try {
+      await messagesService.markAsRead(conv.id);
+      refreshGlobalCount();
+    } catch (error) {
+      console.error("Erreur lors du marquage comme lu", error);
+    }
   };
 
 
@@ -194,6 +242,21 @@ export default function MessagesPage() {
         mentioned_user_ids: mentionedIds.length > 0 ? mentionedIds : undefined,
       });
       setMessages((prev) => [...prev, message]);
+
+      // Update conversation list item with last message and sort
+      setConversations(prev => {
+        const updated = prev.map(c =>
+          c.id === selectedConversation.id
+            ? { ...c, lastMessage: message, updated_at: message.created_at || new Date().toISOString() }
+            : c
+        );
+        return [...updated].sort((a, b) => {
+          const dateA = new Date(a.updated_at).getTime();
+          const dateB = new Date(b.updated_at).getTime();
+          return dateB - dateA;
+        });
+      });
+
       setNewMessage("");
       setSelectedFile(null);
       setMentionedIds([]); // Clear mentions
@@ -281,7 +344,7 @@ export default function MessagesPage() {
       if (participant.profile_photo_url) {
         return (
           <img
-            src={participant.profile_photo_url}
+            src={getFileUrl(participant.profile_photo_url)}
             alt={participant.full_name}
             className="w-10 h-10 rounded-full object-cover"
           />
@@ -451,16 +514,23 @@ export default function MessagesPage() {
                         )}
                       </div>
                       {conv.lastMessage && (
-                        <p className="text-sm text-gray-500 truncate">
-                          {conv.lastMessage.content || (
-                            conv.lastMessage.attachments && conv.lastMessage.attachments.length > 0
-                              ? (conv.lastMessage.attachments[0].file_type === 'AUDIO' ? '🎤 Message vocal'
-                                : conv.lastMessage.attachments[0].file_type === 'IMAGE' ? '📷 Photo'
-                                  : conv.lastMessage.attachments[0].file_type === 'VIDEO' ? '🎥 Vidéo'
-                                    : '📎 Fichier')
-                              : '...'
-                          )}
-                        </p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-sm text-gray-500 truncate flex-1 mr-2">
+                            {conv.lastMessage.content || (
+                              conv.lastMessage.attachments && conv.lastMessage.attachments.length > 0
+                                ? (conv.lastMessage.attachments[0].file_type === 'AUDIO' ? '🎤 Message vocal'
+                                  : conv.lastMessage.attachments[0].file_type === 'IMAGE' ? '📷 Photo'
+                                    : conv.lastMessage.attachments[0].file_type === 'VIDEO' ? '🎥 Vidéo'
+                                      : '📎 Fichier')
+                                : '...'
+                            )}
+                          </p>
+                          {conv.unread_count && conv.unread_count > 0 ? (
+                            <span className="bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center animate-pulse">
+                              {conv.unread_count}
+                            </span>
+                          ) : null}
+                        </div>
                       )}
                     </div>
                   </button>

@@ -129,6 +129,18 @@ export class MessagesController {
     };
   }
 
+  @Post('conversations/:id/read')
+  async markAsRead(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
+  ) {
+    const result = await this.messagesService.markAsRead(id, user.id);
+    return {
+      success: true,
+      ...result,
+    };
+  }
+
   @Delete('conversations/:id/leave')
   async leaveConversation(
     @Param('id', ParseIntPipe) conversationId: number,
