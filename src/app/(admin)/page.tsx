@@ -17,7 +17,7 @@ import { leavesService, LeaveRequest } from "@/services/leaves.service";
 import { KPICardSkeleton, ChartSkeleton, ActivitySkeleton } from "@/components/common/Skeleton";
 
 // Import ApexCharts dynamiquement (SSR disabled + loading state)
-const ReactApexChart = dynamic(() => import("react-apexcharts"), { 
+const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
   loading: () => <div className="h-64 bg-gray-100 dark:bg-gray-700 animate-pulse rounded-lg" />
 });
@@ -59,7 +59,12 @@ const RefreshIcon = () => (
   </svg>
 );
 
-export default function Dashboard() {
+import { useUserRole } from "@/hooks/useUserRole";
+import EmployeeDashboard from "./employee-dashboard/page";
+
+function AdminDashboard({ userRole }: { userRole: any }) {
+
+
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -78,12 +83,12 @@ export default function Dashboard() {
   const loadDashboardData = useCallback(async (forceRefresh = false) => {
     try {
       setLoading(true);
-      
+
       // Vider le cache si refresh forcé
       if (forceRefresh) {
         analyticsService.clearCache();
       }
-      
+
       const [overviewData, attendance, expenses, depts, activity, leavesResponse] = await Promise.all([
         analyticsService.getDashboardOverview(),
         analyticsService.getAttendanceTrend(),
@@ -334,9 +339,9 @@ export default function Dashboard() {
     },
   }), [displayDepartments]);
 
-  const departmentChartSeries = useMemo(() => 
+  const departmentChartSeries = useMemo(() =>
     displayDepartments.slice(0, 6).map(d => d.count),
-  [displayDepartments]);
+    [displayDepartments]);
 
   // Configuration ApexCharts - Gauge Taux de présence
   const attendanceRateOptions: ApexOptions = useMemo(() => ({
@@ -393,13 +398,20 @@ export default function Dashboard() {
     );
   }
 
+  const hasPermission = (permission: string) => {
+    if (userRole?.isSuperAdmin) return true;
+    return userRole?.permissions.includes(permission);
+  };
+
+  const showFinancials = hasPermission('payroll.view') || hasPermission('users.view_salary');
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-gray-900 dark:text-gray-100">
       {/* Header avec animation */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 animate-fade-in">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Tableau de bord RH
+            {userRole?.isAdmin || userRole?.isSuperAdmin || userRole?.isHR ? "Tableau de Bord RH" : "Gestion d'Équipe"}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
             Bienvenue, {user?.full_name} 👋
@@ -506,25 +518,43 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Dépenses */}
-        <div className="group bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-purple-50 dark:bg-purple-900/30 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <CashIcon />
+        {/* Dépenses (Conditionnel) */}
+        {showFinancials ? (
+          <div className="group bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-purple-50 dark:bg-purple-900/30 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <CashIcon />
+              </div>
+            </div>
+            <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+              {formatCurrency(Number(displayOverview?.expenses.totalMonth) || 0)}
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Dépenses ce mois</p>
+            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-400">Notes approuvées</span>
+                <span className="text-green-500">✓</span>
+              </div>
             </div>
           </div>
-          <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-            {formatCurrency(Number(displayOverview?.expenses.totalMonth) || 0)}
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Dépenses ce mois</p>
-          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Notes approuvées</span>
-              <span className="text-green-500">✓</span>
+        ) : (
+          <div className="group bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                <span className="text-2xl">⚡</span>
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+              Quick Stats
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Actions rapides ci-dessous</p>
+            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400">
+              Accès restreint aux finances
             </div>
           </div>
-        </div>
+        )}
       </div>
+
 
       {/* Quick Actions */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
@@ -603,8 +633,8 @@ export default function Dashboard() {
                     </span>
                   </div>
                 </div>
-                <Link 
-                  href="/leaves/review" 
+                <Link
+                  href="/leaves/review"
                   className="mt-3 inline-flex items-center text-sm text-primary hover:underline"
                 >
                   Traiter la demande →
@@ -641,27 +671,29 @@ export default function Dashboard() {
         </div>
 
         {/* Expenses Chart */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              💰 Dépenses (6 derniers mois)
-            </h3>
-          </div>
-          {mounted && displayExpenses.length > 0 ? (
-            <div style={{ minHeight: 250 }}>
-              <ReactApexChart
-                key={`expenses-${displayExpenses.length}`}
-                options={expensesChartOptions}
-                series={expensesChartSeries}
-                type="bar"
-                height={250}
-                width="100%"
-              />
+        {showFinancials && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                💰 Dépenses (6 derniers mois)
+              </h3>
             </div>
-          ) : (
-            <ChartSkeleton height={250} />
-          )}
-        </div>
+            {mounted && displayExpenses.length > 0 ? (
+              <div style={{ minHeight: 250 }}>
+                <ReactApexChart
+                  key={`expenses-${displayExpenses.length}`}
+                  options={expensesChartOptions}
+                  series={expensesChartSeries}
+                  type="bar"
+                  height={250}
+                  width="100%"
+                />
+              </div>
+            ) : (
+              <ChartSkeleton height={250} />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Bottom Row */}
@@ -698,8 +730,8 @@ export default function Dashboard() {
           </h3>
           <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
             {displayActivities.length > 0 ? displayActivities.map((activity, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className="flex items-start gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 style={{ animationDelay: `${i * 100}ms` }}
               >
@@ -717,15 +749,14 @@ export default function Dashboard() {
                         minute: "2-digit",
                       }) : "..."}
                     </span>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                      activity.status === "APPROVED" || activity.status === "PAID" 
-                        ? "bg-green-100 text-green-700" 
-                        : activity.status === "PENDING" 
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${activity.status === "APPROVED" || activity.status === "PAID"
+                      ? "bg-green-100 text-green-700"
+                      : activity.status === "PENDING"
                         ? "bg-yellow-100 text-yellow-700"
                         : activity.status === "REJECTED"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-blue-100 text-blue-700"
-                    }`}>
+                          ? "bg-red-100 text-red-700"
+                          : "bg-blue-100 text-blue-700"
+                      }`}>
                       {activity.status}
                     </span>
                   </div>
@@ -762,14 +793,50 @@ export default function Dashboard() {
             </div>
             <div className="text-sm text-blue-200 mt-1">Congés en attente</div>
           </div>
-          <div className="group">
-            <div className="text-4xl font-bold group-hover:scale-110 transition-transform">
-              {displayOverview?.pending.expenses || 0}
+          {showFinancials ? (
+            <div className="group">
+              <div className="text-4xl font-bold group-hover:scale-110 transition-transform">
+                {formatCurrency(Number(displayOverview?.expenses.totalMonth) || 0)}
+              </div>
+              <div className="text-sm text-blue-200 mt-1">Dépenses ce mois</div>
             </div>
-            <div className="text-sm text-blue-200 mt-1">Frais en attente</div>
-          </div>
+          ) : (
+            <div className="group">
+              <div className="text-4xl font-bold group-hover:scale-110 transition-transform">
+                {displayOverview?.attendance.attendanceRate || 0}%
+              </div>
+              <div className="text-sm text-blue-200 mt-1">Taux de présence</div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
+export default function Dashboard() {
+  const { role: userRole, loading: roleLoading } = useUserRole();
+
+  if (roleLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Un utilisateur est "employé seulement" s'il a le rôle EMPLOYEE ET aucune permission admin/manager
+  const isEmployeeOnly = userRole?.role === "ROLE_EMPLOYEE" &&
+    !userRole.isManager &&
+    !userRole.isHR &&
+    !userRole.isAdmin &&
+    !userRole.isSuperAdmin;
+
+  if (isEmployeeOnly) {
+    return <EmployeeDashboard />;
+  }
+
+  // Sinon, on affiche le tableau de bord global (Manager/RH/Admin)
+  return <AdminDashboard userRole={userRole} />;
+}
+
