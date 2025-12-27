@@ -1,13 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateNotificationDto, NotificationType } from './dto/create-notification.dto';
+import { NotificationsGateway } from './notifications.gateway';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private readonly gateway: NotificationsGateway,
+  ) { }
 
   async create(dto: CreateNotificationDto) {
-    return this.prisma.notification.create({
+    const notification = await this.prisma.notification.create({
       data: {
         user_id: dto.user_id,
         type: dto.type as any,
@@ -18,20 +22,35 @@ export class NotificationsService {
         entity_id: dto.entity_id,
       },
     });
+
+    // Émettre la notification en temps réel via WebSocket
+    this.gateway.emitNotification(dto.user_id, notification);
+
+    return notification;
   }
 
   async createMany(notifications: CreateNotificationDto[]) {
-    return this.prisma.notification.createMany({
-      data: notifications.map(n => ({
-        user_id: n.user_id,
-        type: n.type as any,
-        title: n.title,
-        message: n.message,
-        link: n.link,
-        entity_type: n.entity_type,
-        entity_id: n.entity_id,
-      })),
+    const data = notifications.map(n => ({
+      user_id: n.user_id,
+      type: n.type as any,
+      title: n.title,
+      message: n.message,
+      link: n.link,
+      entity_type: n.entity_type,
+      entity_id: n.entity_id,
+    }));
+
+    const result = await this.prisma.notification.createMany({
+      data,
     });
+
+    // Émettre chaque notification en temps réel
+    // Note: createMany ne retourne pas les objets créés, on utilise les DTOs originaux
+    notifications.forEach(n => {
+      this.gateway.emitNotification(n.user_id, n);
+    });
+
+    return result;
   }
 
   async findAllForUser(userId: number, limit = 50) {

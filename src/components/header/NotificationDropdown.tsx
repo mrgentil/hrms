@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { leavesService, LeaveRequest, LeaveStatus } from "@/services/leaves.service";
 import { notificationsService, Notification, NOTIFICATION_TYPE_ICONS } from "@/services/notifications.service";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useSocket } from "@/contexts/SocketContext";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 
@@ -84,6 +85,7 @@ export default function NotificationDropdown() {
   const { role: userRole, loading: roleLoading } = useUserRole();
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
+  const { socket } = useSocket();
 
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -147,7 +149,6 @@ export default function NotificationDropdown() {
             pendingList = listResponse.data as LeaveRequest[];
           }
         } catch (error: any) {
-          // Silently ignore 403/404 errors
           if (error?.response?.status !== 403 && error?.response?.status !== 404) {
             console.error("Failed to load pending approvals", error);
           }
@@ -170,7 +171,6 @@ export default function NotificationDropdown() {
             );
           }
         } catch (error: any) {
-          // Silently ignore 403 errors (permission issues)
           if (error?.response?.status !== 403) {
             console.error("Failed to load leave updates", error);
           }
@@ -190,15 +190,12 @@ export default function NotificationDropdown() {
       setUnreadUpdates(unread);
       setLatestUpdateTs(latestTs);
 
-      // Charger les notifications système (projets, tâches)
       try {
         const sysNotifs = await notificationsService.getNotifications(10);
         setSystemNotifications(sysNotifs);
         const sysUnread = sysNotifs.filter(n => !n.is_read).length;
         setUnreadSystemCount(sysUnread);
-      } catch (error: any) {
-        // Silently ignore errors for non-critical notifications
-      }
+      } catch (error: any) { }
     } finally {
       setLoading(false);
     }
@@ -235,21 +232,32 @@ export default function NotificationDropdown() {
     }
   }, [authLoading, roleLoading, refreshNotifications]);
 
-  // Polling automatique toutes les 30 secondes pour les nouvelles notifications
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRealtimeUpdate = () => {
+      refreshNotifications();
+    };
+
+    socket.on('newMessage', handleRealtimeUpdate);
+    socket.on('newNotification', handleRealtimeUpdate);
+
+    return () => {
+      socket.off('newMessage', handleRealtimeUpdate);
+      socket.off('newNotification', handleRealtimeUpdate);
+    };
+  }, [socket, refreshNotifications]);
+
+  // Polling automatique de secours toutes les 60 secondes
   useEffect(() => {
     if (authLoading || roleLoading) return;
 
     const interval = setInterval(() => {
-      // Rafraîchir seulement les notifications système (silencieux)
-      notificationsService.getNotifications(10).then((sysNotifs) => {
-        setSystemNotifications(sysNotifs);
-        const sysUnread = sysNotifs.filter(n => !n.is_read).length;
-        setUnreadSystemCount(sysUnread);
-      }).catch(() => { });
-    }, 30000); // 30 secondes
+      refreshNotifications().catch(() => { });
+    }, 60000);
 
     return () => clearInterval(interval);
-  }, [authLoading, roleLoading]);
+  }, [authLoading, roleLoading, refreshNotifications]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -500,8 +508,8 @@ export default function NotificationDropdown() {
               <button
                 onClick={() => handleSystemNotificationClick(notification)}
                 className={`w-full flex gap-3 rounded-lg border px-4 py-3 hover:bg-gray-100 dark:hover:bg-white/5 text-left ${!notification.is_read
-                    ? "border-primary/30 bg-primary/5"
-                    : "border-gray-100 dark:border-gray-800"
+                  ? "border-primary/30 bg-primary/5"
+                  : "border-gray-100 dark:border-gray-800"
                   }`}
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg">

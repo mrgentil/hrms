@@ -81,6 +81,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         // Notifier CHAQUE participant via sa room personnelle (pour les notifications globales / non-lus)
         if (message.conversationParticipants) {
             message.conversationParticipants.forEach((pId: number) => {
+                console.log(`[MessagesGateway] Emitting newMessage to user_${pId}`);
                 this.server.to(`user_${pId}`).emit('newMessage', message);
             });
         }
