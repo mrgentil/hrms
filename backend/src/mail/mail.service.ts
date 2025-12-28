@@ -233,4 +233,104 @@ export class MailService {
       html,
     });
   }
+
+  async sendCampaignLaunchedEmail(
+    user: { email: string | null; firstName: string; lastName: string },
+    campaign: {
+      title: string;
+      description: string | null;
+      type: string;
+      start_date: Date;
+      end_date: Date;
+      self_review_deadline: Date | null;
+      manager_review_deadline: Date | null;
+    }
+  ): Promise<void> {
+    const subject = `Nouvelle campagne d'évaluation : ${campaign.title}`;
+
+    const formattedStartDate = campaign.start_date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const formattedEndDate = campaign.end_date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+
+    const html = `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #4f46e5; font-size: 28px; margin: 0;">📊 Nouvelle Campagne d'Évaluation</h1>
+        </div>
+        
+        <p style="font-size: 16px; color: #374151;">Bonjour <strong>${user.firstName} ${user.lastName}</strong>,</p>
+        
+        <p style="font-size: 16px; color: #374151;">
+          Une nouvelle campagne d'évaluation des performances a été lancée :
+        </p>
+        
+        <div style="background: #f9fafb; border-left: 4px solid #4f46e5; padding: 20px; margin: 25px 0; border-radius: 8px;">
+          <h2 style="color: #111827; font-size: 20px; margin: 0 0 10px 0;">${campaign.title}</h2>
+          ${campaign.description ? `<p style="color: #6b7280; margin: 0;">${campaign.description}</p>` : ''}
+        </div>
+        
+        <div style="margin: 25px 0;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 12px; background: #f3f4f6; font-weight: bold; color: #374151; border-bottom: 1px solid #e5e7eb;">📅 Période</td>
+              <td style="padding: 12px; background: #f9fafb; color: #374151; border-bottom: 1px solid #e5e7eb;">
+                ${formattedStartDate} - ${formattedEndDate}
+              </td>
+            </tr>
+            ${campaign.self_review_deadline ? `
+            <tr>
+              <td style="padding: 12px; background: #f3f4f6; font-weight: bold; color: #374151; border-bottom: 1px solid #e5e7eb;">⏰ Auto-évaluation</td>
+              <td style="padding: 12px; background: #f9fafb; color: #374151; border-bottom: 1px solid #e5e7eb;">
+                Avant le ${campaign.self_review_deadline.toLocaleDateString('fr-FR')}
+              </td>
+            </tr>
+            ` : ''}
+            ${campaign.manager_review_deadline ? `
+            <tr>
+              <td style="padding: 12px; background: #f3f4f6; font-weight: bold; color: #374151;">👔 Évaluation manager</td>
+              <td style="padding: 12px; background: #f9fafb; color: #374151;">
+                Avant le ${campaign.manager_review_deadline.toLocaleDateString('fr-FR')}
+              </td>
+            </tr>
+            ` : ''}
+          </table>
+        </div>
+        
+        <p style="font-size: 16px; color: #374151;">
+          Votre évaluation a été créée. Veuillez vous connecter à votre espace pour <strong>définir vos objectifs</strong> et compléter votre auto-évaluation.
+        </p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${frontendUrl}/performance/campaigns" 
+             style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+            Accéder à la campagne
+          </a>
+        </div>
+        
+        <br/>
+        <p style="font-size: 16px; color: #374151;">Cordialement,</p>
+        
+        <div style="margin-top: 20px; border-left: 4px solid #4f46e5; padding-left: 15px;">
+          <p style="font-size: 16px; font-weight: bold; color: #111827; margin: 0;">Service RH</p>
+          <p style="font-size: 14px; color: #6b7280; margin: 4px 0 0 0;">Gestion des Performances</p>
+        </div>
+      </div>
+    `;
+
+    await this.sendMail({
+      to: user.email,
+      subject,
+      html,
+    });
+  }
 }

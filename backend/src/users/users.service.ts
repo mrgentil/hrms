@@ -688,10 +688,9 @@ export class UsersService {
       },
     });
 
-    // Récupérer les managers potentiels (utilisateurs avec rôle SUPER_ADMIN, ADMIN ou MANAGER)
+    // Récupérer tous les utilisateurs actifs comme managers potentiels
     const managers = await this.prisma.user.findMany({
       where: {
-        role: UserRole.ROLE_MANAGER,
         active: true,
       },
       select: {

@@ -28,6 +28,7 @@ import {
   DollarLineIcon,
   ChatIcon,
   ShootingStarIcon,
+  BoxIconLine,
 } from "../icons/index";
 
 type RoleCode =
@@ -130,7 +131,21 @@ const equipeNavItems: NavItem[] = [
     subItems: [
       { name: "Planning d'Équipe", path: "/planning/team-schedule" },
       { name: "Validation Congés", path: "/leaves/review", requiredPermission: "leaves.approve" },
-      { name: "Suivi Performance", path: "/performance/reviews" },
+    ],
+  },
+];
+
+const performanceNavItems: NavItem[] = [
+  {
+    icon: <BoxIconLine />,
+    name: "Performance",
+    subItems: [
+      { name: "Évaluations", path: "/performance/reviews" },
+      { name: "Objectifs (OKR)", path: "/performance/objectives" },
+      { name: "Feedback 360°", path: "/performance/feedback-360" },
+      { name: "Reconnaissance", path: "/performance/recognition" },
+      { name: "Plans d'Amélioration", path: "/performance/improvement-plans" },
+      { name: "Campagnes", path: "/performance/campaigns", allowedRoles: ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"] },
     ],
   },
 ];
@@ -281,6 +296,7 @@ const AppSidebar: React.FC = () => {
 
   const visibleMoiItems = useMemo(() => filterNavItems(moiNavItems), [filterNavItems]);
   const visibleEquipeItems = useMemo(() => filterNavItems(equipeNavItems), [filterNavItems]);
+  const visiblePerformanceItems = useMemo(() => filterNavItems(performanceNavItems), [filterNavItems]);
   const visibleRhItems = useMemo(() => filterNavItems(rhTalentsNavItems), [filterNavItems]);
   const visibleFinanceItems = useMemo(() => filterNavItems(financeNavItems), [filterNavItems]);
   const visibleSystemItems = useMemo(() => filterNavItems(systemNavItems), [filterNavItems]);
@@ -296,6 +312,7 @@ const AppSidebar: React.FC = () => {
     const menuMap: Record<string, NavItem[]> = {
       moi: visibleMoiItems,
       equipe: visibleEquipeItems,
+      performance: visiblePerformanceItems,
       rh: visibleRhItems,
       finance: visibleFinanceItems,
       system: visibleSystemItems,
@@ -313,7 +330,7 @@ const AppSidebar: React.FC = () => {
     });
 
     if (!submenuMatched) setOpenSubmenu(null);
-  }, [isEmployeeOnly, isActive, visibleMoiItems, visibleEquipeItems, visibleRhItems, visibleFinanceItems, visibleSystemItems]);
+  }, [isEmployeeOnly, isActive, visibleMoiItems, visibleEquipeItems, visiblePerformanceItems, visibleRhItems, visibleFinanceItems, visibleSystemItems]);
 
   useEffect(() => {
     if (openSubmenu !== null) {
@@ -478,6 +495,16 @@ const AppSidebar: React.FC = () => {
                     {isExpanded || isHovered || isMobileOpen ? "Mon Équipe" : <HorizontaLDots />}
                   </h2>
                   {renderMenuItems(visibleEquipeItems, "equipe")}
+                </div>
+              )}
+
+              {/* PERFORMANCE */}
+              {visiblePerformanceItems.length > 0 && (
+                <div>
+                  <h2 className={`mb-4 flex text-[10px] font-bold uppercase tracking-wider text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>
+                    {isExpanded || isHovered || isMobileOpen ? "Performance" : <HorizontaLDots />}
+                  </h2>
+                  {renderMenuItems(visiblePerformanceItems, "performance")}
                 </div>
               )}
 

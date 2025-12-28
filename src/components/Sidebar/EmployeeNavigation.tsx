@@ -62,6 +62,33 @@ const moiNavigation: NavigationItem[] = [
   },
 ];
 
+const performanceNavigation: NavigationItem[] = [
+  {
+    title: 'Mes Évaluations',
+    href: '/performance/reviews',
+    icon: '📊',
+    description: 'Auto-évaluations et entretiens'
+  },
+  {
+    title: 'Mes Objectifs',
+    href: '/performance/objectives',
+    icon: '🎯',
+    description: 'Suivre mes OKR'
+  },
+  {
+    title: 'Feedback 360°',
+    href: '/performance/feedback-360',
+    icon: '🔄',
+    description: 'Donner du feedback'
+  },
+  {
+    title: 'Reconnaissance',
+    href: '/performance/recognition',
+    icon: '🏆',
+    description: 'Kudos et badges'
+  },
+];
+
 const communauteNavigation: NavigationItem[] = [
   {
     title: 'Vision Équipe',
@@ -152,6 +179,7 @@ export default function EmployeeNavigation({ className = '' }: EmployeeNavigatio
   return (
     <nav className={`space-y-2 ${className}`}>
       {renderSection('Moi / Mon / Mes', moiNavigation)}
+      {renderSection('Ma Performance', performanceNavigation)}
       {renderSection('Ma Communauté', communauteNavigation)}
 
       <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>

@@ -664,6 +664,18 @@ model user {
   development_plans_created    development_plan[]      @relation("development_plan_creator")
   elearning_progress           elearning_progress[]    @relation("elearning_user")
 
+  // Performance Management relations
+  perf_campaigns_created       performance_campaign[]    @relation("campaign_creator")
+  perf_reviews_as_employee     performance_review[]      @relation("review_employee")
+  perf_reviews_as_manager      performance_review[]      @relation("review_manager")
+  perf_objectives              performance_objective[]   @relation("objective_employee")
+  perf_feedback_as_reviewer    feedback_360_request[]    @relation("feedback_reviewer")
+  perf_feedback_requested      feedback_360_request[]    @relation("feedback_requester")
+  perf_improvement_as_employee perf_improvement_plan[]   @relation("improvement_employee")
+  perf_improvement_as_manager  perf_improvement_plan[]   @relation("improvement_manager")
+  perf_recognitions_sent       recognition[]             @relation("recognition_from")
+  perf_recognitions_received   recognition[]             @relation("recognition_to")
+
   @@index([department_id], map: "department_id")
   @@index([manager_user_id], map: "manager_user_id")
   @@index([position_id], map: "position_id")
@@ -1431,6 +1443,10 @@ enum notification_type {
   TRAINING_REJECTED
   ELEARNING_BADGE_EARNED
   TRAINING_REGISTERED
+  PERFORMANCE_CAMPAIGN_LAUNCHED
+  PERFORMANCE_REVIEW_ASSIGNED
+  PERFORMANCE_REVIEW_REMINDER
+  PERFORMANCE_REVIEW_COMPLETED
 }
 
 // Payroll enums
@@ -1872,4 +1888,293 @@ enum elearning_status {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
+}
+
+// ========================================
+// PERFORMANCE MANAGEMENT MODULE
+// ========================================
+
+model performance_campaign {
+  id                      Int                     @id @default(autoincrement())
+  title                   String                  @db.VarChar(255)
+  description             String?                 @db.Text
+  type                    campaign_type           @default(ANNUAL)
+  year                    Int
+  start_date              DateTime                @db.Date
+  end_date                DateTime                @db.Date
+  self_review_deadline    DateTime?               @db.Date
+  manager_review_deadline DateTime?               @db.Date
+  status                  campaign_status         @default(DRAFT)
+  
+  // Pondération configurable
+  weight_self             Int                     @default(20)
+  weight_manager          Int                     @default(50)
+  weight_feedback360      Int                     @default(30)
+  
+  created_by_id           Int
+  created_at              DateTime                @default(now()) @db.DateTime(0)
+  updated_at              DateTime                @updatedAt @db.DateTime(0)
+  
+  creator                 user                    @relation("campaign_creator", fields: [created_by_id], references: [id])
+  reviews                 performance_review[]
+  
+  @@index([created_by_id], map: "perf_campaign_creator")
+  @@index([status], map: "perf_campaign_status")
+  @@index([year], map: "perf_campaign_year")
+}
+
+model performance_review {
+  id                    Int                     @id @default(autoincrement())
+  campaign_id           Int
+  employee_id           Int
+  manager_id            Int
+  
+  status                review_status           @default(PENDING_SELF)
+  
+  // Auto-évaluation employé
+  self_rating           Int?
+  self_comments         String?                 @db.Text
+  self_submitted_at     DateTime?               @db.DateTime(0)
+  
+  // Évaluation manager
+  manager_rating        Int?
+  manager_comments      String?                 @db.Text
+  manager_submitted_at  DateTime?               @db.DateTime(0)
+  
+  // Score final
+  final_rating          Int?
+  final_comments        String?                 @db.Text
+  finalized_at          DateTime?               @db.DateTime(0)
+  
+  created_at            DateTime                @default(now()) @db.DateTime(0)
+  updated_at            DateTime                @updatedAt @db.DateTime(0)
+  
+  campaign              performance_campaign    @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  employee              user                    @relation("review_employee", fields: [employee_id], references: [id], onDelete: Cascade)
+  manager               user                    @relation("review_manager", fields: [manager_id], references: [id])
+  objectives            performance_objective[]
+  feedback_requests     feedback_360_request[]
+  improvement_plan      perf_improvement_plan?
+  
+  @@unique([campaign_id, employee_id])
+  @@index([employee_id], map: "perf_review_employee")
+  @@index([manager_id], map: "perf_review_manager")
+  @@index([status], map: "perf_review_status")
+}
+
+model performance_objective {
+  id                Int                       @id @default(autoincrement())
+  review_id         Int?
+  employee_id       Int
+  
+  title             String                    @db.VarChar(255)
+  description       String?                   @db.Text
+  type              perf_objective_type       @default(INDIVIDUAL)
+  category          String?                   @db.VarChar(100)
+  
+  metric_type       metric_type               @default(PERCENTAGE)
+  target_value      Decimal?                  @db.Decimal(10, 2)
+  current_value     Decimal?                  @db.Decimal(10, 2)
+  weight            Int                       @default(100)
+  
+  start_date        DateTime                  @db.Date
+  due_date          DateTime                  @db.Date
+  completed_at      DateTime?                 @db.DateTime(0)
+  
+  self_progress     Int?
+  self_comments     String?                   @db.Text
+  manager_progress  Int?
+  manager_comments  String?                   @db.Text
+  
+  status            perf_obj_status           @default(NOT_STARTED)
+  created_at        DateTime                  @default(now()) @db.DateTime(0)
+  updated_at        DateTime                  @updatedAt @db.DateTime(0)
+  
+  review            performance_review?       @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  employee          user                      @relation("objective_employee", fields: [employee_id], references: [id], onDelete: Cascade)
+  key_results       objective_key_result[]
+  
+  @@index([review_id], map: "perf_objective_review")
+  @@index([employee_id], map: "perf_objective_employee")
+  @@index([status], map: "perf_objective_status")
+}
+
+model objective_key_result {
+  id              Int                       @id @default(autoincrement())
+  objective_id    Int
+  title           String                    @db.VarChar(255)
+  target_value    Decimal?                  @db.Decimal(10, 2)
+  current_value   Decimal?                  @db.Decimal(10, 2)
+  unit            String?                   @db.VarChar(50)
+  status          perf_obj_status           @default(NOT_STARTED)
+  created_at      DateTime                  @default(now()) @db.DateTime(0)
+  updated_at      DateTime                  @updatedAt @db.DateTime(0)
+  
+  objective       performance_objective     @relation(fields: [objective_id], references: [id], onDelete: Cascade)
+  
+  @@index([objective_id], map: "key_result_objective")
+}
+
+model feedback_360_request {
+  id                Int                     @id @default(autoincrement())
+  review_id         Int
+  reviewer_id       Int
+  requested_by_id   Int
+  
+  status            feedback_status         @default(PENDING)
+  rating            Int?
+  responses         Json?
+  comments          String?                 @db.Text
+  is_anonymous      Boolean                 @default(true)
+  
+  submitted_at      DateTime?               @db.DateTime(0)
+  created_at        DateTime                @default(now()) @db.DateTime(0)
+  updated_at        DateTime                @updatedAt @db.DateTime(0)
+  
+  review            performance_review      @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  reviewer          user                    @relation("feedback_reviewer", fields: [reviewer_id], references: [id])
+  requested_by      user                    @relation("feedback_requester", fields: [requested_by_id], references: [id])
+  
+  @@unique([review_id, reviewer_id])
+  @@index([reviewer_id], map: "feedback_reviewer")
+  @@index([requested_by_id], map: "feedback_requester")
+  @@index([status], map: "feedback_status")
+}
+
+model perf_improvement_plan {
+  id              Int                       @id @default(autoincrement())
+  review_id       Int?                      @unique
+  employee_id     Int
+  manager_id      Int
+  
+  title           String                    @db.VarChar(255)
+  reason          String?                   @db.Text
+  start_date      DateTime                  @db.Date
+  end_date        DateTime                  @db.Date
+  status          perf_plan_status          @default(DRAFT)
+  
+  created_at      DateTime                  @default(now()) @db.DateTime(0)
+  updated_at      DateTime                  @updatedAt @db.DateTime(0)
+  
+  review          performance_review?       @relation(fields: [review_id], references: [id])
+  employee        user                      @relation("improvement_employee", fields: [employee_id], references: [id], onDelete: Cascade)
+  manager         user                      @relation("improvement_manager", fields: [manager_id], references: [id])
+  actions         improvement_action[]
+  
+  @@index([employee_id], map: "improvement_employee")
+  @@index([manager_id], map: "improvement_manager")
+  @@index([status], map: "improvement_status")
+}
+
+model improvement_action {
+  id              Int                       @id @default(autoincrement())
+  plan_id         Int
+  title           String                    @db.VarChar(255)
+  description     String?                   @db.Text
+  due_date        DateTime?                 @db.Date
+  completed_at    DateTime?                 @db.DateTime(0)
+  status          perf_action_status        @default(PENDING)
+  employee_notes  String?                   @db.Text
+  manager_notes   String?                   @db.Text
+  created_at      DateTime                  @default(now()) @db.DateTime(0)
+  updated_at      DateTime                  @updatedAt @db.DateTime(0)
+  
+  plan            perf_improvement_plan     @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+  
+  @@index([plan_id], map: "action_plan")
+}
+
+model recognition {
+  id              Int                       @id @default(autoincrement())
+  from_user_id    Int
+  to_user_id      Int
+  
+  type            recognition_type          @default(KUDOS)
+  badge           String?                   @db.VarChar(50)
+  message         String                    @db.Text
+  is_public       Boolean                   @default(true)
+  
+  created_at      DateTime                  @default(now()) @db.DateTime(0)
+  
+  from_user       user                      @relation("recognition_from", fields: [from_user_id], references: [id], onDelete: Cascade)
+  to_user         user                      @relation("recognition_to", fields: [to_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([from_user_id], map: "recognition_from")
+  @@index([to_user_id], map: "recognition_to")
+  @@index([created_at], map: "recognition_date")
+}
+
+// ========================================
+// PERFORMANCE MANAGEMENT ENUMS
+// ========================================
+
+enum campaign_type {
+  ANNUAL
+  SEMI_ANNUAL
+  QUARTERLY
+  PROBATION
+  PROJECT
+}
+
+enum campaign_status {
+  DRAFT
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum review_status {
+  PENDING_SELF
+  PENDING_MANAGER
+  PENDING_FEEDBACK
+  PENDING_FINAL
+  COMPLETED
+  CANCELLED
+}
+
+enum perf_objective_type {
+  INDIVIDUAL
+  TEAM
+  COMPANY
+}
+
+enum metric_type {
+  PERCENTAGE
+  NUMBER
+  CURRENCY
+  BOOLEAN
+  CUSTOM
+}
+
+enum perf_obj_status {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum feedback_status {
+  PENDING
+  SUBMITTED
+  DECLINED
+}
+
+enum perf_plan_status {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum perf_action_status {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum recognition_type {
+  KUDOS
+  BADGE
+  AWARD
 }

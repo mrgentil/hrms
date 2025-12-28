@@ -359,4 +359,43 @@ export class NotificationsService {
 
     return this.createMany(notifications);
   }
+
+  // Performance Campaign Notifications
+
+  async notifyCampaignLaunched(
+    campaignId: number,
+    campaignTitle: string,
+    campaignDescription: string,
+    startDate: Date,
+    endDate: Date,
+  ) {
+    // Récupérer tous les utilisateurs actifs
+    const users = await this.prisma.user.findMany({
+      where: { active: true },
+      select: { id: true, full_name: true },
+    });
+
+    const formattedStartDate = startDate.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+    });
+    const formattedEndDate = endDate.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+
+    // Créer une notification pour chaque utilisateur
+    const notifications = users.map(user => ({
+      user_id: user.id,
+      type: NotificationType.PERFORMANCE_CAMPAIGN_LAUNCHED,
+      title: 'Nouvelle campagne d\'évaluation',
+      message: `La campagne "${campaignTitle}" a été lancée. Période : ${formattedStartDate} - ${formattedEndDate}`,
+      link: `/performance/campaigns/${campaignId}`,
+      entity_type: 'performance_campaign',
+      entity_id: campaignId,
+    }));
+
+    return this.createMany(notifications);
+  }
 }

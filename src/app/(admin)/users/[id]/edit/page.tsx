@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import { useUserAdminOptions } from "@/hooks/useUsers";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import SearchableSelect from "@/components/common/SearchableSelect";
 import { authService } from "@/lib/auth";
 import { resolveImageUrl } from "@/lib/images";
 import Link from "next/link";
@@ -106,6 +108,10 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Utiliser le hook pour les options d'administration
+  const { data: adminOptionsResponse, isLoading: adminOptionsLoading } = useUserAdminOptions();
+  const adminOptions = adminOptionsResponse?.data;
+
   const [departments, setDepartments] = useState<Department[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
   const [managers, setManagers] = useState<Manager[]>([]);
@@ -155,25 +161,13 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
     try {
       setLoading(true);
 
-      // Charger utilisateur et options en parallèle
-      const [userRes, deptRes, posRes, usersRes] = await Promise.all([
-        authService.authenticatedFetch(`${API_BASE_URL}/users/${resolvedParams.id}`),
-        authService.authenticatedFetch(`${API_BASE_URL}/departments`),
-        authService.authenticatedFetch(`${API_BASE_URL}/positions`),
-        authService.authenticatedFetch(`${API_BASE_URL}/users?limit=100`),
-      ]);
+      // Charger uniquement l'utilisateur
+      const userRes = await authService.authenticatedFetch(`${API_BASE_URL}/users/${resolvedParams.id}`);
 
       if (!userRes.ok) throw new Error("Utilisateur non trouvé");
 
       const userData = (await userRes.json()).data;
-      const deptsData = (await deptRes.json()).data || [];
-      const posData = (await posRes.json()).data || [];
-      const usersData = (await usersRes.json()).data?.users || [];
-
       setUser(userData);
-      setDepartments(deptsData);
-      setPositions(posData);
-      setManagers(usersData.filter((u: any) => u.id !== userData.id));
 
       const personalInfo = userData.user_personal_info?.[0] || {};
       const financialInfo = userData.user_financial_info?.[0] || {};
@@ -220,6 +214,34 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
       setLoading(false);
     }
   };
+
+  // Charger les départements, positions et managers depuis adminOptions
+  useEffect(() => {
+    if (adminOptions) {
+      setDepartments(adminOptions.departments || []);
+      setPositions(adminOptions.positions || []);
+      // Exclure l'utilisateur actuel de la liste des managers
+      setManagers((adminOptions.managers || []).filter((m: Manager) => m.id !== user?.id));
+    }
+  }, [adminOptions, user?.id]);
+
+  if (loading || adminOptionsLoading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-8 w-64 bg-gray-200 dark:bg-gray-700 rounded" />
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -324,23 +346,7 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
     }
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-8 w-64 bg-gray-200 dark:bg-gray-700 rounded" />
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
-          </div>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   if (error && !user) {
     return (
@@ -498,19 +504,20 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
               </div>
               <div>
                 <label className={labelClass}>Manager</label>
-                <select
+                <SearchableSelect
                   name="manager_id"
                   value={formData.manager_id}
-                  onChange={handleChange}
-                  className={inputClass}
-                >
-                  <option value="">Sélectionner...</option>
-                  {managers.map((mgr) => (
-                    <option key={mgr.id} value={mgr.id}>
-                      {mgr.full_name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => {
+                    setFormData(prev => ({ ...prev, manager_id: value }));
+                  }}
+                  options={managers.map(m => ({
+                    id: m.id,
+                    full_name: m.full_name,
+                    role: m.role
+                  }))}
+                  placeholder="Rechercher un manager..."
+                  emptyMessage="Aucun manager trouvé"
+                />
               </div>
             </div>
 

@@ -1,0 +1,109 @@
+{
+  "success": true,
+  "data": [
+    {
+      "id": "1",
+      "full_name": "Jean Dupont",
+      "position": "Directeur Général",
+      "department": "Direction",
+      "profile_photo_url": null,
+      "work_email": "jean.dupont@company.com",
+      "children": [
+        {
+          "id": "2",
+          "full_name": "Marie Martin",
+          "position": "Directrice RH",
+          "department": "Ressources Humaines",
+          "profile_photo_url": "/uploads/profiles/marie.jpg",
+          "work_email": "marie.martin@company.com",
+          "children": [
+            {
+              "id": "5",
+              "full_name": "Sophie Bernard",
+              "position": "Chargée de recrutement",
+              "department": "Ressources Humaines",
+              "profile_photo_url": null,
+              "work_email": "sophie.bernard@company.com",
+              "children": []
+            },
+            {
+              "id": "6",
+              "full_name": "Lucas Petit",
+              "position": "Gestionnaire Paie",
+              "department": "Ressources Humaines",
+              "profile_photo_url": null,
+              "work_email": "lucas.petit@company.com",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "3",
+          "full_name": "Pierre Durand",
+          "position": "Directeur Technique",
+          "department": "IT",
+          "profile_photo_url": "/uploads/profiles/pierre.jpg",
+          "work_email": "pierre.durand@company.com",
+          "children": [
+            {
+              "id": "7",
+              "full_name": "Emma Leroy",
+              "position": "Lead Developer",
+              "department": "IT",
+              "profile_photo_url": null,
+              "work_email": "emma.leroy@company.com",
+              "children": [
+                {
+                  "id": "10",
+                  "full_name": "Antoine Moreau",
+                  "position": "Développeur Frontend",
+                  "department": "IT",
+                  "profile_photo_url": null,
+                  "work_email": "antoine.moreau@company.com",
+                  "children": []
+                },
+                {
+                  "id": "11",
+                  "full_name": "Camille Roux",
+                  "position": "Développeur Backend",
+                  "department": "IT",
+                  "profile_photo_url": null,
+                  "work_email": "camille.roux@company.com",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "8",
+              "full_name": "Thomas Garcia",
+              "position": "DevOps Engineer",
+              "department": "IT",
+              "profile_photo_url": null,
+              "work_email": "thomas.garcia@company.com",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "4",
+          "full_name": "Claire Lefebvre",
+          "position": "Directrice Commerciale",
+          "department": "Commercial",
+          "profile_photo_url": null,
+          "work_email": "claire.lefebvre@company.com",
+          "children": [
+            {
+              "id": "9",
+              "full_name": "Nicolas Mercier",
+              "position": "Commercial Senior",
+              "department": "Commercial",
+              "profile_photo_url": null,
+              "work_email": "nicolas.mercier@company.com",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

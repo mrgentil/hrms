@@ -1,0 +1,409 @@
+{
+  "examples": {
+    "campaign": {
+      "endpoint": "GET /performance/campaigns/:id",
+      "response": {
+        "success": true,
+        "data": {
+          "id": 1,
+          "title": "Évaluation Annuelle 2024",
+          "description": "Campagne d'évaluation annuelle pour tous les employés",
+          "type": "ANNUAL",
+          "year": 2024,
+          "start_date": "2024-11-01",
+          "end_date": "2024-12-31",
+          "self_review_deadline": "2024-12-10",
+          "manager_review_deadline": "2024-12-20",
+          "status": "ACTIVE",
+          "weight_self": 20,
+          "weight_manager": 50,
+          "weight_feedback360": 30,
+          "creator": {
+            "id": 1,
+            "full_name": "Admin RH"
+          },
+          "_count": {
+            "reviews": 25
+          },
+          "created_at": "2024-10-15T10:00:00.000Z",
+          "updated_at": "2024-11-01T08:00:00.000Z"
+        }
+      }
+    },
+    "review_complete": {
+      "endpoint": "GET /performance/reviews/:id",
+      "response": {
+        "success": true,
+        "data": {
+          "id": 42,
+          "campaign": {
+            "id": 1,
+            "title": "Évaluation Annuelle 2024",
+            "type": "ANNUAL",
+            "year": 2024,
+            "weight_self": 20,
+            "weight_manager": 50,
+            "weight_feedback360": 30
+          },
+          "employee": {
+            "id": 15,
+            "full_name": "Marie Dupont",
+            "profile_photo_url": "/uploads/profiles/marie.jpg",
+            "work_email": "marie.dupont@company.com",
+            "position": { "title": "Développeuse Senior" },
+            "department": { "department_name": "IT" }
+          },
+          "manager": {
+            "id": 8,
+            "full_name": "Pierre Martin",
+            "profile_photo_url": null,
+            "work_email": "pierre.martin@company.com",
+            "position": { "title": "Tech Lead" },
+            "department": { "department_name": "IT" }
+          },
+          "status": "COMPLETED",
+          "self_rating": 4,
+          "self_comments": "J'ai atteint la majorité de mes objectifs cette année. J'ai notamment réussi à optimiser les performances de l'API et à mentorer deux développeurs juniors.",
+          "self_submitted_at": "2024-12-10T14:30:00.000Z",
+          "manager_rating": 4,
+          "manager_comments": "Marie a démontré une excellente progression technique et un leadership naturel. Elle est prête pour plus de responsabilités.",
+          "manager_submitted_at": "2024-12-15T09:00:00.000Z",
+          "final_rating": 4,
+          "final_comments": "Excellente année, objectifs dépassés. Promotion recommandée vers Tech Lead Junior.",
+          "finalized_at": "2024-12-20T11:00:00.000Z",
+          "objectives": [
+            {
+              "id": 101,
+              "title": "Réduire le temps de réponse API de 20%",
+              "description": "Optimiser les endpoints critiques pour améliorer l'expérience utilisateur",
+              "type": "INDIVIDUAL",
+              "category": "Technique",
+              "metric_type": "PERCENTAGE",
+              "target_value": 20,
+              "current_value": 25,
+              "weight": 40,
+              "start_date": "2024-01-01",
+              "due_date": "2024-12-31",
+              "status": "COMPLETED",
+              "self_progress": 100,
+              "self_comments": "Objectif dépassé avec 25% d'amélioration",
+              "manager_progress": 100,
+              "manager_comments": "Excellent travail, impact mesurable sur les métriques",
+              "key_results": [
+                {
+                  "id": 201,
+                  "title": "Optimiser les 10 requêtes DB les plus lentes",
+                  "target_value": 10,
+                  "current_value": 10,
+                  "unit": "requêtes",
+                  "status": "COMPLETED"
+                },
+                {
+                  "id": 202,
+                  "title": "Implémenter le cache Redis",
+                  "target_value": 1,
+                  "current_value": 1,
+                  "unit": null,
+                  "status": "COMPLETED"
+                }
+              ]
+            },
+            {
+              "id": 102,
+              "title": "Mentorer 2 développeurs juniors",
+              "type": "INDIVIDUAL",
+              "category": "Leadership",
+              "metric_type": "NUMBER",
+              "target_value": 2,
+              "current_value": 2,
+              "weight": 30,
+              "status": "COMPLETED",
+              "self_progress": 100,
+              "manager_progress": 100,
+              "key_results": []
+            }
+          ],
+          "feedback_requests": [
+            {
+              "id": 301,
+              "status": "SUBMITTED",
+              "rating": 4,
+              "is_anonymous": true,
+              "reviewer": null,
+              "submitted_at": "2024-12-12T11:00:00.000Z"
+            },
+            {
+              "id": 302,
+              "status": "SUBMITTED",
+              "rating": 5,
+              "is_anonymous": true,
+              "reviewer": null,
+              "submitted_at": "2024-12-13T16:00:00.000Z"
+            }
+          ],
+          "improvement_plan": null,
+          "created_at": "2024-11-01T00:00:00.000Z",
+          "updated_at": "2024-12-20T11:00:00.000Z"
+        }
+      }
+    },
+    "objectives_list": {
+      "endpoint": "GET /performance/objectives/my",
+      "response": {
+        "success": true,
+        "data": [
+          {
+            "id": 101,
+            "title": "Réduire le temps de réponse API de 20%",
+            "type": "INDIVIDUAL",
+            "category": "Technique",
+            "metric_type": "PERCENTAGE",
+            "target_value": 20,
+            "current_value": 25,
+            "weight": 40,
+            "start_date": "2024-01-01",
+            "due_date": "2024-12-31",
+            "status": "COMPLETED",
+            "self_progress": 100,
+            "review": {
+              "id": 42,
+              "campaign": {
+                "id": 1,
+                "title": "Évaluation Annuelle 2024",
+                "year": 2024
+              }
+            },
+            "key_results": [
+              {
+                "id": 201,
+                "title": "Optimiser les 10 requêtes DB",
+                "target_value": 10,
+                "current_value": 10,
+                "status": "COMPLETED"
+              }
+            ]
+          },
+          {
+            "id": 150,
+            "title": "Apprendre Kubernetes",
+            "type": "INDIVIDUAL",
+            "category": "Développement personnel",
+            "metric_type": "PERCENTAGE",
+            "target_value": 100,
+            "current_value": 60,
+            "weight": 100,
+            "start_date": "2024-06-01",
+            "due_date": "2025-03-31",
+            "status": "IN_PROGRESS",
+            "self_progress": 60,
+            "review": null,
+            "key_results": []
+          }
+        ]
+      }
+    },
+    "feedback_aggregated": {
+      "endpoint": "GET /performance/feedback/review/:reviewId/aggregated",
+      "response": {
+        "success": true,
+        "data": {
+          "count": 3,
+          "average_rating": 4.3,
+          "ratings_distribution": {
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 2,
+            "5": 1
+          },
+          "all_comments": [
+            "Excellente communicatrice, toujours disponible pour aider",
+            "Très bonne collaboration sur le projet Alpha",
+            "Sessions de code review très utiles et constructives"
+          ]
+        }
+      }
+    },
+    "improvement_plan": {
+      "endpoint": "GET /performance/improvement-plans/:id",
+      "response": {
+        "success": true,
+        "data": {
+          "id": 5,
+          "title": "Plan d'amélioration communication",
+          "reason": "Améliorer les compétences de présentation et communication écrite",
+          "start_date": "2024-12-01",
+          "end_date": "2025-03-31",
+          "status": "ACTIVE",
+          "employee": {
+            "id": 25,
+            "full_name": "Lucas Bernard",
+            "profile_photo_url": null,
+            "position": { "title": "Développeur" },
+            "department": { "department_name": "IT" }
+          },
+          "manager": {
+            "id": 8,
+            "full_name": "Pierre Martin"
+          },
+          "review": {
+            "id": 55,
+            "status": "COMPLETED",
+            "final_rating": 3,
+            "campaign": {
+              "id": 1,
+              "title": "Évaluation Annuelle 2024",
+              "year": 2024
+            }
+          },
+          "actions": [
+            {
+              "id": 10,
+              "title": "Suivre formation prise de parole",
+              "description": "Formation de 2 jours sur la prise de parole en public",
+              "due_date": "2025-01-15",
+              "status": "COMPLETED",
+              "completed_at": "2025-01-12T00:00:00.000Z",
+              "employee_notes": "Formation très utile, exercices pratiques",
+              "manager_notes": "Bon investissement"
+            },
+            {
+              "id": 11,
+              "title": "Présenter en réunion d'équipe hebdomadaire",
+              "description": "Faire au moins 4 présentations de 10 min sur un sujet technique",
+              "due_date": "2025-02-28",
+              "status": "IN_PROGRESS",
+              "completed_at": null,
+              "employee_notes": "2 présentations faites, feedback positif",
+              "manager_notes": null
+            },
+            {
+              "id": 12,
+              "title": "Rédiger documentation technique",
+              "description": "Écrire la doc de 2 modules avec revue par pair",
+              "due_date": "2025-03-15",
+              "status": "PENDING",
+              "completed_at": null,
+              "employee_notes": null,
+              "manager_notes": null
+            }
+          ],
+          "created_at": "2024-12-01T10:00:00.000Z",
+          "updated_at": "2025-01-15T09:00:00.000Z"
+        }
+      }
+    },
+    "recognition_feed": {
+      "endpoint": "GET /performance/recognitions/feed",
+      "response": {
+        "success": true,
+        "data": [
+          {
+            "id": 150,
+            "type": "KUDOS",
+            "badge": null,
+            "message": "Merci pour ton aide sur le bug critique hier soir! Tu as sauvé la release 🙌",
+            "is_public": true,
+            "from_user": {
+              "id": 12,
+              "full_name": "Sophie Leroy",
+              "profile_photo_url": "/uploads/profiles/sophie.jpg",
+              "position": { "title": "Product Manager" }
+            },
+            "to_user": {
+              "id": 15,
+              "full_name": "Marie Dupont",
+              "profile_photo_url": "/uploads/profiles/marie.jpg",
+              "position": { "title": "Développeuse Senior" }
+            },
+            "created_at": "2024-12-20T08:30:00.000Z"
+          },
+          {
+            "id": 149,
+            "type": "BADGE",
+            "badge": "team_player",
+            "message": "Pour ton esprit d'équipe exemplaire tout au long du projet Alpha",
+            "is_public": true,
+            "from_user": {
+              "id": 8,
+              "full_name": "Pierre Martin",
+              "profile_photo_url": null,
+              "position": { "title": "Tech Lead" }
+            },
+            "to_user": {
+              "id": 20,
+              "full_name": "Antoine Moreau",
+              "profile_photo_url": null,
+              "position": { "title": "Développeur Frontend" }
+            },
+            "created_at": "2024-12-19T16:00:00.000Z"
+          }
+        ],
+        "meta": {
+          "total": 245,
+          "page": 1,
+          "limit": 20,
+          "totalPages": 13
+        }
+      }
+    },
+    "leaderboard": {
+      "endpoint": "GET /performance/recognitions/leaderboard?period=month",
+      "response": {
+        "success": true,
+        "data": [
+          {
+            "rank": 1,
+            "user": {
+              "id": 15,
+              "full_name": "Marie Dupont",
+              "profile_photo_url": "/uploads/profiles/marie.jpg",
+              "position": { "title": "Développeuse Senior" },
+              "department": { "department_name": "IT" }
+            },
+            "recognition_count": 12
+          },
+          {
+            "rank": 2,
+            "user": {
+              "id": 20,
+              "full_name": "Antoine Moreau",
+              "profile_photo_url": null,
+              "position": { "title": "Développeur Frontend" },
+              "department": { "department_name": "IT" }
+            },
+            "recognition_count": 8
+          },
+          {
+            "rank": 3,
+            "user": {
+              "id": 35,
+              "full_name": "Emma Garcia",
+              "profile_photo_url": null,
+              "position": { "title": "Chargée RH" },
+              "department": { "department_name": "Ressources Humaines" }
+            },
+            "recognition_count": 7
+          }
+        ]
+      }
+    }
+  },
+  "permissions": {
+    "performance.view_own": ["ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.view_team": ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.view_all": ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.campaigns.manage": ["ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.objectives.create": ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.objectives.edit_own": ["ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.reviews.submit_self": ["ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.reviews.submit_manager": ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.reviews.finalize": ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.feedback.request": ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.feedback.submit": ["ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.improvement.create": ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.improvement.view_team": ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.recognition.send": ["ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+    "performance.recognition.delete_own": ["ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"]
+  }
+}

@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import SearchableSelect from "@/components/common/SearchableSelect";
 import { useToast } from "@/hooks/useToast";
 import { useCreateUser, useUserAdminOptions } from "@/hooks/useUsers";
 import { CreateUserDto, UserRole } from "@/types/api";
@@ -319,20 +320,21 @@ export default function CreateUser() {
                 <label className="mb-2.5 block text-black dark:text-white">
                   Manager
                 </label>
-                <select
+                <SearchableSelect
                   name="manager_user_id"
                   value={formState.manager_user_id}
-                  onChange={handleInputChange}
+                  onChange={(value) => {
+                    setFormState(prev => ({ ...prev, manager_user_id: value }));
+                  }}
+                  options={(adminOptions?.managers || []).map(m => ({
+                    id: m.id,
+                    full_name: m.full_name,
+                    role: formatUserRole(m.role)
+                  }))}
+                  placeholder="Rechercher un manager..."
+                  emptyMessage="Aucun manager trouvé"
                   disabled={isFormDisabled || isSubmitting}
-                  className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-not-allowed disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                >
-                  <option value="">Aucun</option>
-                  {adminOptions?.managers?.map((manager) => (
-                    <option key={manager.id} value={manager.id}>
-                      {manager.full_name} ({formatUserRole(manager.role)})
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div>

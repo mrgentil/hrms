@@ -21,7 +21,7 @@ export interface Employee {
   position_id?: number;
   created_at: string;
   updated_at: string;
-  
+
   // Relations
   department_user_department_idTodepartment?: {
     id: number;
@@ -236,7 +236,7 @@ export interface CreateEmployeeData {
   hire_date?: string;
   profile_photo_url?: string;
   active?: boolean;
-  
+
   // Personal info
   date_of_birth?: string;
   gender?: 'Male' | 'Female';
@@ -249,7 +249,7 @@ export interface CreateEmployeeData {
   mobile?: string;
   phone?: string;
   email_address?: string;
-  
+
   // Financial info
   employment_type?: 'Full_Time' | 'Part_Time';
   salary_basic?: number;
@@ -369,6 +369,16 @@ class EmployeesService {
       params,
     });
     return this.normalizeEmployeePayload(response.data);
+  }
+
+  async getAllEmployees() {
+    // Fetch all active employees (using a high limit for simplicity)
+    const response = await axios.get(`${API_BASE_URL}/employees`, {
+      headers: this.getAuthHeaders(),
+      params: { limit: 1000 },
+    });
+    const normalized = this.normalizeEmployeePayload(response.data);
+    return normalized.data || [];
   }
 
   async getEmployee(id: number) {

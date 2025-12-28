@@ -38,6 +38,8 @@ import { UploadsModule } from './uploads/uploads.module';
 import { FundRequestsModule } from './fund-requests/fund-requests.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { TrainingModule } from './training/training.module';
+import { OrgchartModule } from './orgchart/orgchart.module';
+import { PerformanceModule } from './performance/performance.module';
 
 @Module({
   imports: [
@@ -89,6 +91,8 @@ import { TrainingModule } from './training/training.module';
     FundRequestsModule,
     PermissionsModule,
     TrainingModule,
+    OrgchartModule,
+    PerformanceModule,
   ],
   controllers: [AppController],
   providers: [
