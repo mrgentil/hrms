@@ -708,8 +708,8 @@ export class RolesService {
       jsonPermissions = user.role_relation.permissions as string[];
     }
 
-    console.log(`[RolesService] Legacy perms for ${user.role}:`, legacy);
-    console.log(`[RolesService] Relation perms:`, relationPermissions);
+    // console.log(`[RolesService] Legacy perms for ${user.role}:`, legacy);
+    // console.log(`[RolesService] Relation perms:`, relationPermissions);
 
     // Merge all sources of permissions: Legacy + Relation Table + JSON Field
     return Array.from(new Set([...legacy, ...relationPermissions, ...jsonPermissions]));

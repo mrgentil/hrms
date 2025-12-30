@@ -29,9 +29,11 @@ export class PermissionsGuard implements CanActivate {
     // Récupérer les permissions de l'utilisateur
     const userPermissions = await this.rolesService.getUserPermissions(user.id);
 
+    /* 
     console.log(`[PermissionsGuard] User: ${user.id} (${user.username}), Role: ${user.role}`);
     console.log(`[PermissionsGuard] Required: ${JSON.stringify(requiredPermissions)}`);
     console.log(`[PermissionsGuard] User Permissions: ${JSON.stringify(userPermissions)}`);
+    */
 
     // Vérifier si l'utilisateur a toutes les permissions requises
     const hasAllPermissions = requiredPermissions.every(permission =>
