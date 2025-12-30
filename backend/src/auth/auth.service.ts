@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdatePersonalProfileDto, ChangePasswordDto } from './dto/update-profile.dto';
+import { SetupPasswordDto } from './dto/setup-password.dto';
 import * as bcrypt from 'bcryptjs';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { UserRole } from '@prisma/client';
@@ -361,4 +362,65 @@ export class AuthService {
     return updatedUser;
   }
 
+  async verifyInvitationToken(token: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        password_setup_token: token,
+        password_setup_expires: {
+          gt: new Date(),
+        },
+      },
+      select: {
+        id: true,
+        username: true,
+        full_name: true,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Lien d\'invitation invalide ou expiré');
+    }
+
+    return user;
+  }
+
+  async setupPassword(setupPasswordDto: SetupPasswordDto) {
+    const { token, password } = setupPasswordDto;
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        password_setup_token: token,
+        password_setup_expires: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Lien d\'invitation invalide ou expiré');
+    }
+
+    // Hasher le nouveau mot de passe
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Mettre à jour l'utilisateur
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        password_setup_token: null,
+        password_setup_expires: null,
+        active: true, // S'assurer que l'utilisateur est actif
+        updated_at: new Date(),
+      },
+    });
+
+    // Log d'audit
+    await this.auditService.logUpdate(user.id, 'user', user.id, {
+      action: 'setup_password',
+      message: 'Mot de passe configuré via invitation',
+    });
+
+    return { message: 'Mot de passe configuré avec succès' };
+  }
 }

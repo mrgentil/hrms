@@ -1,15 +1,17 @@
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  Get, 
-  Put, 
-  UseGuards, 
-  ValidationPipe, 
-  UseInterceptors, 
-  UploadedFile, 
-  BadRequestException 
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Put,
+  UseGuards,
+  ValidationPipe,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  Param
 } from '@nestjs/common';
+import { SetupPasswordDto } from './dto/setup-password.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -33,7 +35,7 @@ const avatarStorage = diskStorage({
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Public()
   @Post('login')
@@ -128,6 +130,18 @@ export class AuthController {
       data: updatedUser,
       message: 'Avatar mis à jour avec succès',
     };
+  }
+
+  @Public()
+  @Get('verify-invitation/:token')
+  async verifyInvitation(@Param('token') token: string) {
+    return this.authService.verifyInvitationToken(token);
+  }
+
+  @Public()
+  @Post('setup-password')
+  async setupPassword(@Body(ValidationPipe) setupPasswordDto: SetupPasswordDto) {
+    return this.authService.setupPassword(setupPasswordDto);
   }
 
 }

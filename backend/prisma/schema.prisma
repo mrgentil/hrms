@@ -587,6 +587,8 @@ model user {
   position_id                                           Int?
   created_at                                            DateTime                   @db.DateTime(0)
   updated_at                                            DateTime                   @db.DateTime(0)
+  password_setup_token                                  String?                    @db.VarChar(255)
+  password_setup_expires                                DateTime?                  @db.DateTime(0)
   announcements                                         announcement[]
   announcement_reads                                    announcement_read[]
   app_settings_updated                                  app_settings[]

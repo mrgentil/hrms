@@ -6,9 +6,14 @@ export class CreateUserDto {
   @MinLength(3, { message: 'Le nom d\'utilisateur doit contenir au moins 3 caractères' })
   username: string;
 
+  @IsOptional()
   @IsString()
   @MinLength(6, { message: 'Le mot de passe doit contenir au moins 6 caractères' })
-  password: string;
+  password?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  send_invitation?: boolean;
 
   @IsString()
   @MinLength(2, { message: 'Le nom complet doit contenir au moins 2 caractères' })

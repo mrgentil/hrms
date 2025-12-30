@@ -37,7 +37,7 @@ export interface CreateUserDto {
   username: string;
   full_name: string;
   work_email: string;
-  password: string;
+  password?: string;
   role: UserRole;
   role_id?: number; // Nouveau système de rôles
   department_id?: number;
@@ -45,6 +45,7 @@ export interface CreateUserDto {
   manager_user_id?: number;
   hire_date?: string;
   active?: boolean;
+  send_invitation?: boolean;
 }
 
 export interface UpdateUserDto {

@@ -22,6 +22,7 @@ type FormState = {
   manager_user_id: string;
   hire_date: string;
   active: "true" | "false";
+  send_invitation: boolean;
 };
 
 const initialFormState: FormState = {
@@ -36,6 +37,7 @@ const initialFormState: FormState = {
   manager_user_id: "",
   hire_date: "",
   active: "true",
+  send_invitation: false,
 };
 
 export default function CreateUser() {
@@ -64,10 +66,10 @@ export default function CreateUser() {
   const handleInputChange = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
-    const { name, value } = event.target;
+    const { name, value, type } = event.target;
     setFormState((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === 'checkbox' ? (event.target as HTMLInputElement).checked : value,
     }));
   };
 
@@ -82,10 +84,18 @@ export default function CreateUser() {
     const payload: CreateUserDto = {
       username: formState.username.trim(),
       full_name: formState.full_name.trim(),
-      password: formState.password,
       role: formState.role,
       active: formState.active === "true",
+      send_invitation: formState.send_invitation,
     };
+
+    if (!formState.send_invitation) {
+      if (!formState.password) {
+        toast.error("Le mot de passe est requis si l'invitation n'est pas envoyée.");
+        return;
+      }
+      payload.password = formState.password;
+    }
 
     // Ajouter role_id si un rôle personnalisé est sélectionné
     if (formState.role_id) {
@@ -177,6 +187,21 @@ export default function CreateUser() {
               </div>
             </div>
 
+            <div className="flex items-center space-x-3 mb-6">
+              <input
+                type="checkbox"
+                name="send_invitation"
+                id="send_invitation"
+                checked={formState.send_invitation}
+                onChange={handleInputChange}
+                disabled={isFormDisabled || isSubmitting}
+                className="h-5 w-5 rounded border-stroke text-primary focus:ring-primary"
+              />
+              <label htmlFor="send_invitation" className="text-black dark:text-white font-medium cursor-pointer">
+                Envoyer un mail d&apos;invitation <span className="text-sm font-normal text-gray-500">(L&apos;utilisateur configurera son propre mot de passe)</span>
+              </label>
+            </div>
+
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
                 <label className="mb-2.5 block text-black dark:text-white">
@@ -193,21 +218,23 @@ export default function CreateUser() {
                 />
               </div>
 
-              <div>
-                <label className="mb-2.5 block text-black dark:text-white">
-                  Mot de passe <span className="text-meta-1">*</span>
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Entrez le mot de passe"
-                  value={formState.password}
-                  onChange={handleInputChange}
-                  disabled={isFormDisabled || isSubmitting}
-                  className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-not-allowed disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                  required
-                />
-              </div>
+              {!formState.send_invitation && (
+                <div>
+                  <label className="mb-2.5 block text-black dark:text-white">
+                    Mot de passe <span className="text-meta-1">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder="Entrez le mot de passe"
+                    value={formState.password}
+                    onChange={handleInputChange}
+                    disabled={isFormDisabled || isSubmitting}
+                    className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-not-allowed disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                    required={!formState.send_invitation}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">

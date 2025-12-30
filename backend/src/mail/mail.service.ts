@@ -333,4 +333,61 @@ export class MailService {
       html,
     });
   }
+
+  async sendUserInvitation(
+    user: { email: string; fullName: string },
+    token: string
+  ): Promise<void> {
+    const subject = `Bienvenue chez Groupe Gentil - Configurez votre compte`;
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const setupUrl = `${frontendUrl}/setup-password?token=${token}`;
+
+    const html = `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #4f46e5; font-size: 28px; margin: 0;">👋 Bienvenue !</h1>
+        </div>
+        
+        <p style="font-size: 16px; color: #374151;">Bonjour <strong>${user.fullName}</strong>,</p>
+        
+        <p style="font-size: 16px; color: #374151;">
+          Un compte a été créé pour vous sur la plateforme HRMS du Groupe Gentil.
+        </p>
+        
+        <p style="font-size: 16px; color: #374151;">
+          Pour finaliser la configuration de votre compte et accéder à vos services, veuillez définir votre mot de passe en cliquant sur le bouton ci-dessous :
+        </p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${setupUrl}" 
+             style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+            Définir mon mot de passe
+          </a>
+        </div>
+
+        <p style="font-size: 14px; color: #6b7280;">
+          Si le bouton ne fonctionne pas, vous pouvez copier et coller le lien suivant dans votre navigateur :<br/>
+          <a href="${setupUrl}" style="color: #4f46e5; word-break: break-all;">${setupUrl}</a>
+        </p>
+        
+        <p style="font-size: 14px; color: #9ca3af; margin-top: 20px;">
+          Ce lien expirera dans 24 heures. Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail.
+        </p>
+        
+        <br/>
+        <p style="font-size: 16px; color: #374151;">À très bientôt,</p>
+        
+        <div style="margin-top: 20px; border-left: 4px solid #4f46e5; padding-left: 15px;">
+          <p style="font-size: 16px; font-weight: bold; color: #111827; margin: 0;">L'équipe RH</p>
+          <p style="font-size: 14px; color: #6b7280; margin: 4px 0 0 0;">Groupe Gentil</p>
+        </div>
+      </div>
+    `;
+
+    await this.sendMail({
+      to: user.email,
+      subject,
+      html,
+    });
+  }
 }

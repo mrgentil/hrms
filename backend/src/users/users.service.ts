@@ -8,6 +8,8 @@ import { UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { RolesService, SYSTEM_PERMISSIONS } from '../roles/roles.service';
 import { AuditService } from '../audit/audit.service';
+import { MailService } from '../mail/mail.service';
+import * as crypto from 'crypto';
 
 export const ROLE_CREATION_PERMISSIONS: Record<UserRole, string> = {
   [UserRole.ROLE_SUPER_ADMIN]: SYSTEM_PERMISSIONS.USERS_CREATE_SUPER_ADMIN,
@@ -23,6 +25,7 @@ export class UsersService {
     private prisma: PrismaService,
     private rolesService: RolesService,
     private auditService: AuditService,
+    private mailService: MailService,
   ) { }
 
   async validateRoleAssignment(userId: number, targetRole: UserRole) {
@@ -80,7 +83,25 @@ export class UsersService {
 
     // Hasher le mot de passe
     const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(createUserDto.password, saltRounds);
+    let hashedPassword = '';
+    let invitationToken = null;
+    let invitationExpires = null;
+
+    if (createUserDto.send_invitation) {
+      // Générer un token d'invitation
+      invitationToken = crypto.randomBytes(32).toString('hex');
+      invitationExpires = new Date();
+      invitationExpires.setHours(invitationExpires.getHours() + 24); // Expire dans 24h
+
+      // Mot de passe temporaire aléatoire
+      const tempPassword = crypto.randomBytes(16).toString('hex');
+      hashedPassword = await bcrypt.hash(tempPassword, saltRounds);
+    } else {
+      if (!createUserDto.password) {
+        throw new BadRequestException('Le mot de passe est requis si aucune invitation n\'est envoyée');
+      }
+      hashedPassword = await bcrypt.hash(createUserDto.password, saltRounds);
+    }
 
     console.log('--- CREATE USER DEBUG ---');
     console.log('Payload received:', JSON.stringify(createUserDto, null, 2));
@@ -101,6 +122,8 @@ export class UsersService {
         hire_date: createUserDto.hire_date ? new Date(createUserDto.hire_date) : new Date(),
         created_at: new Date(),
         updated_at: new Date(),
+        password_setup_token: invitationToken,
+        password_setup_expires: invitationExpires,
       },
       include: {
         department: {
@@ -118,6 +141,14 @@ export class UsersService {
         },
       },
     });
+
+    // Envoyer l'invitation par mail si nécessaire
+    if (createUserDto.send_invitation && user.work_email) {
+      await this.mailService.sendUserInvitation(
+        { email: user.work_email, fullName: user.full_name },
+        invitationToken,
+      );
+    }
 
     // Log de création
     await this.auditService.logCreate(currentUserId, 'user', user.id, {
