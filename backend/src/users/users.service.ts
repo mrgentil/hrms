@@ -84,14 +84,17 @@ export class UsersService {
     // Hasher le mot de passe
     const saltRounds = 12;
     let hashedPassword = '';
-    let invitationToken = null;
-    let invitationExpires = null;
+    let invitationToken: string | null = null;
+    let invitationExpires: Date | null = null;
 
     if (createUserDto.send_invitation) {
       // Générer un token d'invitation
-      invitationToken = crypto.randomBytes(32).toString('hex');
-      invitationExpires = new Date();
-      invitationExpires.setHours(invitationExpires.getHours() + 24); // Expire dans 24h
+      const token = crypto.randomBytes(32).toString('hex');
+      const expires = new Date();
+      expires.setHours(expires.getHours() + 24); // Expire dans 24h
+
+      invitationToken = token;
+      invitationExpires = expires;
 
       // Mot de passe temporaire aléatoire
       const tempPassword = crypto.randomBytes(16).toString('hex');
@@ -143,7 +146,7 @@ export class UsersService {
     });
 
     // Envoyer l'invitation par mail si nécessaire
-    if (createUserDto.send_invitation && user.work_email) {
+    if (createUserDto.send_invitation && user.work_email && invitationToken) {
       await this.mailService.sendUserInvitation(
         { email: user.work_email, fullName: user.full_name },
         invitationToken,
