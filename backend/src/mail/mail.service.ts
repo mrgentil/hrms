@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import nodemailer, { Transporter } from 'nodemailer';
+import { Resend } from 'resend';
 
 interface Attachment {
   filename: string;
@@ -20,65 +20,38 @@ interface SendMailPayload {
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: Transporter | null = null;
+  private resend: Resend | null = null;
   private readonly fromEmail: string | null;
   private readonly fromName: string | null;
   private readonly enabled: boolean;
   private readonly fallbackEmail: string | null;
 
   constructor(private readonly configService: ConfigService) {
-    const mailer = this.configService.get<string>('MAIL_MAILER', 'smtp');
-    const host = this.configService.get<string>('MAIL_HOST');
-    const port = Number(this.configService.get<string>('MAIL_PORT') ?? '0');
-    const username = this.configService.get<string>('MAIL_USERNAME');
-    const password = this.configService.get<string>('MAIL_PASSWORD');
-    const encryption = (this.configService.get<string>('MAIL_ENCRYPTION') || '').toLowerCase();
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
 
-    this.fromEmail = this.configService.get<string>('MAIL_FROM_ADDRESS') || username || null;
-    this.fromName = this.configService.get<string>('MAIL_FROM_NAME') || null;
+    // Resend requires a verified domain or use their testing domain
+    this.fromEmail = this.configService.get<string>('MAIL_FROM_ADDRESS') || 'onboarding@resend.dev';
+    this.fromName = this.configService.get<string>('MAIL_FROM_NAME') || 'HRMS';
     this.fallbackEmail = this.configService.get<string>('CONTACT_TO_EMAIL') || null;
 
-    if (mailer !== 'smtp') {
+    if (!apiKey) {
       this.enabled = false;
-      this.logger.warn(`Unsupported mailer "${mailer}". Emails will be disabled.`);
+      this.logger.warn('RESEND_API_KEY not found. Emails will be disabled.');
       return;
     }
 
-    if (!host || !username || !password || !this.fromEmail) {
+    try {
+      this.resend = new Resend(apiKey);
+      this.enabled = true;
+      this.logger.log('MailService initialized with Resend');
+    } catch (error) {
       this.enabled = false;
-      this.logger.warn('Mail configuration incomplete. Emails will be disabled.');
-      return;
+      this.logger.error('Failed to initialize Resend', error);
     }
-
-    this.enabled = true;
-
-    // For cloud platforms like Railway, use port 587 with STARTTLS
-    // Port 465 with SSL is often blocked
-    const usePort = port > 0 ? port : 587;
-    const useSecure = usePort === 465; // Only true for port 465
-
-    this.logger.log(`Configuring SMTP: ${host}:${usePort} (secure: ${useSecure})`);
-
-    this.transporter = nodemailer.createTransport({
-      host,
-      port: usePort,
-      secure: useSecure, // true for 465, false for other ports (will use STARTTLS)
-      auth: {
-        user: username,
-        pass: password,
-      },
-      connectionTimeout: 30000, // 30 seconds
-      greetingTimeout: 30000,
-      socketTimeout: 60000,
-      tls: {
-        // Do not fail on invalid certs
-        rejectUnauthorized: false,
-      },
-    });
   }
 
   async sendMail(payload: SendMailPayload): Promise<void> {
-    if (!this.enabled || !this.transporter) {
+    if (!this.enabled || !this.resend) {
       this.logger.warn(
         `Mail service disabled. Skipping email "${payload.subject}" (target: ${payload.to ?? 'n/a'}).`,
       );
@@ -96,18 +69,26 @@ export class MailService {
 
       const from =
         this.fromName && this.fromEmail
-          ? `"${this.fromName}" <${this.fromEmail}>`
-          : this.fromEmail;
+          ? `${this.fromName} <${this.fromEmail}>`
+          : this.fromEmail || 'onboarding@resend.dev';
 
-      await this.transporter.sendMail({
-        from: from ?? undefined,
+      this.logger.debug(`Sending email "${payload.subject}" to ${recipient} via Resend...`);
+
+      const { data, error } = await this.resend.emails.send({
+        from: from,
         to: recipient,
         subject: payload.subject,
         text: payload.text,
         html: payload.html,
-        attachments: payload.attachments,
+        attachments: payload.attachments as any,
       });
-      this.logger.debug(`Email "${payload.subject}" sent to ${recipient}`);
+
+      if (error) {
+        this.logger.error(`Resend API Error: ${error.name} - ${error.message}`);
+        throw new Error(error.message);
+      }
+
+      this.logger.log(`Email sent successfully. ID: ${data?.id}`);
     } catch (error) {
       this.logger.error('Failed to send email', error instanceof Error ? error.stack : error);
     }
