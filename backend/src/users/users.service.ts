@@ -82,6 +82,9 @@ export class UsersService {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(createUserDto.password, saltRounds);
 
+    console.log('--- CREATE USER DEBUG ---');
+    console.log('Payload received:', JSON.stringify(createUserDto, null, 2));
+
     // Créer l'utilisateur
     const user = await this.prisma.user.create({
       data: {
@@ -94,6 +97,7 @@ export class UsersService {
         active: createUserDto.active ?? true,
         department_id: createUserDto.department_id,
         position_id: createUserDto.position_id,
+        manager_user_id: createUserDto.manager_user_id,
         hire_date: createUserDto.hire_date ? new Date(createUserDto.hire_date) : new Date(),
         created_at: new Date(),
         updated_at: new Date(),

@@ -45,7 +45,7 @@ interface UserData {
   work_email?: string;
   hire_date?: string;
   profile_photo_url?: string;
-  department_user_department_idTodepartment?: {
+  department?: {
     id: number;
     department_name: string;
   };
@@ -279,7 +279,7 @@ export default function UserDetails({ params }: { params: Promise<{ id: string }
             <div>
               <label className="text-sm text-gray-500">Département</label>
               <p className="font-medium text-gray-900 dark:text-white">
-                {user.department_user_department_idTodepartment?.department_name || "Non assigné"}
+                {user.department?.department_name || "Non assigné"}
               </p>
             </div>
             <div>
@@ -312,8 +312,8 @@ export default function UserDetails({ params }: { params: Promise<{ id: string }
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
                     }`}
                 >
                   <span className="text-lg">{tab.icon}</span>

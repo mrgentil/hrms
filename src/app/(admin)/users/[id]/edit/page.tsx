@@ -51,7 +51,7 @@ interface UserData {
   department_id?: number;
   position_id?: number;
   manager_user_id?: number;
-  department_user_department_idTodepartment?: Department;
+  department?: Department;
   position?: Position;
   user?: Manager;
   user_personal_info?: PersonalInfo[];
@@ -178,7 +178,7 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
         work_email: userData.work_email || "",
         password: "",
         role: userData.role || "ROLE_EMPLOYEE",
-        department_id: userData.department_user_department_idTodepartment?.id?.toString() || "",
+        department_id: userData.department?.id?.toString() || "",
         position_id: userData.position?.id?.toString() || "",
         manager_user_id: userData.manager_user_id?.toString() || "",
         hire_date: userData.hire_date ? userData.hire_date.split("T")[0] : "",

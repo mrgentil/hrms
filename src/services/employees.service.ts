@@ -23,7 +23,7 @@ export interface Employee {
   updated_at: string;
 
   // Relations
-  department_user_department_idTodepartment?: {
+  department?: {
     id: number;
     department_name: string;
   };
