@@ -19,7 +19,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: configService.get<string>('JWT_SECRET') || 'fallback_secret_change_me',
         signOptions: {
           expiresIn: configService.get<string>('JWT_EXPIRES_IN') ?? '7d',
         },
@@ -30,4 +30,4 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
   providers: [AuthService, LocalStrategy, JwtStrategy],
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }

@@ -66,8 +66,8 @@ export class AuthService {
     };
     const access_token = this.jwtService.sign(payload);
     const refresh_token = this.jwtService.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET,
-      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
+      secret: process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret_change_me',
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
     });
 
     // Récupérer le profil complet avec les nouvelles informations
