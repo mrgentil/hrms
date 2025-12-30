@@ -52,15 +52,27 @@ export class MailService {
 
     this.enabled = true;
 
-    const secure = encryption === 'ssl' || encryption === 'tls' || port === 465;
+    // For cloud platforms like Railway, use port 587 with STARTTLS
+    // Port 465 with SSL is often blocked
+    const usePort = port > 0 ? port : 587;
+    const useSecure = usePort === 465; // Only true for port 465
+
+    this.logger.log(`Configuring SMTP: ${host}:${usePort} (secure: ${useSecure})`);
 
     this.transporter = nodemailer.createTransport({
       host,
-      port: port > 0 ? port : secure ? 465 : 587,
-      secure,
+      port: usePort,
+      secure: useSecure, // true for 465, false for other ports (will use STARTTLS)
       auth: {
         user: username,
         pass: password,
+      },
+      connectionTimeout: 30000, // 30 seconds
+      greetingTimeout: 30000,
+      socketTimeout: 60000,
+      tls: {
+        // Do not fail on invalid certs
+        rejectUnauthorized: false,
       },
     });
   }
