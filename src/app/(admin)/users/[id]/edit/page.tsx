@@ -50,7 +50,7 @@ interface UserData {
   profile_photo_url?: string;
   department_id?: number;
   position_id?: number;
-  manager_id?: number;
+  manager_user_id?: number;
   department_user_department_idTodepartment?: Department;
   position?: Position;
   user?: Manager;
@@ -65,7 +65,7 @@ interface FormData {
   role: string;
   department_id: string;
   position_id: string;
-  manager_id: string;
+  manager_user_id: string;
   hire_date: string;
   active: boolean;
   // Personal info
@@ -124,7 +124,7 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
     role: "ROLE_EMPLOYEE",
     department_id: "",
     position_id: "",
-    manager_id: "",
+    manager_user_id: "",
     hire_date: "",
     active: true,
     date_of_birth: "",
@@ -180,7 +180,7 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
         role: userData.role || "ROLE_EMPLOYEE",
         department_id: userData.department_user_department_idTodepartment?.id?.toString() || "",
         position_id: userData.position?.id?.toString() || "",
-        manager_id: userData.user?.id?.toString() || "",
+        manager_user_id: userData.manager_user_id?.toString() || "",
         hire_date: userData.hire_date ? userData.hire_date.split("T")[0] : "",
         active: userData.active ?? true,
         date_of_birth: personalInfo.date_of_birth ? personalInfo.date_of_birth.split("T")[0] : "",
@@ -269,7 +269,7 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
         active: formData.active,
         department_id: formData.department_id ? parseInt(formData.department_id) : undefined,
         position_id: formData.position_id ? parseInt(formData.position_id) : undefined,
-        manager_id: formData.manager_id ? parseInt(formData.manager_id) : undefined,
+        manager_user_id: formData.manager_user_id ? parseInt(formData.manager_user_id) : undefined,
         hire_date: formData.hire_date || undefined,
         // Financial fields
         salary_basic: formData.salary_basic ? parseInt(formData.salary_basic) : undefined,
@@ -505,10 +505,10 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
               <div>
                 <label className={labelClass}>Manager</label>
                 <SearchableSelect
-                  name="manager_id"
-                  value={formData.manager_id}
+                  name="manager_user_id"
+                  value={formData.manager_user_id}
                   onChange={(value) => {
-                    setFormData(prev => ({ ...prev, manager_id: value }));
+                    setFormData(prev => ({ ...prev, manager_user_id: value }));
                   }}
                   options={managers.map(m => ({
                     id: m.id,

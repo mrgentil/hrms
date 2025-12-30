@@ -388,6 +388,7 @@ export class UsersService {
     // Préparer les données à mettre à jour pour l'utilisateur (sans les champs financiers)
     const updateData: any = {
       ...userFields,
+      manager_user_id: updateUserDto.manager_user_id,
       updated_at: new Date(),
     };
 
