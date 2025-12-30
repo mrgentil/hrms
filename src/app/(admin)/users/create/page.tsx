@@ -76,6 +76,9 @@ export default function CreateUser() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    console.log("=== DEBUG: handleSubmit START ===");
+    console.log("formState:", formState);
+
     if (!formState.role) {
       toast.error("Veuillez selectionner un role pour l'utilisateur.");
       return;
@@ -89,12 +92,21 @@ export default function CreateUser() {
       send_invitation: formState.send_invitation,
     };
 
+    console.log("DEBUG: send_invitation =", formState.send_invitation);
+
     if (!formState.send_invitation) {
       if (!formState.password) {
         toast.error("Le mot de passe est requis si l'invitation n'est pas envoyée.");
         return;
       }
       payload.password = formState.password;
+    } else {
+      console.log("DEBUG: Mode invitation - pas de mot de passe requis");
+      // En mode invitation, vérifier que l'email est fourni
+      if (!formState.work_email.trim()) {
+        toast.error("L'email professionnel est requis pour envoyer une invitation.");
+        return;
+      }
     }
 
     // Ajouter role_id si un rôle personnalisé est sélectionné
@@ -118,9 +130,24 @@ export default function CreateUser() {
       payload.hire_date = new Date(formState.hire_date).toISOString();
     }
 
+    console.log("DEBUG: Payload final envoyé au backend:", JSON.stringify(payload, null, 2));
+    toast.info("Création de l'utilisateur en cours...");
+
     createUserMutation.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        console.log("DEBUG: Création réussie!", data);
+        if (formState.send_invitation) {
+          toast.success("Utilisateur créé ! Un email d'invitation a été envoyé.");
+        } else {
+          toast.success("Utilisateur créé avec succès !");
+        }
         router.push("/users");
+      },
+      onError: (error: any) => {
+        console.error("DEBUG: Erreur lors de la création:", error);
+        console.error("DEBUG: Error response:", error?.response?.data);
+        const errorMessage = error?.response?.data?.message || error?.message || "Erreur inconnue";
+        toast.error(`Erreur: ${errorMessage}`);
       },
     });
   };
