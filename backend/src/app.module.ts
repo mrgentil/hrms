@@ -52,11 +52,11 @@ import { PerformanceModule } from './performance/performance.module';
       ],
     }),
     ServeStaticModule.forRoot({
-      rootPath: resolve(__dirname, '..', '..', 'public'), // Point to backend/public
+      rootPath: resolve(__dirname, '..', '..', 'public'),
       serveRoot: '/',
     }),
     ServeStaticModule.forRoot({
-      rootPath: resolve(__dirname, '..', '..', 'uploads'), // Point to backend/uploads
+      rootPath: resolve(__dirname, '..', '..', 'uploads'),
       serveRoot: '/uploads',
     }),
     ScheduleModule.forRoot(),

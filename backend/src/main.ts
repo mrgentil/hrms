@@ -21,7 +21,7 @@ async function bootstrap() {
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
   // Servir les fichiers statiques (uploads)
-  const uploadsDir = join(process.cwd(), '..', 'uploads');
+  const uploadsDir = join(process.cwd(), 'uploads');
   app.useStaticAssets(uploadsDir, {
     prefix: '/uploads/',
   });
