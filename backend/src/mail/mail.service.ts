@@ -81,7 +81,7 @@ export class MailService {
         text: payload.text,
         html: payload.html,
         attachments: payload.attachments as any,
-      });
+      } as any);
 
       if (error) {
         this.logger.error(`Resend API Error: ${error.name} - ${error.message}`);
