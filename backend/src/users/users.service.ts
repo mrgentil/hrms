@@ -57,9 +57,15 @@ export class UsersService {
     return checks.filter((value): value is UserRole => value !== null);
   }
 
-  async create(createUserDto: CreateUserDto, currentUserId: number) {
+  async create(createUserDto: CreateUserDto, currentUserId: number, companyId?: number) {
     const roleToAssign = createUserDto.role ?? UserRole.ROLE_EMPLOYEE;
     await this.validateRoleAssignment(currentUserId, roleToAssign);
+
+    // Si companyId n'est pas fourni, essayer de le récupérer depuis l'utilisateur courant
+    if (!companyId) {
+      const currentUser = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+      companyId = currentUser?.company_id || undefined;
+    }
 
     // Vérifier si l'utilisateur existe déjà
     const existingUser = await this.prisma.user.findUnique({
@@ -119,6 +125,7 @@ export class UsersService {
         role: roleToAssign,
         role_id: createUserDto.role_id, // Nouveau système de rôles
         active: createUserDto.active ?? true,
+        company_id: companyId,
         department_id: createUserDto.department_id,
         position_id: createUserDto.position_id,
         manager_user_id: createUserDto.manager_user_id,
@@ -165,12 +172,16 @@ export class UsersService {
     return userWithoutPassword;
   }
 
-  async findAll(queryParams: QueryParamsDto) {
+  async findAll(queryParams: QueryParamsDto, companyId?: number) {
     const { page = 1, limit = 10, search, role, active, department_id } = queryParams;
     const skip = (page - 1) * limit;
 
     // Construire les conditions de recherche
     const where: any = {};
+
+    if (companyId) {
+      where.company_id = companyId;
+    }
 
     if (search) {
       where.OR = [

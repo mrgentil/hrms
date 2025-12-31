@@ -63,6 +63,7 @@ export class AuthService {
       sub: user.id,
       role: user.role,
       role_id: user.role_id,
+      company_id: user.company_id,
       permissions: permissions,
     };
     const access_token = this.jwtService.sign(payload);
@@ -199,6 +200,7 @@ export class AuthService {
         sub: user.id,
         role: user.role,
         role_id: user.role_id,
+        company_id: user.company_id,
         permissions: permissions
       };
       const access_token = this.jwtService.sign(newPayload);

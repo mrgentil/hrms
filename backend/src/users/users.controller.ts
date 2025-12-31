@@ -33,7 +33,7 @@ import { SYSTEM_PERMISSIONS } from '../roles/roles.service';
 @Controller('users')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Post()
   @RequirePermissions(SYSTEM_PERMISSIONS.USERS_CREATE)
@@ -41,7 +41,7 @@ export class UsersController {
     @Body(ValidationPipe) createUserDto: CreateUserDto,
     @CurrentUser() currentUser: any,
   ) {
-    const user = await this.usersService.create(createUserDto, currentUser.id);
+    const user = await this.usersService.create(createUserDto, currentUser.id, currentUser.company_id);
     return {
       success: true,
       data: user,
@@ -51,8 +51,11 @@ export class UsersController {
 
   @Get()
   @RequirePermissions(SYSTEM_PERMISSIONS.USERS_VIEW)
-  async findAll(@Query(ValidationPipe) queryParams: QueryParamsDto) {
-    const result = await this.usersService.findAll(queryParams);
+  async findAll(
+    @Query(ValidationPipe) queryParams: QueryParamsDto,
+    @CurrentUser() currentUser: any,
+  ) {
+    const result = await this.usersService.findAll(queryParams, currentUser.company_id);
     return {
       success: true,
       ...result,
@@ -85,12 +88,12 @@ export class UsersController {
     @Res() res: Response,
   ) {
     const buffer = await this.usersService.exportUsers(format);
-    
+
     res.set({
       'Content-Type': format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename="users.${format}"`,
     });
-    
+
     res.send(buffer);
   }
 

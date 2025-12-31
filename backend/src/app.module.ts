@@ -40,6 +40,7 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { TrainingModule } from './training/training.module';
 import { OrgchartModule } from './orgchart/orgchart.module';
 import { PerformanceModule } from './performance/performance.module';
+import { CompanyModule } from './company/company.module';
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { PerformanceModule } from './performance/performance.module';
     TrainingModule,
     OrgchartModule,
     PerformanceModule,
+    CompanyModule,
   ],
   controllers: [AppController],
   providers: [

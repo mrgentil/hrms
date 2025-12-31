@@ -31,7 +31,7 @@ export class MailService {
 
     // Resend requires a verified domain or use their testing domain
     this.fromEmail = this.configService.get<string>('MAIL_FROM_ADDRESS') || 'onboarding@resend.dev';
-    this.fromName = this.configService.get<string>('MAIL_FROM_NAME') || 'HRMS';
+    this.fromName = this.configService.get<string>('MAIL_FROM_NAME') || 'Efficia';
     this.fallbackEmail = this.configService.get<string>('CONTACT_TO_EMAIL') || null;
 
     if (!apiKey) {
@@ -331,20 +331,21 @@ export class MailService {
     user: { email: string; fullName: string },
     token: string
   ): Promise<void> {
-    const subject = `Bienvenue chez Groupe Gentil - Configurez votre compte`;
+    const subject = `Bienvenue chez Efficia - Configurez votre compte`;
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     const setupUrl = `${frontendUrl}/setup-password?token=${token}`;
 
     const html = `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
         <div style="text-align: center; margin-bottom: 30px;">
+          <img src="${frontendUrl}/images/logo/logo.svg" alt="Efficia Logo" style="height: 40px; margin-bottom: 20px;" />
           <h1 style="color: #4f46e5; font-size: 28px; margin: 0;">👋 Bienvenue !</h1>
         </div>
         
         <p style="font-size: 16px; color: #374151;">Bonjour <strong>${user.fullName}</strong>,</p>
         
         <p style="font-size: 16px; color: #374151;">
-          Un compte a été créé pour vous sur la plateforme HRMS du Groupe Gentil.
+          Un compte a été créé pour vous sur la plateforme Efficia HRMS.
         </p>
         
         <p style="font-size: 16px; color: #374151;">
@@ -372,7 +373,7 @@ export class MailService {
         
         <div style="margin-top: 20px; border-left: 4px solid #4f46e5; padding-left: 15px;">
           <p style="font-size: 16px; font-weight: bold; color: #111827; margin: 0;">L'équipe RH</p>
-          <p style="font-size: 14px; color: #6b7280; margin: 4px 0 0 0;">Groupe Gentil</p>
+          <p style="font-size: 14px; color: #6b7280; margin: 4px 0 0 0;">Efficia</p>
         </div>
       </div>
     `;

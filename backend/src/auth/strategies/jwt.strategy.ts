@@ -28,6 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         work_email: true,
         active: true,
         department_id: true,
+        company_id: true,
         position_id: true,
       },
     });
