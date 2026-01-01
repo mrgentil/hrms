@@ -64,7 +64,7 @@ export default function CreatePositionPage() {
   };
 
   return (
-    <ProtectedRoute requiredPermission="positions.create">
+    <ProtectedRoute permission="positions.create">
       <div>
         <PageBreadcrumb pageTitle="Creer un poste" />
 
@@ -128,7 +128,7 @@ export default function CreatePositionPage() {
                 </option>
                 {departments.map((department) => (
                   <option key={department.id} value={department.id}>
-                    {department.department_name}
+                    {department.name}
                   </option>
                 ))}
               </select>

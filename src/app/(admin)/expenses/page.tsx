@@ -311,8 +311,8 @@ export default function ExpensesPage() {
             <button
               onClick={() => setActiveTab('my')}
               className={`pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'my'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
                 }`}
             >
               Mes Notes
@@ -321,8 +321,8 @@ export default function ExpensesPage() {
               <button
                 onClick={() => setActiveTab('approvals')}
                 className={`pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'approvals'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
                   }`}
               >
                 Validations
@@ -337,8 +337,8 @@ export default function ExpensesPage() {
               <button
                 onClick={() => setActiveTab('all')}
                 className={`pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'all'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
                   }`}
               >
                 Historique Global
@@ -482,7 +482,7 @@ export default function ExpensesPage() {
                             {expense.user?.full_name || "Inconnu"}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {expense.user?.department_user_department_idTodepartment?.department_name || "Département inconnu"}
+                            {expense.user?.department?.name || "Département inconnu"}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -543,7 +543,7 @@ export default function ExpensesPage() {
                             {expense.user?.full_name || "Inconnu"}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {expense.user?.department_user_department_idTodepartment?.department_name || "Département inconnu"}
+                            {expense.user?.department?.name || "Département inconnu"}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">

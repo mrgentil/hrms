@@ -13,14 +13,14 @@ import {
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 type FormState = {
-  department_name: string;
+  name: string;
   description: string;
   manager_user_id: string;
   parent_department_id: string;
 };
 
 const initialState: FormState = {
-  department_name: "",
+  name: "",
   description: "",
   manager_user_id: "",
   parent_department_id: "",
@@ -44,7 +44,7 @@ export default function CreateDepartmentPage() {
 
     createDepartmentMutation.mutate(
       {
-        department_name: formState.department_name.trim(),
+        name: formState.name.trim(),
         description: formState.description.trim() || undefined,
         manager_user_id: formState.manager_user_id
           ? Number(formState.manager_user_id)
@@ -62,7 +62,7 @@ export default function CreateDepartmentPage() {
   };
 
   return (
-    <ProtectedRoute requiredPermission="departments.create">
+    <ProtectedRoute permission="departments.create">
       <div>
         <PageBreadcrumb pageTitle="Creer un departement" />
 
@@ -75,11 +75,11 @@ export default function CreateDepartmentPage() {
                 </label>
                 <input
                   type="text"
-                  value={formState.department_name}
+                  value={formState.name}
                   onChange={(event) =>
                     setFormState((prev) => ({
                       ...prev,
-                      department_name: event.target.value,
+                      name: event.target.value,
                     }))
                   }
                   required
@@ -132,7 +132,7 @@ export default function CreateDepartmentPage() {
                   </option>
                   {parentDepartments.map((department) => (
                     <option key={department.id} value={department.id}>
-                      {department.department_name}
+                      {department.name}
                     </option>
                   ))}
                 </select>

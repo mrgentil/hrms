@@ -142,7 +142,7 @@ export default function PositionsPage() {
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                         <span className="text-sm text-black dark:text-white">
-                          {position.department?.department_name ?? "-"}
+                          {position.department?.name ?? "-"}
                         </span>
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">

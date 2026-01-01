@@ -142,7 +142,7 @@ export class ImprovementPlansService {
               id: true,
               full_name: true,
               position: { select: { title: true } },
-              department: { select: { department_name: true } },
+              department: { select: { name: true } },
             },
           },
           manager: {
@@ -238,7 +238,7 @@ export class ImprovementPlansService {
             full_name: true,
             profile_photo_url: true,
             position: { select: { title: true } },
-            department: { select: { department_name: true } },
+            department: { select: { name: true } },
           },
         },
         manager: {

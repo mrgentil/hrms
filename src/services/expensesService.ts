@@ -2,7 +2,7 @@ import { authService } from '@/lib/auth';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-export type ExpenseCategory = 
+export type ExpenseCategory =
   | 'TRANSPORT'
   | 'MEALS'
   | 'ACCOMMODATION'
@@ -39,9 +39,9 @@ export interface ExpenseReport {
     id: number;
     full_name: string;
     work_email?: string;
-    department_user_department_idTodepartment?: {
-      department_name: string;
-    };
+    department?: {
+      name: string;
+    } | null;
   };
   approver?: {
     id: number;

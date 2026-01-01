@@ -186,7 +186,7 @@ export class EmployeesService {
         where,
         include: {
           department: {
-            select: { id: true, department_name: true },
+            select: { id: true, name: true },
           },
           position: {
             select: { id: true, title: true, level: true },
@@ -224,7 +224,7 @@ export class EmployeesService {
       where: { id },
       include: {
         department: {
-          select: { id: true, department_name: true },
+          select: { id: true, name: true },
         },
         position: {
           select: { id: true, title: true, level: true, description: true },
@@ -726,7 +726,7 @@ export class EmployeesService {
         department: {
           select: {
             id: true,
-            department_name: true,
+            name: true,
           },
         },
       },
@@ -883,7 +883,7 @@ export class EmployeesService {
           select: { id: true, full_name: true, profile_photo_url: true },
         },
         department: {
-          select: { id: true, department_name: true },
+          select: { id: true, name: true },
         },
       },
       orderBy: [
@@ -933,7 +933,7 @@ export class EmployeesService {
           },
           {
             department: {
-              department_name: { contains: query }
+              name: { contains: query }
             }
           },
           {
@@ -945,7 +945,7 @@ export class EmployeesService {
       },
       include: {
         department: {
-          select: { id: true, department_name: true },
+          select: { id: true, name: true },
         },
         position: {
           select: { id: true, title: true, level: true },
@@ -969,7 +969,7 @@ export class EmployeesService {
       where: { active: true },
       include: {
         department: {
-          select: { id: true, department_name: true },
+          select: { id: true, name: true },
         },
         position: {
           select: { id: true, title: true, level: true },
@@ -993,7 +993,7 @@ export class EmployeesService {
 
     employees.forEach(employee => {
       const deptId = employee.department_id || 0;
-      const deptName = employee.department?.department_name || 'Sans département';
+      const deptName = employee.department?.name || 'Sans département';
 
       if (!organizationMap.has(deptId)) {
         organizationMap.set(deptId, {

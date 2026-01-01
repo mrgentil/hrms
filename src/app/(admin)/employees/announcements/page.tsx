@@ -16,7 +16,7 @@ type Announcement = {
   publish_date?: string;
   department?: {
     id: number;
-    department_name: string;
+    name: string;
   } | null;
   author?: {
     id: number;
@@ -118,7 +118,7 @@ export default function EmployeeAnnouncementsPage() {
         const haystack = [
           announcement.title,
           announcement.content,
-          announcement.department?.department_name,
+          announcement.department?.name,
           announcement.author?.full_name,
         ]
           .filter(Boolean)
@@ -288,7 +288,7 @@ export default function EmployeeAnnouncementsPage() {
 
                           <div className="flex items-center gap-1.5">
                             <span className="inline-flex items-center rounded-sm bg-primary/5 px-1.5 py-0.5 text-primary">
-                              {announcement.department?.department_name || '🏢 Toute l\'entreprise'}
+                              {announcement.department?.name || '🏢 Toute l\'entreprise'}
                             </span>
                           </div>
                         </div>

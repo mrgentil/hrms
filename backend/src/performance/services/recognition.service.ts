@@ -98,7 +98,7 @@ export class RecognitionService {
               full_name: true,
               profile_photo_url: true,
               position: { select: { title: true } },
-              department: { select: { department_name: true } },
+              department: { select: { name: true } },
             },
           },
           to_user: {
@@ -107,7 +107,7 @@ export class RecognitionService {
               full_name: true,
               profile_photo_url: true,
               position: { select: { title: true } },
-              department: { select: { department_name: true } },
+              department: { select: { name: true } },
             },
           },
         },
@@ -224,7 +224,7 @@ export class RecognitionService {
             full_name: true,
             profile_photo_url: true,
             position: { select: { title: true } },
-            department: { select: { department_name: true } },
+            department: { select: { name: true } },
           },
         },
         to_user: {
@@ -233,7 +233,7 @@ export class RecognitionService {
             full_name: true,
             profile_photo_url: true,
             position: { select: { title: true } },
-            department: { select: { department_name: true } },
+            department: { select: { name: true } },
           },
         },
       },
@@ -309,7 +309,7 @@ export class RecognitionService {
         full_name: true,
         profile_photo_url: true,
         position: { select: { title: true } },
-        department: { select: { department_name: true } },
+        department: { select: { name: true } },
       },
     });
 

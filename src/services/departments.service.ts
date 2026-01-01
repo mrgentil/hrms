@@ -4,7 +4,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface Department {
   id: number;
-  department_name: string;
+  name: string;
   description?: string;
   manager_id?: number;
   parent_id?: number;

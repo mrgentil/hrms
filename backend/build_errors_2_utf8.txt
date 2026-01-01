@@ -1,0 +1,772 @@
+﻿
+> backend@0.0.1 build
+> nest build
+
+node.exe : [96msrc/a
+nalytics/analytics.se
+rvice.ts[0m:[93m94
+[0m:[93m9[0m - 
+[91merror[0m[90m 
+TS2353: [0mObject 
+literal may only 
+specify known 
+properties, and 'user
+_user_department_idTo
+department' does not 
+exist in type 'depart
+mentInclude<DefaultAr
+gs>'.
+Au caractère C:\Users
+\bedi-\AppData\Roamin
+g\npm\npm.ps1:24 : 5
++     & "node$exe"  "
+$basedir/node_modules
+/npm/bin/npm-cli.js" 
+$args
++     ~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: ([96msr   
+ c/analyt...<Defa    
+ultArgs>'.:Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+
+[7m94[0m         us
+er_user_department_id
+Todepartment: true,
+[7m  [0m [91m     
+   ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~[0m
+[96msrc/analytics/an
+alytics.service.ts[0
+m:[93m101[0m:[93m1
+6[0m - 
+[91merror[0m[90m 
+TS2339: [0mProperty 
+'user_user_department
+_idTodepartment' 
+does not exist on 
+type '{ created_at: 
+Date; id: number; 
+name: string; 
+manager_user_id: 
+number | null; 
+updated_at: Date; 
+company_id: number; 
+description: string 
+| null; parent_depart
+ment_id: number | 
+null; is_active: 
+boolean; }'.
+
+[7m101[0m       
+count: d.user_user_de
+partment_idTodepartme
+nt?.length || 0,
+[7m   [0m [91m    
+           ~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~[0m
+[96msrc/departments/
+departments.controlle
+r.ts[0m:[93m23[0m:
+[93m10[0m - 
+[91merror[0m[90m 
+TS2724: [0m'"@prisma
+/client"' has no 
+exported member 
+named 'User'. Did 
+you mean 'user'?
+
+[7m23[0m import { 
+User } from 
+'@prisma/client';
+[7m  [0m [91m     
+    ~~~~[0m
+[96msrc/departments/
+departments.service.t
+s[0m:[93m99[0m:[9
+3m15[0m - 
+[91merror[0m[90m 
+TS2353: [0mObject 
+literal may only 
+specify known 
+properties, and 'user
+_user_department_idTo
+department' does not 
+exist in type 'Depart
+mentCountOutputTypeSe
+lect<DefaultArgs>'.
+
+[7m99[0m           
+    user_user_departm
+ent_idTodepartment: 
+true,
+[7m  [0m [91m     
+         ~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~[0m
+[96msrc/departments/
+departments.service.t
+s[0m:[93m108[0m:[
+93m15[0m - 
+[91merror[0m[90m 
+TS2339: [0mProperty 
+'_count' does not 
+exist on type '{ 
+created_at: Date; 
+id: number; name: 
+string; 
+manager_user_id: 
+number | null; 
+updated_at: Date; 
+company_id: number; 
+description: string 
+| null; parent_depart
+ment_id: number | 
+null; is_active: 
+boolean; }'.
+
+[7m108[0m       
+const { _count, 
+...rest } = 
+department;
+[7m   [0m [91m    
+          ~~~~~~[0m
+[96msrc/departments/
+departments.service.t
+s[0m:[93m136[0m:[
+93m13[0m - 
+[91merror[0m[90m 
+TS2353: [0mObject 
+literal may only 
+specify known 
+properties, and 'user
+_user_department_idTo
+department' does not 
+exist in type 'Depart
+mentCountOutputTypeSe
+lect<DefaultArgs>'.
+
+[7m136[0m          
+   user_user_departme
+nt_idTodepartment: 
+true,
+[7m   [0m [91m    
+        ~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~[0m
+[96msrc/departments/
+departments.service.t
+s[0m:[93m146[0m:[
+93m13[0m - 
+[91merror[0m[90m 
+TS2339: [0mProperty 
+'_count' does not 
+exist on type '{ 
+created_at: Date; 
+id: number; name: 
+string; 
+manager_user_id: 
+number | null; 
+updated_at: Date; 
+company_id: number; 
+description: string 
+| null; parent_depart
+ment_id: number | 
+null; is_active: 
+boolean; }'.
+
+[7m146[0m     
+const { _count, 
+...rest } = 
+department;
+[7m   [0m [91m    
+        ~~~~~~[0m
+[96msrc/departments/
+departments.service.t
+s[0m:[93m224[0m:[
+93m13[0m - 
+[91merror[0m[90m 
+TS2353: [0mObject 
+literal may only 
+specify known 
+properties, and 'user
+_user_department_idTo
+department' does not 
+exist in type 'Depart
+mentCountOutputTypeSe
+lect<DefaultArgs>'.
+
+[7m224[0m          
+   user_user_departme
+nt_idTodepartment: 
+true,
+[7m   [0m [91m    
+        ~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~[0m
+[96msrc/departments/
+departments.service.t
+s[0m:[93m234[0m:[
+93m20[0m - 
+[91merror[0m[90m 
+TS2339: [0mProperty 
+'_count' does not 
+exist on type '{ 
+created_at: Date; 
+id: number; name: 
+string; 
+manager_user_id: 
+number | null; 
+updated_at: Date; 
+company_id: number; 
+description: string 
+| null; parent_depart
+ment_id: number | 
+null; is_active: 
+boolean; }'.
+
+[7m234[0m     if (d
+epartment._count.user
+_user_department_idTo
+department > 0) {
+[7m   [0m [91m    
+               
+~~~~~~[0m
+[96msrc/employees/em
+ployees.service.ts[0
+m:[93m251[0m:[93m9
+[0m - 
+[91merror[0m[90m 
+TS2353: [0mObject 
+literal may only 
+specify known 
+properties, and 
+'user' does not 
+exist in type 'userIn
+clude<DefaultArgs>'.
+
+[7m251[0m         
+user: {
+[7m   [0m [91m    
+    ~~~~[0m
+
+  [96mnode_modules/.
+prisma/client/index.d
+.ts[0m:[93m47936[0
+m:[93m5[0m
+    [7m47936[0m    
+ include?: 
+userInclude<ExtArgs> 
+| null
+    [7m     [0m 
+[96m    ~~~~~~~[0m
+    The expected 
+type comes from 
+property 'include' 
+which is declared 
+here on type '{ 
+select?: userSelect<D
+efaultArgs> | null | 
+undefined; omit?: use
+rOmit<DefaultArgs> | 
+null | undefined; 
+include?: userInclude
+<DefaultArgs> | null 
+| undefined; where: u
+serWhereUniqueInput; 
+}'
+[96msrc/employees/em
+ployees.service.ts[0
+m:[93m957[0m:[93m9
+[0m - 
+[91merror[0m[90m 
+TS2353: [0mObject 
+literal may only 
+specify known 
+properties, and 
+'user' does not 
+exist in type 'userIn
+clude<DefaultArgs>'.
+
+[7m957[0m         
+user: {
+[7m   [0m [91m    
+    ~~~~[0m
+[96msrc/employees/em
+ployees.service.ts[0
+m:[93m977[0m:[93m9
+[0m - 
+[91merror[0m[90m 
+TS2353: [0mObject 
+literal may only 
+specify known 
+properties, and 
+'user' does not 
+exist in type 'userIn
+clude<DefaultArgs>'.
+
+[7m977[0m         
+user: {
+[7m   [0m [91m    
+    ~~~~[0m
+[96msrc/employees/em
+ployees.service.ts[0
+m:[93m996[0m:[93m3
+3[0m - 
+[91merror[0m[90m 
+TS2551: [0mProperty 
+'department' does 
+not exist on type '{ 
+role: UserRole; 
+username: string; 
+password: string; 
+full_name: string; 
+work_email: string | 
+null; 
+profile_photo_url: 
+string | null; 
+created_at: Date; 
+id: number; role_id: 
+number | null; ... 9 
+more ...; 
+company_id: number | 
+null; }'. Did you 
+mean 'department_id'?
+
+[7m996[0m       
+const deptName = empl
+oyee.department?.name
+ || 'Sans 
+d├®partement';
+[7m   [0m [91m    
+                     
+       ~~~~~~~~~~[0m
+[96msrc/employees/em
+ployees.service.ts[0
+m:[93m1012[0m:[93m
+28[0m - 
+[91merror[0m[90m 
+TS2339: [0mProperty 
+'position' does not 
+exist on type '{ 
+role: UserRole; 
+username: string; 
+password: string; 
+full_name: string; 
+work_email: string | 
+null; 
+profile_photo_url: 
+string | null; 
+created_at: Date; 
+id: number; role_id: 
+number | null; ... 9 
+more ...; 
+company_id: number | 
+null; }'.
+
+[7m1012[0m         
+position: employee.po
+sition?.title || 
+'Poste non d├®fini',
+[7m    [0m [91m   
+                     
+   ~~~~~~~~[0m
+[96msrc/employees/em
+ployees.service.ts[0
+m:[93m1013[0m:[93m
+25[0m - 
+[91merror[0m[90m 
+TS2339: [0mProperty 
+'position' does not 
+exist on type '{ 
+role: UserRole; 
+username: string; 
+password: string; 
+full_name: string; 
+work_email: string | 
+null; 
+profile_photo_url: 
+string | null; 
+created_at: Date; 
+id: number; role_id: 
+number | null; ... 9 
+more ...; 
+company_id: number | 
+null; }'.
+
+[7m1013[0m         
+level: employee.posit
+ion?.level,
+[7m    [0m [91m   
+                     
+~~~~~~~~[0m
+[96msrc/employees/em
+ployees.service.ts[0
+m:[93m1014[0m:[93m
+27[0m - 
+[91merror[0m[90m 
+TS2339: [0mProperty 
+'user' does not 
+exist on type '{ 
+role: UserRole; 
+username: string; 
+password: string; 
+full_name: string; 
+work_email: string | 
+null; 
+profile_photo_url: 
+string | null; 
+created_at: Date; 
+id: number; role_id: 
+number | null; ... 9 
+more ...; 
+company_id: number | 
+null; }'.
+
+[7m1014[0m         
+manager: 
+employee.user,
+[7m    [0m [91m   
+                     
+  ~~~~[0m
+[96msrc/employees/em
+ployees.service.ts[0
+m:[93m1015[0m:[93m
+32[0m - 
+[91merror[0m[90m 
+TS2339: [0mProperty 
+'other_user' does 
+not exist on type '{ 
+role: UserRole; 
+username: string; 
+password: string; 
+full_name: string; 
+work_email: string | 
+null; 
+profile_photo_url: 
+string | null; 
+created_at: Date; 
+id: number; role_id: 
+number | null; ... 9 
+more ...; 
+company_id: number | 
+null; }'.
+
+[7m1015[0m         
+subordinates: 
+employee.other_user,
+[7m    [0m [91m   
+                     
+       ~~~~~~~~~~[0m
+[96msrc/positions/po
+sitions.controller.ts
+[0m:[93m23[0m:[93
+m10[0m - 
+[91merror[0m[90m 
+TS2724: [0m'"@prisma
+/client"' has no 
+exported member 
+named 'User'. Did 
+you mean 'user'?
+
+[7m23[0m import { 
+User } from 
+'@prisma/client';
+[7m  [0m [91m     
+    ~~~~[0m
+[96msrc/positions/po
+sitions.service.ts[0
+m:[93m77[0m:[93m15
+[0m - 
+[91merror[0m[90m 
+TS2561: [0mObject 
+literal may only 
+specify known 
+properties, but 
+'user' does not 
+exist in type 'Positi
+onCountOutputTypeSele
+ct<DefaultArgs>'. 
+Did you mean to 
+write 'users'?
+
+[7m77[0m           
+    user: true,
+[7m  [0m [91m     
+         ~~~~[0m
+[96msrc/positions/po
+sitions.service.ts[0
+m:[93m85[0m:[93m37
+[0m - 
+[91merror[0m[90m 
+TS2339: [0mProperty 
+'_count' does not 
+exist on type '{ 
+created_at: Date; 
+id: number; 
+department_id: 
+number | null; 
+updated_at: Date; 
+company_id: number; 
+description: string 
+| null; is_active: 
+boolean; title: 
+string; level: 
+string | null; }'.
+
+[7m85[0m     const 
+mapped = 
+positions.map(({ 
+_count, ...rest }) 
+=> ({
+[7m  [0m [91m     
+                     
+          ~~~~~~[0m
+[96msrc/positions/po
+sitions.service.ts[0
+m:[93m108[0m:[93m1
+3[0m - 
+[91merror[0m[90m 
+TS2561: [0mObject 
+literal may only 
+specify known 
+properties, but 
+'user' does not 
+exist in type 'Positi
+onCountOutputTypeSele
+ct<DefaultArgs>'. 
+Did you mean to 
+write 'users'?
+
+[7m108[0m          
+   user: true,
+[7m   [0m [91m    
+        ~~~~[0m
+[96msrc/positions/po
+sitions.service.ts[0
+m:[93m118[0m:[93m1
+3[0m - 
+[91merror[0m[90m 
+TS2339: [0mProperty 
+'_count' does not 
+exist on type '{ 
+created_at: Date; 
+id: number; 
+department_id: 
+number | null; 
+updated_at: Date; 
+company_id: number; 
+description: string 
+| null; is_active: 
+boolean; title: 
+string; level: 
+string | null; }'.
+
+[7m118[0m     
+const { _count, 
+...rest } = position;
+[7m   [0m [91m    
+        ~~~~~~[0m
+[96msrc/positions/po
+sitions.service.ts[0
+m:[93m181[0m:[93m1
+3[0m - 
+[91merror[0m[90m 
+TS2561: [0mObject 
+literal may only 
+specify known 
+properties, but 
+'user' does not 
+exist in type 'Positi
+onCountOutputTypeSele
+ct<DefaultArgs>'. 
+Did you mean to 
+write 'users'?
+
+[7m181[0m          
+   user: true,
+[7m   [0m [91m    
+        ~~~~[0m
+[96msrc/positions/po
+sitions.service.ts[0
+m:[93m191[0m:[93m1
+8[0m - 
+[91merror[0m[90m 
+TS2339: [0mProperty 
+'_count' does not 
+exist on type '{ 
+created_at: Date; 
+id: number; 
+department_id: 
+number | null; 
+updated_at: Date; 
+company_id: number; 
+description: string 
+| null; is_active: 
+boolean; title: 
+string; level: 
+string | null; }'.
+
+[7m191[0m     if (p
+osition._count.user 
+> 0) {
+[7m   [0m [91m    
+             
+~~~~~~[0m
+[96msrc/users/users.
+service.ts[0m:[93m2
+96[0m:[93m9[0m - 
+[91merror[0m[90m 
+TS2353: [0mObject 
+literal may only 
+specify known 
+properties, and 
+'user' does not 
+exist in type 'userSe
+lect<DefaultArgs>'.
+
+[7m296[0m         
+user: {
+[7m   [0m [91m    
+    ~~~~[0m
+
+  [96mnode_modules/.
+prisma/client/index.d
+.ts[0m:[93m47928[0
+m:[93m5[0m
+    [7m47928[0m    
+ select?: 
+userSelect<ExtArgs> 
+| null
+    [7m     [0m 
+[96m    ~~~~~~[0m
+    The expected 
+type comes from 
+property 'select' 
+which is declared 
+here on type '{ 
+select?: userSelect<D
+efaultArgs> | null | 
+undefined; omit?: use
+rOmit<DefaultArgs> | 
+null | undefined; 
+include?: userInclude
+<DefaultArgs> | null 
+| undefined; where: u
+serWhereUniqueInput; 
+}'
+[96msrc/users/users.
+service.ts[0m:[93m3
+82[0m:[93m24[0m - 
+[91merror[0m[90m 
+TS2551: [0mProperty 
+'department' does 
+not exist on type '{ 
+role: UserRole; 
+username: string; 
+password: string; 
+full_name: string; 
+work_email: string | 
+null; 
+profile_photo_url: 
+string | null; 
+created_at: Date; 
+id: number; role_id: 
+number | null; ... 9 
+more ...; 
+company_id: number | 
+null; }'. Did you 
+mean 'department_id'?
+
+[7m382[0m       
+department: 
+user.department,
+[7m   [0m [91m    
+                   
+~~~~~~~~~~[0m
+[96msrc/users/users.
+service.ts[0m:[93m3
+83[0m:[93m21[0m - 
+[91merror[0m[90m 
+TS2339: [0mProperty 
+'user' does not 
+exist on type '{ 
+role: UserRole; 
+username: string; 
+password: string; 
+full_name: string; 
+work_email: string | 
+null; 
+profile_photo_url: 
+string | null; 
+created_at: Date; 
+id: number; role_id: 
+number | null; ... 9 
+more ...; 
+company_id: number | 
+null; }'.
+
+[7m383[0m       
+manager: user.user,
+[7m   [0m [91m    
+                
+~~~~[0m
+[96msrc/users/users.
+service.ts[0m:[93m7
+10[0m:[93m9[0m - 
+[91merror[0m[90m 
+TS2353: [0mObject 
+literal may only 
+specify known 
+properties, and 
+'user' does not 
+exist in type 'userSe
+lect<DefaultArgs>'.
+
+[7m710[0m         
+user: {
+[7m   [0m [91m    
+    ~~~~[0m
+
+  [96mnode_modules/.
+prisma/client/index.d
+.ts[0m:[93m48156[0
+m:[93m5[0m
+    [7m48156[0m    
+ select?: 
+userSelect<ExtArgs> 
+| null
+    [7m     [0m 
+[96m    ~~~~~~[0m
+    The expected 
+type comes from 
+property 'select' 
+which is declared 
+here on type '{ 
+select?: userSelect<D
+efaultArgs> | null | 
+undefined; omit?: use
+rOmit<DefaultArgs> | 
+null | undefined; 
+include?: userInclude
+<DefaultArgs> | null 
+| undefined; data: 
+(Without<...> & userU
+ncheckedUpdateInput) 
+| (Without<...> & 
+userUpdateInput); 
+where: userWhereUniqu
+eInput; }'
+
+Found 28 error(s).
+

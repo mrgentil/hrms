@@ -25,7 +25,7 @@ export interface Employee {
   // Relations
   department?: {
     id: number;
-    department_name: string;
+    name: string;
   };
   position?: {
     id: number;
@@ -68,6 +68,13 @@ export interface PersonalInfo {
   mobile?: string;
   phone?: string;
   email_address?: string;
+  spouse_name?: string;
+  emergency_contact_primary_name?: string;
+  emergency_contact_primary_phone?: string;
+  emergency_contact_primary_relation?: string;
+  emergency_contact_secondary_name?: string;
+  emergency_contact_secondary_phone?: string;
+  emergency_contact_secondary_relation?: string;
   user_id: number;
 }
 
@@ -186,9 +193,9 @@ export interface TeamMember {
     title: string;
     level?: string | null;
   } | null;
-  department_user_department_idTodepartment?: {
+  department?: {
     id: number;
-    department_name: string;
+    name: string;
   } | null;
 }
 

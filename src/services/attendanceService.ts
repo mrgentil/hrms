@@ -22,9 +22,9 @@ export interface Attendance {
     id: number;
     full_name: string;
     work_email?: string;
-    department_user_department_idTodepartment?: {
-      department_name: string;
-    };
+    department?: {
+      name: string;
+    } | null;
     position?: {
       title: string;
     };

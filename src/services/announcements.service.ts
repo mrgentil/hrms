@@ -20,7 +20,7 @@ export interface Announcement {
   updated_at: string;
   department?: {
     id: number;
-    department_name: string;
+    name: string;
   };
   author?: {
     id: number;
@@ -154,7 +154,7 @@ class AnnouncementsService {
         full_name: string;
         work_email: string;
         profile_photo_url?: string;
-        department?: { id: number; department_name: string };
+        department?: { id: number; name: string };
       };
       read_at: string;
     }>;

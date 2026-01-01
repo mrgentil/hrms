@@ -14,7 +14,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 interface Department {
   id: number;
-  department_name: string;
+  name: string;
 }
 
 interface Position {
@@ -25,6 +25,7 @@ interface Position {
 interface Manager {
   id: number;
   full_name: string;
+  role: string;
 }
 
 interface PersonalInfo {
@@ -468,7 +469,7 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
                   <option value="">Sélectionner...</option>
                   {departments.map((dept) => (
                     <option key={dept.id} value={dept.id}>
-                      {dept.department_name}
+                      {dept.name}
                     </option>
                   ))}
                 </select>

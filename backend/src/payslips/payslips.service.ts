@@ -201,7 +201,7 @@ export class PayslipsService {
                             work_email: true,
                             department: {
                                 select: {
-                                    department_name: true,
+                                    name: true,
                                 },
                             },
                         },
@@ -286,7 +286,7 @@ export class PayslipsService {
                             work_email: true,
                             department: {
                                 select: {
-                                    department_name: true,
+                                    name: true,
                                 },
                             },
                         },
@@ -544,7 +544,7 @@ export class PayslipsService {
             doc.fontSize(10).font('Helvetica-Bold').text('EMPLOYÉ', 310, 90);
             doc.font('Helvetica').text(`${payslip.user.full_name}`, 310, 105);
             doc.text(`Email: ${payslip.user.work_email}`, 310, 120);
-            doc.text(`Département: ${payslip.user.department?.department_name || 'N/A'}`, 310, 135);
+            doc.text(`Département: ${payslip.user.department?.name || 'N/A'}`, 310, 135);
             doc.text(`Poste: ${payslip.user.position?.title || 'N/A'}`, 310, 150);
 
             doc.moveDown(4);

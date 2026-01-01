@@ -20,7 +20,7 @@ import { SYSTEM_PERMISSIONS } from '../roles/roles.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '@prisma/client';
+import { user } from '@prisma/client';
 
 @Controller('positions')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -30,7 +30,7 @@ export class PositionsController {
   @Post()
   @RequirePermissions(SYSTEM_PERMISSIONS.POSITIONS_CREATE)
   async create(
-    @CurrentUser() user: User,
+    @CurrentUser() user: user,
     @Body(ValidationPipe) createPositionDto: CreatePositionDto,
   ) {
     const position = await this.positionsService.create(user.company_id, createPositionDto);
@@ -44,7 +44,7 @@ export class PositionsController {
   @Get()
   @RequirePermissions(SYSTEM_PERMISSIONS.POSITIONS_VIEW)
   async findAll(
-    @CurrentUser() user: User,
+    @CurrentUser() user: user,
     @Query(ValidationPipe) query: QueryPositionDto,
   ) {
     const result = await this.positionsService.findAll(user.company_id, query);
@@ -57,7 +57,7 @@ export class PositionsController {
   @Get(':id')
   @RequirePermissions(SYSTEM_PERMISSIONS.POSITIONS_VIEW)
   async findOne(
-    @CurrentUser() user: User,
+    @CurrentUser() user: user,
     @Param('id', ParseIntPipe) id: number,
   ) {
     const position = await this.positionsService.findOne(user.company_id, id);
@@ -70,7 +70,7 @@ export class PositionsController {
   @Patch(':id')
   @RequirePermissions(SYSTEM_PERMISSIONS.POSITIONS_EDIT)
   async update(
-    @CurrentUser() user: User,
+    @CurrentUser() user: user,
     @Param('id', ParseIntPipe) id: number,
     @Body(ValidationPipe) updatePositionDto: UpdatePositionDto,
   ) {
@@ -85,7 +85,7 @@ export class PositionsController {
   @Delete(':id')
   @RequirePermissions(SYSTEM_PERMISSIONS.POSITIONS_DELETE)
   async remove(
-    @CurrentUser() user: User,
+    @CurrentUser() user: user,
     @Param('id', ParseIntPipe) id: number,
   ) {
     const result = await this.positionsService.remove(user.company_id, id);

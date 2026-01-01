@@ -60,7 +60,7 @@ export default function AnnouncementsPage() {
         full_name: string;
         work_email: string;
         profile_photo_url?: string;
-        department?: { id: number; department_name: string };
+        department?: { id: number; name: string };
       };
       read_at: string;
     }>;
@@ -289,10 +289,10 @@ export default function AnnouncementsPage() {
             <div
               key={announcement.id}
               className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border-l-4 ${announcement.type === "URGENT" ? "border-red-500" :
-                  announcement.type === "EVENT" ? "border-purple-500" :
-                    announcement.type === "CELEBRATION" ? "border-yellow-500" :
-                      announcement.type === "MAINTENANCE" ? "border-orange-500" :
-                        "border-blue-500"
+                announcement.type === "EVENT" ? "border-purple-500" :
+                  announcement.type === "CELEBRATION" ? "border-yellow-500" :
+                    announcement.type === "MAINTENANCE" ? "border-orange-500" :
+                      "border-blue-500"
                 } ${isExpired(announcement.expire_date) ? "opacity-60" : ""}`}
             >
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -313,7 +313,7 @@ export default function AnnouncementsPage() {
                     )}
                     {announcement.department && (
                       <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400">
-                        {announcement.department.department_name}
+                        {announcement.department?.name || 'Toute l\'entreprise'}
                       </span>
                     )}
                   </div>
@@ -356,8 +356,8 @@ export default function AnnouncementsPage() {
                     <button
                       onClick={() => handlePublish(announcement.id, !announcement.is_published)}
                       className={`px-3 py-1.5 text-xs font-medium rounded-lg ${announcement.is_published
-                          ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
-                          : "bg-green-100 text-green-700 hover:bg-green-200"
+                        ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+                        : "bg-green-100 text-green-700 hover:bg-green-200"
                         }`}
                     >
                       {announcement.is_published ? "Dépublier" : "Publier"}
@@ -463,7 +463,7 @@ export default function AnnouncementsPage() {
                   >
                     <option value="">Tous les départements</option>
                     {departments.map((dept) => (
-                      <option key={dept.id} value={dept.id}>{dept.department_name}</option>
+                      <option key={dept.id} value={dept.id}>{dept.name}</option>
                     ))}
                   </select>
                 </div>
@@ -604,7 +604,7 @@ export default function AnnouncementsPage() {
                                   {reader.user.full_name}
                                 </div>
                                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                                  {reader.user.department?.department_name || "Sans département"}
+                                  {reader.user.department?.name || "Sans département"}
                                 </div>
                               </div>
                             </div>

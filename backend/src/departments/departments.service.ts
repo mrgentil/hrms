@@ -96,7 +96,7 @@ export class DepartmentsService {
           },
           _count: {
             select: {
-              user_user_department_idTodepartment: true,
+              users: true,
             },
           },
         },
@@ -108,7 +108,7 @@ export class DepartmentsService {
       const { _count, ...rest } = department;
       return {
         ...rest,
-        employees_count: _count.user_user_department_idTodepartment,
+        employees_count: _count.users,
       };
     });
 
@@ -231,7 +231,7 @@ export class DepartmentsService {
       throw new NotFoundException('Département non trouvé');
     }
 
-    if (department._count.user_user_department_idTodepartment > 0) {
+    if (department._count.users > 0) {
       throw new ConflictException('Impossible de supprimer un département qui possède des utilisateurs');
     }
 

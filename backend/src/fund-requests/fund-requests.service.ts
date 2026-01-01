@@ -58,7 +58,7 @@ export class FundRequestsService {
                         work_email: true,
                         department: {
                             select: {
-                                department_name: true,
+                                name: true,
                             },
                         },
                     },
@@ -104,7 +104,7 @@ export class FundRequestsService {
                             work_email: true,
                             department: {
                                 select: {
-                                    department_name: true,
+                                    name: true,
                                 },
                             },
                         },

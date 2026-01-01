@@ -339,7 +339,7 @@ export default function Feedback360Page() {
                             {feedback.review?.employee?.full_name}
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {feedback.review?.employee?.position?.title} • {feedback.review?.employee?.department?.department_name}
+                            {feedback.review?.employee?.position?.title} • {feedback.review?.employee?.department?.name}
                           </p>
                           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                             Campagne: {feedback.review?.campaign?.title} ({feedback.review?.campaign?.year})

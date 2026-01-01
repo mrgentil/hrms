@@ -68,7 +68,7 @@ export interface Contract {
     work_email?: string;
     profile_photo_url?: string;
     position?: { title: string };
-    department_user_department_idTodepartment?: { department_name: string };
+    department_user_department_idTodepartment?: { name: string };
   };
   creator?: {
     id: number;

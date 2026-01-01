@@ -15,14 +15,14 @@ import { useToast } from "@/hooks/useToast";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 type FormState = {
-  department_name: string;
+  name: string;
   description: string;
   manager_user_id: string;
   parent_department_id: string;
 };
 
 const toFormState = (department: any): FormState => ({
-  department_name: department.department_name ?? "",
+  name: department.name ?? "",
   description: department.description ?? "",
   manager_user_id: department.manager_user_id
     ? String(department.manager_user_id)
@@ -86,7 +86,7 @@ export default function EditDepartmentPage({
       {
         id: departmentId,
         payload: {
-          department_name: formState.department_name.trim(),
+          name: formState.name.trim(),
           description: formState.description.trim() || undefined,
           manager_user_id: formState.manager_user_id
             ? Number(formState.manager_user_id)
@@ -95,7 +95,7 @@ export default function EditDepartmentPage({
             ? Number(formState.parent_department_id)
             : undefined,
         },
-        },
+      },
       {
         onSuccess: () => {
           router.push("/departments");
@@ -114,7 +114,7 @@ export default function EditDepartmentPage({
     pageContent = (
       <div>
         <PageBreadcrumb pageTitle="Modifier un departement" />
-        <ComponentCard>
+        <ComponentCard title="Chargement">
           <p className="text-sm text-gray-500 dark:text-gray-300">
             Chargement des informations...
           </p>
@@ -124,7 +124,7 @@ export default function EditDepartmentPage({
   } else {
     pageContent = (
       <div>
-        <PageBreadcrumb pageTitle={`Modifier - ${department?.department_name ?? ""}`} />
+        <PageBreadcrumb pageTitle={`Modifier - ${department?.name ?? ""}`} />
 
         <ComponentCard title="Informations du departement">
           <form className="space-y-6" onSubmit={handleSubmit}>
@@ -135,11 +135,11 @@ export default function EditDepartmentPage({
                 </label>
                 <input
                   type="text"
-                  value={formState.department_name}
+                  value={formState.name}
                   onChange={(event) =>
                     setFormState((prev) =>
                       prev
-                        ? { ...prev, department_name: event.target.value }
+                        ? { ...prev, name: event.target.value }
                         : prev
                     )
                   }
@@ -193,7 +193,7 @@ export default function EditDepartmentPage({
                   </option>
                   {parentDepartments.map((parent) => (
                     <option key={parent.id} value={parent.id}>
-                      {parent.department_name}
+                      {parent.name}
                     </option>
                   ))}
                 </select>
@@ -241,7 +241,7 @@ export default function EditDepartmentPage({
   }
 
   return (
-    <ProtectedRoute requiredPermission="departments.edit">
+    <ProtectedRoute permission="departments.edit">
       {pageContent}
     </ProtectedRoute>
   );

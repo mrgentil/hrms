@@ -184,7 +184,7 @@ export class ObjectivesService {
             id: true,
             full_name: true,
             position: { select: { title: true } },
-            department: { select: { department_name: true } },
+            department: { select: { name: true } },
           },
         },
         review: {

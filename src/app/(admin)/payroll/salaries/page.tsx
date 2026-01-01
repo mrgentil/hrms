@@ -97,7 +97,7 @@ export default function SalariesPage() {
             const financial = emp.user_financial_info?.[0];
             return [
                 emp.full_name,
-                emp.department_user_department_idTodepartment?.department_name || '',
+                emp.department?.name || '',
                 emp.position?.title || '',
                 financial?.salary_basic || 0,
                 financial?.salary_gross || 0,
@@ -141,8 +141,8 @@ export default function SalariesPage() {
                     bVal = b.full_name;
                     break;
                 case 'department':
-                    aVal = a.department_user_department_idTodepartment?.department_name || '';
-                    bVal = b.department_user_department_idTodepartment?.department_name || '';
+                    aVal = a.department?.name || '';
+                    bVal = b.department?.name || '';
                     break;
                 case 'salary_basic':
                     aVal = a.user_financial_info?.[0]?.salary_basic || 0;
@@ -266,7 +266,7 @@ export default function SalariesPage() {
                             <option value="">Tous</option>
                             {departments.map((dept) => (
                                 <option key={dept.id} value={dept.id}>
-                                    {dept.department_name}
+                                    {dept.name}
                                 </option>
                             ))}
                         </select>
@@ -396,7 +396,7 @@ export default function SalariesPage() {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                                                {employee.department_user_department_idTodepartment?.department_name || '-'}
+                                                {employee.department?.name || '-'}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                                                 {employee.position?.title || '-'}

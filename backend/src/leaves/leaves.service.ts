@@ -111,15 +111,15 @@ export class LeavesService {
 
       case application_status.Approved:
 
-        return 'Approuvée';
+        return 'Approuvï¿½e';
 
       case application_status.Rejected:
 
-        return 'Refusée';
+        return 'Refusï¿½e';
 
       case application_status.Cancelled:
 
-        return 'Annulée';
+        return 'Annulï¿½e';
 
       default:
 
@@ -205,7 +205,7 @@ export class LeavesService {
     const { userId, leaveTypeId, startDate, endDate, direction } = params;
 
     if (!leaveTypeId) {
-      this.logger.warn(`Impossible de mettre à jour le solde : aucun type de congé associé (user=${userId}).`);
+      this.logger.warn(`Impossible de mettre ï¿½ jour le solde : aucun type de congï¿½ associï¿½ (user=${userId}).`);
       return;
     }
 
@@ -428,7 +428,7 @@ export class LeavesService {
     } = params;
 
 
-    const subject = `Nouvelle demande de congé - ${employeeName ?? 'Employé'}`;
+    const subject = `Nouvelle demande de congï¿½ - ${employeeName ?? 'Employï¿½'}`;
 
     const greeting = approverName ? `Bonjour ${approverName},` : 'Bonjour,';
 
@@ -440,17 +440,17 @@ export class LeavesService {
 
       '',
 
-      `${employeeName ?? 'Un employé'} a soumis une nouvelle demande de congé (n°${leaveId}).`,
+      `${employeeName ?? 'Un employï¿½'} a soumis une nouvelle demande de congï¿½ (nï¿½${leaveId}).`,
 
       leaveType ? `Type : ${leaveType}` : null,
 
-      `Période : du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}`,
+      `Pï¿½riode : du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}`,
 
       formattedReason ? `Motif : ${formattedReason}` : null,
 
       '',
 
-      'Connectez-vous à HRMS pour valider ou commenter cette demande.',
+      'Connectez-vous ï¿½ HRMS pour valider ou commenter cette demande.',
 
     ].filter(Boolean);
 
@@ -510,7 +510,7 @@ export class LeavesService {
 
     const statusLabel = this.getStatusLabel(status);
 
-    const subject = `Votre demande de congé (n°${leaveId}) est ${statusLabel.toLowerCase()}`;
+    const subject = `Votre demande de congï¿½ (nï¿½${leaveId}) est ${statusLabel.toLowerCase()}`;
 
     const greeting = employeeName ? `Bonjour ${employeeName},` : 'Bonjour,';
 
@@ -520,17 +520,17 @@ export class LeavesService {
 
       '',
 
-      `Votre demande de congé${leaveType ? ` (${leaveType})` : ''} a été ${statusLabel.toLowerCase()}.`,
+      `Votre demande de congï¿½${leaveType ? ` (${leaveType})` : ''} a ï¿½tï¿½ ${statusLabel.toLowerCase()}.`,
 
-      `Période : du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}`,
+      `Pï¿½riode : du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}`,
 
-      approverName ? `Validée par : ${approverName}` : null,
+      approverName ? `Validï¿½e par : ${approverName}` : null,
 
       comment ? `Commentaire : ${comment}` : null,
 
       '',
 
-      'Connectez-vous à HRMS pour consulter les détails.',
+      'Connectez-vous ï¿½ HRMS pour consulter les dï¿½tails.',
 
     ].filter(Boolean);
 
@@ -557,7 +557,7 @@ export class LeavesService {
 
     const { recipients, authorName, leaveId, message } = params;
 
-    const subject = `Nouveau commentaire sur la demande de congé n°${leaveId}`;
+    const subject = `Nouveau commentaire sur la demande de congï¿½ nï¿½${leaveId}`;
 
     await Promise.all(
 
@@ -585,7 +585,7 @@ export class LeavesService {
 
             '',
 
-            'Connectez-vous à HRMS pour répondre.',
+            'Connectez-vous ï¿½ HRMS pour rï¿½pondre.',
 
           ];
 
@@ -1168,7 +1168,7 @@ export class LeavesService {
             full_name: true,
             work_email: true,
             department: {
-              select: { department_name: true },
+              select: { name: true },
             },
           },
         },
@@ -1182,7 +1182,7 @@ export class LeavesService {
     return balances.map((balance) => ({
       ...balance,
       days_remaining: (balance.days_accrued || 0) - (balance.days_used || 0),
-      days_pending: 0, // À calculer si nécessaire
+      days_pending: 0, // ï¿½ calculer si nï¿½cessaire
     }));
   }
 
@@ -1377,7 +1377,7 @@ export class LeavesService {
             position_id: true,
             manager_user_id: true,
             department: {
-              select: { department_name: true },
+              select: { name: true },
             },
             position: {
               select: { title: true },
@@ -1816,7 +1816,7 @@ export class LeavesService {
   async createLeaveType(dto: CreateLeaveTypeDto) {
     const trimmedName = dto.name.trim();
     if (trimmedName.length === 0) {
-      throw new BadRequestException('Le nom du type de congé ne peut pas être vide.');
+      throw new BadRequestException('Le nom du type de congï¿½ ne peut pas ï¿½tre vide.');
     }
 
     const existing = await this.prisma.leave_type.findFirst({
@@ -1826,7 +1826,7 @@ export class LeavesService {
     });
 
     if (existing) {
-      throw new BadRequestException('Un type de congé portant ce nom existe déjà.');
+      throw new BadRequestException('Un type de congï¿½ portant ce nom existe dï¿½jï¿½.');
     }
 
     const trimmedDescription = dto.description?.trim();
@@ -1861,7 +1861,7 @@ export class LeavesService {
     });
 
     if (!existing) {
-      throw new NotFoundException('Type de congé introuvable.');
+      throw new NotFoundException('Type de congï¿½ introuvable.');
     }
 
     const data: Prisma.leave_typeUpdateInput = {
@@ -1871,7 +1871,7 @@ export class LeavesService {
     if (dto.name !== undefined) {
       const trimmedName = dto.name.trim();
       if (trimmedName.length === 0) {
-        throw new BadRequestException('Le nom du type de congé ne peut pas être vide.');
+        throw new BadRequestException('Le nom du type de congï¿½ ne peut pas ï¿½tre vide.');
       }
       data.name = trimmedName;
     }

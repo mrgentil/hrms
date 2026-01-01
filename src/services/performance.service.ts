@@ -10,7 +10,7 @@ export interface User {
   profile_photo_url?: string;
   work_email?: string;
   position?: { title: string };
-  department?: { department_name: string };
+  department?: { name: string };
 }
 
 export interface Campaign {

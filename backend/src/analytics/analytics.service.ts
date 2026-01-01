@@ -3,16 +3,16 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // Dashboard principal - Vue d'ensemble
   async getDashboardOverview() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const endOfToday = new Date(today);
     endOfToday.setHours(23, 59, 59, 999);
-    
+
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     const startOfYear = new Date(today.getFullYear(), 0, 1);
@@ -39,7 +39,7 @@ export class AnalyticsService {
       this.prisma.department.count(),
       // Présences aujourd'hui (plage de dates)
       this.prisma.attendance.count({
-        where: { 
+        where: {
           date: { gte: today, lte: endOfToday },
           check_in: { not: null },
         },
@@ -73,8 +73,8 @@ export class AnalyticsService {
       attendance: {
         presentToday: todayAttendance,
         absentToday: activeEmployees - todayAttendance,
-        attendanceRate: activeEmployees > 0 
-          ? Math.round((todayAttendance / activeEmployees) * 100) 
+        attendanceRate: activeEmployees > 0
+          ? Math.round((todayAttendance / activeEmployees) * 100)
           : 0,
       },
       pending: {
@@ -91,14 +91,13 @@ export class AnalyticsService {
   async getEmployeesByDepartment() {
     const departments = await this.prisma.department.findMany({
       include: {
-        user_user_department_idTodepartment: true,
+        users: true,
       },
     });
 
     return departments.map(d => ({
-      id: d.id,
-      name: d.department_name,
-      count: d.user_user_department_idTodepartment?.length || 0,
+      name: d.name,
+      count: d.users?.length || 0,
     }));
   }
 
@@ -111,10 +110,10 @@ export class AnalyticsService {
       const start = new Date(today);
       start.setDate(start.getDate() - i);
       start.setHours(0, 0, 0, 0);
-      
+
       const end = new Date(start);
       end.setHours(23, 59, 59, 999);
-      
+
       days.push({ start, end, display: start });
     }
 

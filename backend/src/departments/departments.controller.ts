@@ -20,7 +20,7 @@ import { SYSTEM_PERMISSIONS } from '../roles/roles.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '@prisma/client';
+import { user } from '@prisma/client';
 
 @Controller('departments')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -30,7 +30,7 @@ export class DepartmentsController {
   @Post()
   @RequirePermissions(SYSTEM_PERMISSIONS.DEPARTMENTS_CREATE)
   async create(
-    @CurrentUser() user: User,
+    @CurrentUser() user: user,
     @Body(ValidationPipe) createDepartmentDto: CreateDepartmentDto,
   ) {
     const department = await this.departmentsService.create(user.company_id, createDepartmentDto);
@@ -44,7 +44,7 @@ export class DepartmentsController {
   @Get()
   @RequirePermissions(SYSTEM_PERMISSIONS.DEPARTMENTS_VIEW)
   async findAll(
-    @CurrentUser() user: User,
+    @CurrentUser() user: user,
     @Query(ValidationPipe) query: QueryDepartmentDto,
   ) {
     const result = await this.departmentsService.findAll(user.company_id, query);
@@ -57,7 +57,7 @@ export class DepartmentsController {
   @Get(':id')
   @RequirePermissions(SYSTEM_PERMISSIONS.DEPARTMENTS_VIEW)
   async findOne(
-    @CurrentUser() user: User,
+    @CurrentUser() user: user,
     @Param('id', ParseIntPipe) id: number,
   ) {
     const department = await this.departmentsService.findOne(user.company_id, id);
@@ -70,7 +70,7 @@ export class DepartmentsController {
   @Patch(':id')
   @RequirePermissions(SYSTEM_PERMISSIONS.DEPARTMENTS_EDIT)
   async update(
-    @CurrentUser() user: User,
+    @CurrentUser() user: user,
     @Param('id', ParseIntPipe) id: number,
     @Body(ValidationPipe) updateDepartmentDto: UpdateDepartmentDto,
   ) {
@@ -85,7 +85,7 @@ export class DepartmentsController {
   @Delete(':id')
   @RequirePermissions(SYSTEM_PERMISSIONS.DEPARTMENTS_DELETE)
   async remove(
-    @CurrentUser() user: User,
+    @CurrentUser() user: user,
     @Param('id', ParseIntPipe) id: number,
   ) {
     const response = await this.departmentsService.remove(user.company_id, id);

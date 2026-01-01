@@ -5,7 +5,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { advanceService } from "@/services/payroll.service";
 import { useToast } from "@/hooks/useToast";
 import { useUserRole, hasPermission } from "@/hooks/useUserRole";
-import type { SalaryAdvance, AdvanceStatus } from "@/types/payroll.types";
+import { SalaryAdvance, AdvanceStatus, FundRequestStatus } from "@/types/payroll.types";
 
 export default function AdvancesPage() {
     const toast = useToast();
@@ -89,7 +89,11 @@ export default function AdvancesPage() {
         if (!selectedAdvance) return;
 
         try {
-            await advanceService.reviewAdvance(selectedAdvance.id, { status, reviewer_comment: comment });
+            const reviewStatus = status === 'APPROVED' ? AdvanceStatus.APPROVED : AdvanceStatus.REJECTED;
+            await advanceService.reviewAdvance(selectedAdvance.id, {
+                status: reviewStatus,
+                reviewer_comment: comment
+            });
             toast.success(`Demande ${status === 'APPROVED' ? 'approuvée' : 'rejetée'}`);
             setShowReviewModal(false);
             setSelectedAdvance(null);
@@ -253,7 +257,7 @@ export default function AdvancesPage() {
                                             <td className="px-4 py-3">
                                                 <div>
                                                     <p className="font-medium text-gray-900 dark:text-white">{advance.user?.full_name}</p>
-                                                    <p className="text-sm text-gray-500">{advance.user?.department_user_department_idTodepartment?.department_name}</p>
+                                                    <p className="text-sm text-gray-500">{advance.user?.department?.name || '-'}</p>
                                                 </div>
                                             </td>
                                         )}

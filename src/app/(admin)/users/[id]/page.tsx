@@ -44,10 +44,10 @@ interface UserData {
   active: boolean;
   work_email?: string;
   hire_date?: string;
-  profile_photo_url?: string;
+  profile_photo_url?: string | null;
   department?: {
     id: number;
-    department_name: string;
+    name: string;
   };
   position?: {
     id: number;
@@ -239,7 +239,7 @@ export default function UserDetails({ params }: { params: Promise<{ id: string }
               <div className="w-24 h-24 rounded-full bg-white overflow-hidden ring-4 ring-white/30">
                 {user.profile_photo_url ? (
                   <img
-                    src={resolveImageUrl(user.profile_photo_url)}
+                    src={resolveImageUrl(user.profile_photo_url || undefined)}
                     alt={user.full_name}
                     className="w-full h-full object-cover"
                   />
@@ -279,7 +279,7 @@ export default function UserDetails({ params }: { params: Promise<{ id: string }
             <div>
               <label className="text-sm text-gray-500">Département</label>
               <p className="font-medium text-gray-900 dark:text-white">
-                {user.department?.department_name || "Non assigné"}
+                {user.department?.name || 'N/A'}
               </p>
             </div>
             <div>

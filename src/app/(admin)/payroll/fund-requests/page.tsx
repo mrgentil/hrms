@@ -5,7 +5,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { fundRequestService } from "@/services/payroll.service";
 import { useToast } from "@/hooks/useToast";
 import { useUserRole, hasPermission } from "@/hooks/useUserRole";
-import type { FundRequest, FundRequestStatus } from "@/types/payroll.types";
+import { FundRequest, FundRequestStatus } from "@/types/payroll.types";
 
 export default function FundRequestsPage() {
     const toast = useToast();
@@ -91,7 +91,11 @@ export default function FundRequestsPage() {
         if (!selectedRequest) return;
 
         try {
-            await fundRequestService.reviewRequest(selectedRequest.id, { status, reviewer_comment: comment });
+            const reviewStatus = status === 'APPROVED' ? FundRequestStatus.APPROVED : FundRequestStatus.REJECTED;
+            await fundRequestService.reviewRequest(selectedRequest.id, {
+                status: reviewStatus,
+                reviewer_comment: comment
+            });
             toast.success(`Demande ${status === 'APPROVED' ? 'approuvée' : 'rejetée'}`);
             setShowReviewModal(false);
             setSelectedRequest(null);
@@ -270,7 +274,7 @@ export default function FundRequestsPage() {
                                             <td className="px-4 py-3">
                                                 <div>
                                                     <p className="font-medium text-gray-900 dark:text-white">{request.user?.full_name}</p>
-                                                    <p className="text-sm text-gray-500">{request.user?.department_user_department_idTodepartment?.department_name}</p>
+                                                    <p className="text-sm text-gray-500">{request.user?.department?.name || '-'}</p>
                                                 </div>
                                             </td>
                                         )}
@@ -281,7 +285,7 @@ export default function FundRequestsPage() {
                                             {request.reason.substring(0, 50)}{request.reason.length > 50 ? '...' : ''}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                                            {request.project || '-'}
+                                            {request.user?.department?.name || 'N/A'}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                                             {formatDate(request.created_at)}

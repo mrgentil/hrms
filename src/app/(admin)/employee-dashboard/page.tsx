@@ -174,7 +174,7 @@ export default function EmployeeDashboard() {
                 {profile.full_name}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                {profile.position?.title || 'Employe'} - {profile.department_user_department_idTodepartment?.department_name || 'Departement non assigne'}
+                {profile.position?.title || 'Employe'} - {profile.department?.name || 'Departement non assigne'}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-500">
                 Employe depuis le {profile.hire_date ? new Date(profile.hire_date).toLocaleDateString('fr-FR') : 'Date inconnue'}
@@ -240,14 +240,14 @@ export default function EmployeeDashboard() {
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Conges annuels</span>
                 <span className="text-lg font-bold text-black dark:text-white">{leaveBalance.totalDays} jours</span>
               </div>
-              
+
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                <div 
+                <div
                   className="bg-primary h-3 rounded-full transition-all duration-300"
                   style={{ width: `${(leaveBalance.usedDays / leaveBalance.totalDays) * 100}%` }}
                 ></div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="text-center">
                   <div className="font-semibold text-danger">{leaveBalance.usedDays}</div>
@@ -275,14 +275,14 @@ export default function EmployeeDashboard() {
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Email professionnel:</span>
                 <div className="text-black dark:text-white">{profile.work_email || 'Non renseigne'}</div>
               </div>
-              
+
               {profile.user_personal_info?.[0]?.mobile && (
                 <div>
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Telephone:</span>
                   <div className="text-black dark:text-white">{profile.user_personal_info[0].mobile}</div>
                 </div>
               )}
-              
+
               {profile.user_personal_info?.[0]?.email_address && (
                 <div>
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Email personnel:</span>
@@ -329,7 +329,7 @@ export default function EmployeeDashboard() {
                   )}
                 </div>
               ))}
-              
+
               <Link
                 href="/employees/documents"
                 className="block w-full text-center bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2 px-4 rounded-lg transition-colors"
@@ -360,7 +360,7 @@ export default function EmployeeDashboard() {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <h4 className="font-semibold text-black dark:text-white mb-3">Liens rapides</h4>
               <div className="space-y-2">

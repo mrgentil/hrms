@@ -28,7 +28,7 @@ export default function EmployeeSearchPage() {
     try {
       setLoading(true);
       const response = await employeesService.searchEmployees(query.trim());
-      
+
       if (response.success) {
         setSearchResults(response.data);
         setHasSearched(true);
@@ -65,7 +65,7 @@ export default function EmployeeSearchPage() {
             )}
           </div>
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -77,11 +77,10 @@ export default function EmployeeSearchPage() {
               </p>
             </div>
             <div className="flex items-center space-x-2">
-              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                employee.active 
-                  ? 'bg-success/10 text-success' 
+              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${employee.active
+                  ? 'bg-success/10 text-success'
                   : 'bg-danger/10 text-danger'
-              }`}>
+                }`}>
                 {employee.active ? 'Actif' : 'Inactif'}
               </span>
               <Link
@@ -107,12 +106,12 @@ export default function EmployeeSearchPage() {
                     </span>
                   </div>
                 )}
-                
-                {employee.department_user_department_idTodepartment && (
+
+                {employee.department && (
                   <div>
                     <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Département:</span>
                     <span className="ml-2 text-sm text-black dark:text-white">
-                      {employee.department_user_department_idTodepartment.department_name}
+                      {employee.department?.name || 'N/A'}
                     </span>
                   </div>
                 )}
@@ -124,7 +123,7 @@ export default function EmployeeSearchPage() {
                       {employee.role_relation.icon && (
                         <span className="mr-1">{employee.role_relation.icon}</span>
                       )}
-                      <span 
+                      <span
                         className="text-sm font-medium"
                         style={{ color: employee.role_relation.color || undefined }}
                       >

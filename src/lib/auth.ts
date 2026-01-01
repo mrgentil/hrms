@@ -23,7 +23,7 @@ export interface User {
   profile_photo_url?: string | null;
   department?: {
     id: number;
-    department_name: string;
+    name: string;
   };
 }
 

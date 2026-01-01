@@ -275,7 +275,7 @@ export class AttendanceService {
             full_name: true,
             work_email: true,
             department: {
-              select: { department_name: true },
+              select: { name: true },
             },
             position: {
               select: { title: true },

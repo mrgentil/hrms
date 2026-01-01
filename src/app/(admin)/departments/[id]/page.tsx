@@ -65,7 +65,7 @@ export default function DepartmentDetailsPage({
     return (
       <div>
         <PageBreadcrumb pageTitle="Departement" />
-        <ComponentCard>
+        <ComponentCard title="Chargement">
           <p className="text-sm text-gray-500 dark:text-gray-300">
             Chargement des informations...
           </p>
@@ -76,12 +76,12 @@ export default function DepartmentDetailsPage({
 
   return (
     <div>
-      <PageBreadcrumb pageTitle={`Departement - ${department.department_name}`} />
+      <PageBreadcrumb pageTitle={`Departement - ${department.name}`} />
 
       <div className="space-y-6">
         <ComponentCard title="Informations generales">
           <div className="grid grid-cols-1 gap-4">
-            <InfoRow label="Nom" value={department.department_name} />
+            <InfoRow label="Nom" value={department.name} />
             <InfoRow
               label="Manager"
               value={department.manager?.full_name ?? "Non assigne"}
@@ -90,7 +90,7 @@ export default function DepartmentDetailsPage({
               label="Departement parent"
               value={
                 department.parent_department
-                  ? department.parent_department.department_name
+                  ? department.parent_department.name
                   : "Aucun"
               }
             />

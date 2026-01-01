@@ -51,7 +51,7 @@
             "profile_photo_url": "/uploads/profiles/marie.jpg",
             "work_email": "marie.dupont@company.com",
             "position": { "title": "Développeuse Senior" },
-            "department": { "department_name": "IT" }
+            "department": { "name": "IT" }
           },
           "manager": {
             "id": 8,
@@ -59,7 +59,7 @@
             "profile_photo_url": null,
             "work_email": "pierre.martin@company.com",
             "position": { "title": "Tech Lead" },
-            "department": { "department_name": "IT" }
+            "department": { "name": "IT" }
           },
           "status": "COMPLETED",
           "self_rating": 4,
@@ -240,7 +240,7 @@
             "full_name": "Lucas Bernard",
             "profile_photo_url": null,
             "position": { "title": "Développeur" },
-            "department": { "department_name": "IT" }
+            "department": { "name": "IT" }
           },
           "manager": {
             "id": 8,
@@ -359,7 +359,7 @@
               "full_name": "Marie Dupont",
               "profile_photo_url": "/uploads/profiles/marie.jpg",
               "position": { "title": "Développeuse Senior" },
-              "department": { "department_name": "IT" }
+              "department": { "name": "IT" }
             },
             "recognition_count": 12
           },
@@ -370,7 +370,7 @@
               "full_name": "Antoine Moreau",
               "profile_photo_url": null,
               "position": { "title": "Développeur Frontend" },
-              "department": { "department_name": "IT" }
+              "department": { "name": "IT" }
             },
             "recognition_count": 8
           },
@@ -381,7 +381,7 @@
               "full_name": "Emma Garcia",
               "profile_photo_url": null,
               "position": { "title": "Chargée RH" },
-              "department": { "department_name": "Ressources Humaines" }
+              "department": { "name": "Ressources Humaines" }
             },
             "recognition_count": 7
           }

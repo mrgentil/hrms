@@ -7,16 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model company {
+model Company {
   id                Int          @id @default(autoincrement())
   name              String       @db.VarChar(255)
-  logo_url          String?      @db.VarChar(500)
-  primary_color     String?      @db.VarChar(20)
-  secondary_color   String?      @db.VarChar(20)
-  country           String?      @db.VarChar(100)
-  timezone          String       @default("UTC") @db.VarChar(100)
-  currency          String       @default("USD") @db.VarChar(3)
-  language          String       @default("fr") @db.VarChar(10)
+  email             String?      @db.VarChar(255)
+  phone             String?      @db.VarChar(255)
+  address           String?      @db.Text
+  logo_url          String?      @db.VarChar(255)
+  website           String?      @db.VarChar(255)
+  tax_id            String?      @db.VarChar(255)
+  currency          String       @default("$") @db.VarChar(10)
+  timezone          String       @default("UTC") @db.VarChar(50)
+  date_format       String       @default("YYYY-MM-DD") @db.VarChar(20)
   working_days      Json?
   daily_work_hours  Int?
   probation_period  Int?
@@ -24,8 +26,11 @@ model company {
   is_active         Boolean      @default(true)
   created_at        DateTime     @default(now()) @db.DateTime(0)
   updated_at        DateTime     @updatedAt @db.DateTime(0)
-  departments       department[]
-  positions         position[]
+  departments       Department[]
+  positions         Position[]
+  users             User[]
+
+  @@map("company")
 }
 
 model application {
@@ -93,7 +98,7 @@ model conversation_participant {
   @@index([user_id], map: "user_id")
 }
 
-model department {
+model Department {
   id                                    Int                       @id @default(autoincrement())
   manager_user_id                       Int?
   parent_department_id                  Int?
@@ -104,17 +109,19 @@ model department {
   is_active                             Boolean                   @default(true)
   name                                  String                    @default("") @db.VarChar(255)
   announcements                         announcement[]
-  user_department_manager_user_idTouser user?                     @relation("department_manager_user_idTouser", fields: [manager_user_id], references: [id])
-  department                            department?               @relation("departmentTodepartment", fields: [parent_department_id], references: [id])
-  other_department                      department[]              @relation("departmentTodepartment")
-  company                               company                   @relation(fields: [company_id], references: [id], map: "dept_company_fk")
+  user_department_manager_user_idTouser User?                     @relation("department_manager_user_idTouser", fields: [manager_user_id], references: [id])
+  department                            Department?               @relation("departmentTodepartment", fields: [parent_department_id], references: [id])
+  other_department                      Department[]              @relation("departmentTodepartment")
+  company                               Company                   @relation(fields: [company_id], references: [id], map: "dept_company_fk")
   department_announcement               department_announcement[]
   expense                               expense[]
-  positions                             position[]
+  positions                             Position[]
+  users                                 User[]                    @relation("user_department")
 
   @@index([company_id], map: "dept_company_fk")
   @@index([manager_user_id], map: "manager_user_id")
   @@index([parent_department_id], map: "parent_department_id")
+  @@map("department")
 }
 
 model department_announcement {
@@ -254,7 +261,7 @@ model menu_item {
   @@index([permission_id], map: "menu_item_permission_id")
 }
 
-model position {
+model Position {
   id            Int         @id @default(autoincrement())
   title         String      @db.VarChar(255)
   level         String?     @db.VarChar(255)
@@ -264,11 +271,13 @@ model position {
   company_id    Int         @default(1)
   department_id Int?
   is_active     Boolean     @default(true)
-  company       company     @relation(fields: [company_id], references: [id], map: "pos_company_fk")
-  department    department? @relation(fields: [department_id], references: [id], map: "pos_department_fk")
+  company       Company     @relation(fields: [company_id], references: [id], map: "pos_company_fk")
+  department    Department? @relation(fields: [department_id], references: [id], map: "pos_department_fk")
+  users         User[]
 
   @@index([company_id], map: "pos_company_fk")
   @@index([department_id], map: "pos_department_fk")
+  @@map("position")
 }
 
 model project {
@@ -602,7 +611,7 @@ model task_dependency {
   @@index([created_by], map: "task_dependency_created_by")
 }
 
-model user {
+model User {
   id                                                    Int                        @id @default(autoincrement())
   username                                              String                     @unique(map: "user_username_unique") @db.VarChar(255)
   password                                              String                     @db.VarChar(255)
@@ -637,7 +646,7 @@ model user {
   contracts                                             contract[]
   conversation                                          conversation[]
   conversation_participant                              conversation_participant[]
-  department_department_manager_user_idTouser           department[]               @relation("department_manager_user_idTouser")
+  department_department_manager_user_idTouser           Department[]               @relation("department_manager_user_idTouser")
   department_announcement                               department_announcement[]
   development_plans_created                             development_plan[]         @relation("development_plan_creator")
   development_plans                                     development_plan[]         @relation("development_plan_user")
@@ -683,10 +692,11 @@ model user {
   task_comments_authored                                task_comment[]             @relation("CommentAuthor")
   task_dependencies_created                             task_dependency[]
   task_templates_created                                task_template[]
+  task_templates_created_count                          task_template[]            @relation("task_template_creator")
   task_time_entries                                     task_time_entry[]
   trainings_created                                     training[]                 @relation("training_creator")
-  training_registrations_approved                       training_registration[]    @relation("training_approver")
-  training_registrations                                training_registration[]    @relation("training_participant")
+  training_registration_approved                        training_registration[]    @relation("training_approver")
+  training_registration                                 training_registration[]    @relation("training_participant")
   role_relation                                         role?                      @relation(fields: [role_id], references: [id], map: "user_role_fk")
   user_certifications                                   user_certification[]       @relation("user_certifications")
   user_document_user_document_uploaded_by_user_idTouser user_document[]            @relation("user_document_uploaded_by_user_idTouser")
@@ -698,12 +708,16 @@ model user {
   user_personal_event                                   user_personal_event[]
   user_personal_info                                    user_personal_info[]
   user_role                                             user_role[]
+  company                                               Company?                   @relation(fields: [company_id], references: [id], map: "user_company_id_fkey")
+  department                                            Department?                @relation("user_department", fields: [department_id], references: [id], map: "user_department_id_fkey")
+  position                                              Position?                  @relation(fields: [position_id], references: [id], map: "user_position_id_fkey")
 
   @@index([department_id], map: "department_id")
   @@index([manager_user_id], map: "manager_user_id")
   @@index([position_id], map: "position_id")
   @@index([role_id], map: "user_role_fk")
   @@index([company_id], map: "user_company_id")
+  @@map("user")
 }
 
 model user_document {

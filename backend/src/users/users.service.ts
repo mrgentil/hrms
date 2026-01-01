@@ -139,7 +139,7 @@ export class UsersService {
         department: {
           select: {
             id: true,
-            department_name: true,
+            name: true,
           },
         },
         position: {
@@ -224,7 +224,7 @@ export class UsersService {
           department: {
             select: {
               id: true,
-              department_name: true,
+              name: true,
             },
           },
           position: {
@@ -283,7 +283,7 @@ export class UsersService {
         department: {
           select: {
             id: true,
-            department_name: true,
+            name: true,
           },
         },
         position: {
@@ -319,8 +319,13 @@ export class UsersService {
             address: true,
             city: true,
             country: true,
+            spouse_name: true,
             emergency_contact_primary_name: true,
             emergency_contact_primary_phone: true,
+            emergency_contact_primary_relation: true,
+            emergency_contact_secondary_name: true,
+            emergency_contact_secondary_phone: true,
+            emergency_contact_secondary_relation: true,
           },
         },
         user_financial_info: {
@@ -464,7 +469,7 @@ export class UsersService {
         department: {
           select: {
             id: true,
-            department_name: true,
+            name: true,
           },
         },
         position: {
@@ -692,7 +697,7 @@ export class UsersService {
         department: {
           select: {
             id: true,
-            department_name: true,
+            name: true,
           },
         },
         position: {
@@ -715,19 +720,35 @@ export class UsersService {
   }
 
   async getAdminOptions(currentUserId: number) {
-    // Récupérer les départements
+    // Récupérer le company_id de l'utilisateur courant
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: currentUserId },
+      select: { company_id: true }
+    });
+
+    const companyId = currentUser?.company_id || 1;
+
+    // Récupérer les départements de l'entreprise
     const departments = await this.prisma.department.findMany({
+      where: {
+        company_id: companyId,
+        is_active: true
+      },
       select: {
         id: true,
-        department_name: true,
+        name: true,
       },
       orderBy: {
-        department_name: 'asc',
+        name: 'asc',
       },
     });
 
-    // Récupérer les postes
+    // Récupérer les postes de l'entreprise
     const positions = await this.prisma.position.findMany({
+      where: {
+        company_id: companyId,
+        is_active: true
+      },
       select: {
         id: true,
         title: true,
@@ -738,9 +759,10 @@ export class UsersService {
       },
     });
 
-    // Récupérer tous les utilisateurs actifs comme managers potentiels
+    // Récupérer tous les utilisateurs actifs comme managers potentiels (même entreprise)
     const managers = await this.prisma.user.findMany({
       where: {
+        company_id: companyId,
         active: true,
       },
       select: {
@@ -753,15 +775,11 @@ export class UsersService {
       },
     });
 
-    // Récupérer les rôles personnalisés depuis la table role
+    // Récupérer les rôles personnalisés
     const customRoles = await this.prisma.role.findMany({
       select: {
         id: true,
         name: true,
-        description: true,
-        color: true,
-        icon: true,
-        is_system: true,
       },
       orderBy: {
         name: 'asc',
@@ -846,11 +864,11 @@ export class UsersService {
     const departmentIds = departmentStats.map(stat => stat.department_id).filter((id): id is number => id !== null);
     const departments = await this.prisma.department.findMany({
       where: { id: { in: departmentIds } },
-      select: { id: true, department_name: true },
+      select: { id: true, name: true },
     });
 
     const departmentMap = departments.reduce((acc, dept) => {
-      acc[dept.id] = dept.department_name;
+      acc[dept.id] = dept.name;
       return acc;
     }, {} as Record<number, string>);
 
@@ -883,7 +901,7 @@ export class UsersService {
         hire_date: true,
         created_at: true,
         department: {
-          select: { department_name: true },
+          select: { name: true },
         },
         position: {
           select: { title: true },
@@ -900,7 +918,7 @@ export class UsersService {
         user.role,
         user.work_email || '',
         user.active ? 'Actif' : 'Inactif',
-        user.department?.department_name || '',
+        user.department?.name || '',
         user.position?.title || '',
         user.hire_date ? user.hire_date.toISOString().split('T')[0] : '',
       ]);

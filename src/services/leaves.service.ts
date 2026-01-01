@@ -60,7 +60,7 @@ export interface LeaveRequest {
     full_name: string;
     work_email?: string | null;
     department_id?: number | null;
-    position_id?: number | null;
+    department?: { name: string } | null;
   } | null;
 }
 

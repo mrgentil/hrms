@@ -39,7 +39,7 @@ export default function AllLeavesPage() {
   const departments = useMemo(() => {
     const depts = new Set<string>();
     leaves.forEach((leave) => {
-      const dept = (leave.user as any)?.department_user_department_idTodepartment?.department_name;
+      const dept = leave.user?.department?.name;
       if (dept) depts.add(dept);
     });
     return Array.from(depts).sort();
@@ -97,7 +97,7 @@ export default function AllLeavesPage() {
 
       // Filtre par département
       if (departmentFilter !== "all") {
-        const dept = (leave.user as any)?.department_user_department_idTodepartment?.department_name;
+        const dept = leave.user?.department?.name;
         if (dept !== departmentFilter) {
           return false;
         }
@@ -175,7 +175,7 @@ export default function AllLeavesPage() {
 
   const getLeaveStatus = (leave: LeaveRequest) => {
     if (leave.status !== "Approved") return null;
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const start = new Date(leave.start_date);
@@ -191,7 +191,7 @@ export default function AllLeavesPage() {
         </span>
       );
     }
-    
+
     if (start > today) {
       const daysUntil = Math.ceil((start.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       return (
@@ -210,7 +210,7 @@ export default function AllLeavesPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div 
+        <div
           className={`bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer transition-all ${periodFilter === 'current' ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'}`}
           onClick={() => setPeriodFilter(periodFilter === 'current' ? 'all' : 'current')}
         >
@@ -224,7 +224,7 @@ export default function AllLeavesPage() {
             </div>
           </div>
         </div>
-        <div 
+        <div
           className={`bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer transition-all ${periodFilter === 'upcoming' ? 'ring-2 ring-purple-500' : 'hover:border-purple-300'}`}
           onClick={() => setPeriodFilter(periodFilter === 'upcoming' ? 'all' : 'upcoming')}
         >
@@ -238,7 +238,7 @@ export default function AllLeavesPage() {
             </div>
           </div>
         </div>
-        <div 
+        <div
           className={`bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer transition-all ${statusFilter === 'Pending' ? 'ring-2 ring-yellow-500' : 'hover:border-yellow-300'}`}
           onClick={() => setStatusFilter(statusFilter === 'Pending' ? 'all' : 'Pending')}
         >
@@ -252,7 +252,7 @@ export default function AllLeavesPage() {
             </div>
           </div>
         </div>
-        <div 
+        <div
           className={`bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer transition-all ${statusFilter === 'all' && periodFilter === 'all' ? 'ring-2 ring-gray-500' : 'hover:border-gray-300'}`}
           onClick={() => { setStatusFilter('all'); setPeriodFilter('all'); }}
         >
@@ -390,7 +390,7 @@ export default function AllLeavesPage() {
                             {leave.user?.full_name || "N/A"}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {(leave.user as any)?.department_user_department_idTodepartment?.department_name || ""}
+                            {leave.user?.department?.name || ""}
                           </p>
                         </div>
                       </div>
@@ -420,7 +420,7 @@ export default function AllLeavesPage() {
         {!loading && filteredLeaves.length > 0 && (
           <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700 text-sm text-gray-500">
             Affichage de {filteredLeaves.length} congé{filteredLeaves.length > 1 ? "s" : ""}
-            {(statusFilter !== "all" || periodFilter !== "all" || departmentFilter !== "all" || searchTerm) && 
+            {(statusFilter !== "all" || periodFilter !== "all" || departmentFilter !== "all" || searchTerm) &&
               ` (filtré sur ${leaves.length} total)`
             }
           </div>

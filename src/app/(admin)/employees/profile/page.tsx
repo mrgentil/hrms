@@ -422,7 +422,7 @@ export default function EmployeeProfile() {
                 <div>
                   <span className="font-medium text-gray-600 dark:text-gray-400">Departement:</span>
                   <span className="ml-2 text-black dark:text-white">
-                    {employee.department_user_department_idTodepartment?.department_name ||
+                    {employee.department?.name ||
                       'Non assigne'}
                   </span>
                 </div>
@@ -443,9 +443,8 @@ export default function EmployeeProfile() {
                 <div>
                   <span className="font-medium text-gray-600 dark:text-gray-400">Statut:</span>
                   <span
-                    className={`ml-2 inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                      employee.active ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
-                    }`}
+                    className={`ml-2 inline-flex rounded-full px-3 py-1 text-xs font-medium ${employee.active ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
+                      }`}
                   >
                     {employee.active ? 'Actif' : 'Inactif'}
                   </span>
@@ -548,7 +547,7 @@ export default function EmployeeProfile() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ComponentCard title="Contacts d&apos;urgence">
             {personalInfo?.emergency_contact_primary_name ||
-            personalInfo?.emergency_contact_secondary_name ? (
+              personalInfo?.emergency_contact_secondary_name ? (
               <dl className="space-y-4 text-sm">
                 <div>
                   <dt className="font-medium text-gray-600 dark:text-gray-400">

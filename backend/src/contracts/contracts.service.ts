@@ -33,7 +33,7 @@ export class ContractsService {
             full_name: true,
             work_email: true,
             position: { select: { title: true } },
-            department: { select: { department_name: true } },
+            department: { select: { name: true } },
           },
         },
       },
@@ -89,7 +89,7 @@ export class ContractsService {
             work_email: true,
             profile_photo_url: true,
             position: { select: { title: true } },
-            department: { select: { department_name: true } },
+            department: { select: { name: true } },
           },
         },
         creator: {
@@ -114,7 +114,7 @@ export class ContractsService {
             profile_photo_url: true,
             hire_date: true,
             position: { select: { id: true, title: true } },
-            department: { select: { id: true, department_name: true } },
+            department: { select: { id: true, name: true } },
           },
         },
         creator: {

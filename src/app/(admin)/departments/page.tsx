@@ -201,7 +201,7 @@ export default function DepartmentsPage() {
                       <td className="border-b border-[#eee] px-4 py-4 pl-9 dark:border-strokedark xl:pl-11">
                         <div>
                           <h5 className="font-semibold text-black dark:text-white">
-                            {department.department_name}
+                            {department.name}
                           </h5>
                           {department.description && (
                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -254,7 +254,7 @@ export default function DepartmentsPage() {
                               onClick={() =>
                                 handleDelete(
                                   department.id,
-                                  department.department_name,
+                                  department.name,
                                 )
                               }
                               className="text-xs font-medium text-danger hover:underline disabled:cursor-not-allowed disabled:opacity-50"

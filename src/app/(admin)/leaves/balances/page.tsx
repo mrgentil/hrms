@@ -18,7 +18,7 @@ interface LeaveBalance {
     id: number;
     full_name: string;
     work_email?: string;
-    department_user_department_idTodepartment?: { department_name: string };
+    department?: { name: string };
   };
   leave_type?: {
     id: number;
@@ -186,7 +186,7 @@ export default function LeaveBalancesPage() {
                       {user?.full_name || "N/A"}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {user?.department_user_department_idTodepartment?.department_name || ""}
+                      {user?.department?.name || ""}
                     </p>
                   </div>
                 </div>

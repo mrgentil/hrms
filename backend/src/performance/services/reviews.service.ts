@@ -29,7 +29,7 @@ export class ReviewsService {
     profile_photo_url: true,
     work_email: true,
     position: { select: { title: true } },
-    department: { select: { department_name: true } },
+    department: { select: { name: true } },
   };
 
   async create(dto: CreateReviewDto) {

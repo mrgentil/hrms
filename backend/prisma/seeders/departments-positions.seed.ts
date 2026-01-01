@@ -38,7 +38,7 @@ async function main() {
     for (const dept of departments) {
         // Manually check for existence as there is no unique constraint on name
         const existing = await prisma.department.findFirst({
-            where: { department_name: dept.name }
+            where: { name: dept.name }
         });
 
         let department;
@@ -46,31 +46,21 @@ async function main() {
             department = await prisma.department.update({
                 where: { id: existing.id },
                 data: {
-                    // No description field in actual schema based on my last read? 
-                    // Let's re-verify schema lines 75-93. NO DESCRIPTION FIELD!
-                    // Wait, lines 75-93 of schema.prisma:
-                    // department_name String
-                    // manager_user_id Int?
-                    // parent_department_id Int?
-                    // organization_id Int?
-                    // created_at
-                    // updated_at
-                    // NO DESCRIPTION.
-                    department_name: dept.name,
+                    name: dept.name,
                     updated_at: new Date(),
                 }
             });
         } else {
             department = await prisma.department.create({
                 data: {
-                    department_name: dept.name,
+                    name: dept.name,
                     created_at: new Date(),
                     updated_at: new Date(),
                 }
             });
         }
         createdDepartments.push(department);
-        console.log(`  ✓ ${department.department_name}`);
+        console.log(`  ✓ ${department.name}`);
     }
 
     // ============================================

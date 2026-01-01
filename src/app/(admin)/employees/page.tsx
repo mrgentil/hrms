@@ -83,11 +83,10 @@ export default function EmployeesPage() {
   const getStatusBadge = (active: boolean) => {
     return (
       <span
-        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          active
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${active
             ? 'bg-green-100 text-green-800'
             : 'bg-red-100 text-red-800'
-        }`}
+          }`}
       >
         {active ? 'Actif' : 'Inactif'}
       </span>
@@ -97,7 +96,7 @@ export default function EmployeesPage() {
   const getRoleBadge = (role: string, roleRelation?: any) => {
     const color = roleRelation?.color || '#6B7280';
     const icon = roleRelation?.icon || '👤';
-    
+
     return (
       <span
         className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
@@ -171,7 +170,7 @@ export default function EmployeesPage() {
               <option value="">Tous les départements</option>
               {departments.map((dept) => (
                 <option key={dept.id} value={dept.id}>
-                  {dept.department_name}
+                  {dept.name}
                 </option>
               ))}
             </select>
@@ -250,7 +249,7 @@ export default function EmployeesPage() {
                     {getRoleBadge(employee.role, employee.role_relation)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {employee.department_user_department_idTodepartment?.department_name || '-'}
+                    {employee.department?.name || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {employee.position?.title || '-'}
@@ -343,11 +342,10 @@ export default function EmployeesPage() {
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          currentPage === pageNum
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
                             ? 'z-10 bg-primary border-primary text-white'
                             : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
-                        }`}
+                          }`}
                       >
                         {pageNum}
                       </button>

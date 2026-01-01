@@ -83,7 +83,7 @@ export default function EditPositionPage() {
   };
 
   return (
-    <ProtectedRoute requiredPermission="positions.edit">
+    <ProtectedRoute permission="positions.edit">
       <div>
         <PageBreadcrumb pageTitle="Modifier un poste" />
 
@@ -150,7 +150,7 @@ export default function EditPositionPage() {
                   <option value="">Aucun</option>
                   {departments.map((department) => (
                     <option key={department.id} value={department.id}>
-                      {department.department_name}
+                      {department.name}
                     </option>
                   ))}
                 </select>

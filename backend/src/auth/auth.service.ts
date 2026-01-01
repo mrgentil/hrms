@@ -231,7 +231,7 @@ export class AuthService {
         department: {
           select: {
             id: true,
-            department_name: true,
+            name: true,
           },
         },
         position: {

@@ -37,7 +37,7 @@ export class AnnouncementsService {
           select: { id: true, full_name: true, profile_photo_url: true },
         },
         department: {
-          select: { id: true, department_name: true },
+          select: { id: true, name: true },
         },
       },
     });
@@ -109,7 +109,7 @@ export class AnnouncementsService {
           select: { id: true, full_name: true, profile_photo_url: true },
         },
         department: {
-          select: { id: true, department_name: true },
+          select: { id: true, name: true },
         },
         _count: {
           select: { reads: true },
@@ -150,7 +150,7 @@ export class AnnouncementsService {
           select: { id: true, full_name: true, profile_photo_url: true },
         },
         department: {
-          select: { id: true, department_name: true },
+          select: { id: true, name: true },
         },
         reads: {
           where: { user_id: userId },
@@ -175,7 +175,7 @@ export class AnnouncementsService {
           select: { id: true, full_name: true, profile_photo_url: true },
         },
         department: {
-          select: { id: true, department_name: true },
+          select: { id: true, name: true },
         },
         _count: {
           select: { reads: true },
@@ -216,7 +216,7 @@ export class AnnouncementsService {
           select: { id: true, full_name: true },
         },
         department: {
-          select: { id: true, department_name: true },
+          select: { id: true, name: true },
         },
       },
     });
@@ -230,7 +230,7 @@ export class AnnouncementsService {
           select: { id: true, full_name: true },
         },
         department: {
-          select: { id: true, department_name: true },
+          select: { id: true, name: true },
         },
       },
     });
@@ -291,8 +291,8 @@ export class AnnouncementsService {
     if (emailRecipients.length > 0) {
       const audienceLabel = shouldNotifyAll
         ? 'toute l\'entreprise'
-        : existing.department?.department_name
-          ? `le département ${existing.department.department_name}`
+        : existing.department?.name
+          ? `le département ${existing.department.name}`
           : 'votre département';
 
       const subject = `Nouvelle annonce publiée - ${existing.title}`;
@@ -400,7 +400,7 @@ export class AnnouncementsService {
     const deptIds = users.map((u) => u.department_id).filter(Boolean) as number[];
     const departments = await this.prisma.department.findMany({
       where: { id: { in: deptIds } },
-      select: { id: true, department_name: true },
+      select: { id: true, name: true },
     });
     const deptMap = new Map(departments.map((d) => [d.id, d]));
 

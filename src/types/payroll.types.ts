@@ -123,8 +123,8 @@ export interface SalaryAdvance {
         id: number;
         full_name: string;
         work_email?: string;
-        department_user_department_idTodepartment?: {
-            department_name: string;
+        department?: {
+            name: string;
         };
     };
     reviewer?: {
@@ -193,8 +193,8 @@ export interface FundRequest {
         id: number;
         full_name: string;
         work_email?: string;
-        department_user_department_idTodepartment?: {
-            department_name: string;
+        department?: {
+            name: string;
         };
     };
     reviewer?: {

@@ -10,6 +10,7 @@ export const PERMISSIONS = {
     USERS_CREATE: 'users.create',
     USERS_EDIT: 'users.edit',
     USERS_DELETE: 'users.delete',
+    USERS_VIEW_SALARY: 'users.edit_salary', // Matching the backend permission name mentioned in previous turn
 
     // Départements
     DEPARTMENTS_VIEW: 'departments.view',

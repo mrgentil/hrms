@@ -25,7 +25,7 @@ export interface User {
   department_id?: number;
   department?: {
     id: number;
-    department_name: string;
+    name: string;
   };
   active: boolean;
   hire_date: string;
@@ -67,14 +67,14 @@ export interface DepartmentManager {
 
 export interface Department {
   id: number;
-  department_name: string;
+  name: string;
   description?: string | null;
   manager_user_id?: number | null;
   manager?: DepartmentManager | null;
   parent_department_id?: number | null;
   parent_department?: {
     id: number;
-    department_name: string;
+    name: string;
   } | null;
   positions_count?: number;
   employees_count?: number;
@@ -83,7 +83,7 @@ export interface Department {
 }
 
 export interface CreateDepartmentDto {
-  department_name: string;
+  name: string;
   description?: string;
   manager_user_id?: number;
   parent_department_id?: number;
@@ -184,7 +184,7 @@ export interface PaginatedResponse<T> {
 export interface AdminOptions {
   departments: Array<{
     id: number;
-    department_name: string;
+    name: string;
   }>;
   positions: Array<{
     id: number;

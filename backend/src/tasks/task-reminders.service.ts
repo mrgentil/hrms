@@ -59,7 +59,6 @@ export class TaskRemindersService {
       // Envoyer des notifications pour chaque tâche due aujourd'hui
       for (const task of tasksDueToday) {
         await this.sendReminder(task, 'today');
-        await this.sleep(600); // Respect Resend rate limit (2 req/s)
       }
 
       // 2. Tâches dont l'échéance est DEMAIN
@@ -90,7 +89,6 @@ export class TaskRemindersService {
 
       for (const task of tasksDueTomorrow) {
         await this.sendReminder(task, 'tomorrow');
-        await this.sleep(600); // Respect Resend rate limit (2 req/s)
       }
 
       // 3. Tâches EN RETARD
@@ -117,7 +115,6 @@ export class TaskRemindersService {
 
       for (const task of overdueTasks) {
         await this.sendReminder(task, 'overdue');
-        await this.sleep(600); // Respect Resend rate limit (2 req/s)
       }
 
       this.logger.log(`Rappels envoyés: ${tasksDueToday.length} aujourd'hui, ${tasksDueTomorrow.length} demain, ${overdueTasks.length} en retard`);
@@ -153,10 +150,10 @@ export class TaskRemindersService {
     }
 
     const message = `La tâche "${task.title}" ${type === 'overdue'
-        ? 'est en retard'
-        : type === 'today'
-          ? 'doit être terminée aujourd\'hui'
-          : 'doit être terminée demain'
+      ? 'est en retard'
+      : type === 'today'
+        ? 'doit être terminée aujourd\'hui'
+        : 'doit être terminée demain'
       } dans le projet "${task.project?.name || 'Projet'}"`;
 
     // Envoyer notification à chaque assigné
@@ -222,6 +219,9 @@ export class TaskRemindersService {
               </div>
             `,
           });
+
+          // CRITICAL: Sleep AFTER each email send to respect Resend rate limit (2 req/s)
+          await this.sleep(750);
         } catch (error) {
           this.logger.error(`Erreur envoi email à ${user.work_email}:`, error);
         }

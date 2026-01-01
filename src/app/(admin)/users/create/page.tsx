@@ -87,6 +87,7 @@ export default function CreateUser() {
     const payload: CreateUserDto = {
       username: formState.username.trim(),
       full_name: formState.full_name.trim(),
+      work_email: formState.work_email.trim(),
       role: formState.role,
       active: formState.active === "true",
       send_invitation: formState.send_invitation,
@@ -342,7 +343,7 @@ export default function CreateUser() {
                   <option value="">Aucun</option>
                   {adminOptions?.departments?.map((department) => (
                     <option key={department.id} value={department.id}>
-                      {department.department_name}
+                      {department.name}
                     </option>
                   ))}
                 </select>
