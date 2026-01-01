@@ -16,6 +16,25 @@ export class TaskRemindersService {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  private async sendEmailWithRetry(mailService: any, emailPayload: any, maxRetries = 3): Promise<boolean> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await mailService.sendMail(emailPayload);
+        return true;
+      } catch (error: any) {
+        if (error.message?.includes('rate_limit_exceeded') && attempt < maxRetries) {
+          // Exponential backoff: 2s, 4s, 8s
+          const backoffDelay = Math.pow(2, attempt) * 1000;
+          this.logger.warn(`Rate limit hit, retrying in ${backoffDelay}ms (attempt ${attempt}/${maxRetries})`);
+          await this.sleep(backoffDelay);
+        } else {
+          throw error;
+        }
+      }
+    }
+    return false;
+  }
+
   /**
    * Cron job qui s'exécute tous les jours à 8h du matin
    * Envoie des rappels pour les tâches dont l'échéance est proche
@@ -183,7 +202,7 @@ export class TaskRemindersService {
       // Envoyer email
       if (user.work_email) {
         try {
-          await this.mailService.sendMail({
+          const emailPayload = {
             to: user.work_email,
             subject: `${emoji} ${title} - ${task.title}`,
             html: `
@@ -218,10 +237,14 @@ export class TaskRemindersService {
                 </div>
               </div>
             `,
-          });
+          };
 
-          // CRITICAL: Sleep AFTER each email send to respect Resend rate limit (2 req/s)
-          await this.sleep(750);
+          const success = await this.sendEmailWithRetry(this.mailService, emailPayload);
+          if (success) {
+            // CRITICAL: Sleep AFTER each successful email send to respect Resend rate limit (2 req/s)
+            // Using 600ms delay = ~1.67 req/s to stay safely under the 2 req/s limit
+            await this.sleep(600);
+          }
         } catch (error) {
           this.logger.error(`Erreur envoi email à ${user.work_email}:`, error);
         }
