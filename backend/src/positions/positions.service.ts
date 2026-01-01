@@ -8,22 +8,35 @@ import { QueryPositionDto } from './dto/query-position.dto';
 export class PositionsService {
   constructor(private prisma: PrismaService) { }
 
-  async create(createPositionDto: CreatePositionDto) {
+  async create(companyId: number, createPositionDto: CreatePositionDto) {
+    // Check if department belongs to company
+    if (createPositionDto.department_id) {
+      const department = await this.prisma.department.findUnique({
+        where: { id: createPositionDto.department_id },
+      });
+      if (!department || department.company_id !== companyId) {
+        throw new BadRequestException('Département introuvable ou n\'appartient pas à votre entreprise');
+      }
+    }
+
     const existing = await this.prisma.position.findFirst({
       where: {
+        company_id: companyId,
         title: createPositionDto.title,
       },
     });
 
     if (existing) {
-      throw new ConflictException('Un poste avec ce titre existe déjà');
+      throw new ConflictException('Un poste avec ce titre existe déjà dans cette entreprise');
     }
 
     const position = await this.prisma.position.create({
       data: {
+        company_id: companyId,
         title: createPositionDto.title,
         level: createPositionDto.level,
         description: createPositionDto.description,
+        department_id: createPositionDto.department_id,
         created_at: new Date(),
         updated_at: new Date(),
       },
@@ -32,11 +45,14 @@ export class PositionsService {
     return position;
   }
 
-  async findAll(query: QueryPositionDto) {
+  async findAll(companyId: number, query: QueryPositionDto) {
     const { page = 1, limit = 10, search } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = {
+      company_id: companyId,
+      is_active: true,
+    };
 
     if (search) {
       where.OR = [
@@ -53,6 +69,9 @@ export class PositionsService {
         take: limit,
         orderBy: { created_at: 'desc' },
         include: {
+          department: {
+            select: { id: true, name: true }
+          },
           _count: {
             select: {
               user: true,
@@ -77,10 +96,13 @@ export class PositionsService {
     };
   }
 
-  async findOne(id: number) {
-    const position = await this.prisma.position.findUnique({
-      where: { id },
+  async findOne(companyId: number, id: number) {
+    const position = await this.prisma.position.findFirst({
+      where: { id, company_id: companyId, is_active: true },
       include: {
+        department: {
+          select: { id: true, name: true }
+        },
         _count: {
           select: {
             user: true,
@@ -101,13 +123,22 @@ export class PositionsService {
     };
   }
 
-  async update(id: number, updatePositionDto: UpdatePositionDto) {
-    const existing = await this.prisma.position.findUnique({
-      where: { id },
+  async update(companyId: number, id: number, updatePositionDto: UpdatePositionDto) {
+    const existing = await this.prisma.position.findFirst({
+      where: { id, company_id: companyId },
     });
 
     if (!existing) {
       throw new NotFoundException('Poste non trouvé');
+    }
+
+    if (updatePositionDto.department_id) {
+      const department = await this.prisma.department.findUnique({
+        where: { id: updatePositionDto.department_id },
+      });
+      if (!department || department.company_id !== companyId) {
+        throw new BadRequestException('Département introuvable ou n\'appartient pas à votre entreprise');
+      }
     }
 
     if (
@@ -116,6 +147,7 @@ export class PositionsService {
     ) {
       const duplicate = await this.prisma.position.findFirst({
         where: {
+          company_id: companyId,
           id: { not: id },
           title: updatePositionDto.title,
         },
@@ -129,16 +161,10 @@ export class PositionsService {
     const updated = await this.prisma.position.update({
       where: { id },
       data: {
-        // We handle department_id removal by ignoring it even if present in DTO in runtime (but Typescript might complain if we don't pick properties, however strict DTOs usually handle validation)
-        // Safer to spread specific properties or assume DTO is clean. 
-        // Let's assume DTO might still have it but we only pass relevant ones if mapped manually, or rely on DTO cleaning.
-        // Here I'll just map manually or spread but 'department_id' should be removed from DTO type ideally too.
-        // For now, let's just use ...updatePositionDto but usually prisma warns about unknown fields.
-        // Wait, if DTO still has department_id, passing it to prisma update will throw.
-        // I should strip it.    
         title: updatePositionDto.title,
         level: updatePositionDto.level,
         description: updatePositionDto.description,
+        department_id: updatePositionDto.department_id,
         updated_at: new Date(),
       },
     });
@@ -146,9 +172,9 @@ export class PositionsService {
     return updated;
   }
 
-  async remove(id: number) {
-    const position = await this.prisma.position.findUnique({
-      where: { id },
+  async remove(companyId: number, id: number) {
+    const position = await this.prisma.position.findFirst({
+      where: { id, company_id: companyId },
       include: {
         _count: {
           select: {
@@ -166,8 +192,12 @@ export class PositionsService {
       throw new ConflictException('Impossible de supprimer un poste assigné à des utilisateurs');
     }
 
-    await this.prisma.position.delete({ where: { id } });
+    // Soft delete
+    await this.prisma.position.update({
+      where: { id },
+      data: { is_active: false }
+    });
 
-    return { message: 'Poste supprimé avec succès' };
+    return { message: 'Poste supprimé (archivé) avec succès' };
   }
 }

@@ -8,22 +8,24 @@ datasource db {
 }
 
 model company {
-  id         Int      @id @default(autoincrement())
-  name       String   @db.VarChar(255)
-  logo_url          String?  @db.VarChar(500)
-  primary_color     String?  @db.VarChar(20)
-  secondary_color   String?  @db.VarChar(20)
-  country           String?  @db.VarChar(100)
-  timezone          String   @default("UTC") @db.VarChar(100)
-  currency          String   @default("USD") @db.VarChar(3)
-  language          String   @default("fr") @db.VarChar(10)
+  id                Int          @id @default(autoincrement())
+  name              String       @db.VarChar(255)
+  logo_url          String?      @db.VarChar(500)
+  primary_color     String?      @db.VarChar(20)
+  secondary_color   String?      @db.VarChar(20)
+  country           String?      @db.VarChar(100)
+  timezone          String       @default("UTC") @db.VarChar(100)
+  currency          String       @default("USD") @db.VarChar(3)
+  language          String       @default("fr") @db.VarChar(10)
   working_days      Json?
   daily_work_hours  Int?
   probation_period  Int?
   fiscal_year_start Int?
-  is_active         Boolean  @default(true)
-  created_at        DateTime @default(now()) @db.DateTime(0)
-  updated_at        DateTime @updatedAt @db.DateTime(0)
+  is_active         Boolean      @default(true)
+  created_at        DateTime     @default(now()) @db.DateTime(0)
+  updated_at        DateTime     @updatedAt @db.DateTime(0)
+  departments       department[]
+  positions         position[]
   users             user[]
 }
 
@@ -94,22 +96,27 @@ model conversation_participant {
 
 model department {
   id                                    Int                       @id @default(autoincrement())
-  department_name                       String                    @db.VarChar(255)
+  name                                  String                    @default("") @db.VarChar(255)
   manager_user_id                       Int?
   parent_department_id                  Int?
-  organization_id                       Int?
-  created_at                            DateTime                  @db.DateTime(0)
-  updated_at                            DateTime                  @db.DateTime(0)
+  created_at                            DateTime                  @default(now()) @db.DateTime(0)
+  updated_at                            DateTime                  @updatedAt @db.DateTime(0)
+  company_id                            Int?                      @default(1)
+  description                           String?                   @db.Text
+  is_active                             Boolean                   @default(true)
   announcements                         announcement[]
-  user_department_manager_user_idTouser user?                     @relation("department_manager_user_idTouser", fields: [manager_user_id], references: [id], map: "department_ibfk_321")
-  department                            department?               @relation("departmentTodepartment", fields: [parent_department_id], references: [id], map: "department_ibfk_322")
+  company                               company?                  @relation(fields: [company_id], references: [id])
+  user_department_manager_user_idTouser user?                     @relation("department_manager_user_idTouser", fields: [manager_user_id], references: [id])
+  department                            department?               @relation("departmentTodepartment", fields: [parent_department_id], references: [id])
   other_department                      department[]              @relation("departmentTodepartment")
   department_announcement               department_announcement[]
   expense                               expense[]
+  positions                             position[]
   user_user_department_idTodepartment   user[]                    @relation("user_department_idTodepartment")
 
-  @@index([manager_user_id], map: "manager_user_id")
-  @@index([parent_department_id], map: "parent_department_id")
+  @@index([company_id], map: "department_company_id_fkey")
+  @@index([manager_user_id], map: "department_manager_user_id_fkey")
+  @@index([parent_department_id], map: "department_parent_department_id_fkey")
 }
 
 model department_announcement {
@@ -218,14 +225,14 @@ model permission {
   id              Int               @id @default(autoincrement())
   name            String            @unique(map: "name") @db.VarChar(255)
   description     String?           @db.Text
-  group_name      String?           @db.VarChar(100)
-  group_icon      String?           @db.VarChar(10)
-  label           String?           @db.VarChar(255)
-  sort_order      Int               @default(0)
   created_at      DateTime          @db.DateTime(0)
   updated_at      DateTime          @db.DateTime(0)
-  role_permission role_permission[]
+  group_icon      String?           @db.VarChar(10)
+  group_name      String?           @db.VarChar(100)
+  label           String?           @db.VarChar(255)
+  sort_order      Int               @default(0)
   menu_items      menu_item[]
+  role_permission role_permission[]
 }
 
 model menu_item {
@@ -241,22 +248,30 @@ model menu_item {
   description   String?     @db.VarChar(255)
   created_at    DateTime    @db.DateTime(0)
   updated_at    DateTime    @db.DateTime(0)
-  parent        menu_item?  @relation("menu_hierarchy", fields: [parent_id], references: [id], onDelete: SetNull)
+  parent        menu_item?  @relation("menu_hierarchy", fields: [parent_id], references: [id])
   children      menu_item[] @relation("menu_hierarchy")
-  permission    permission? @relation(fields: [permission_id], references: [id], onDelete: SetNull)
+  permission    permission? @relation(fields: [permission_id], references: [id])
 
   @@index([parent_id], map: "menu_item_parent_id")
   @@index([permission_id], map: "menu_item_permission_id")
 }
 
 model position {
-  id          Int      @id @default(autoincrement())
-  title       String   @db.VarChar(255)
-  level       String?  @db.VarChar(255)
-  description String?  @db.Text
-  created_at  DateTime @db.DateTime(0)
-  updated_at  DateTime @db.DateTime(0)
-  user        user[]
+  id            Int         @id @default(autoincrement())
+  title         String      @db.VarChar(255)
+  level         String?     @db.VarChar(255)
+  description   String?     @db.Text
+  created_at    DateTime    @default(now()) @db.DateTime(0)
+  updated_at    DateTime    @updatedAt @db.DateTime(0)
+  company_id    Int?        @default(1)
+  department_id Int?
+  is_active     Boolean     @default(true)
+  company       company?    @relation(fields: [company_id], references: [id])
+  department    department? @relation(fields: [department_id], references: [id])
+  user          user[]
+
+  @@index([company_id], map: "position_company_id_fkey")
+  @@index([department_id], map: "position_department_id_fkey")
 }
 
 model project {
@@ -411,24 +426,24 @@ model task_column {
 model task_comment {
   id                Int                    @id @default(autoincrement())
   content           String                 @db.Text
-  content_html      String?                @db.Text
   task_id           Int
   user_id           Int
   parent_comment_id Int?
-  is_pinned         Boolean                @default(false)
-  is_resolved       Boolean                @default(false)
-  resolved_by       Int?
-  resolved_at       DateTime?              @db.DateTime(0)
   created_at        DateTime               @db.DateTime(0)
   updated_at        DateTime               @db.DateTime(0)
+  content_html      String?                @db.Text
+  is_pinned         Boolean                @default(false)
+  is_resolved       Boolean                @default(false)
+  resolved_at       DateTime?              @db.DateTime(0)
+  resolved_by       Int?
+  edit_history      comment_edit_history[]
+  reactions         comment_reaction[]
   attachments       task_attachment[]      @relation("CommentAttachments")
   parent_comment    task_comment?          @relation("CommentReplies", fields: [parent_comment_id], references: [id], onDelete: Cascade)
   replies           task_comment[]         @relation("CommentReplies")
+  resolver          user?                  @relation("CommentResolver", fields: [resolved_by], references: [id])
   task              task                   @relation(fields: [task_id], references: [id], onDelete: Cascade)
   user              user                   @relation("CommentAuthor", fields: [user_id], references: [id], onDelete: Cascade)
-  resolver          user?                  @relation("CommentResolver", fields: [resolved_by], references: [id])
-  reactions         comment_reaction[]
-  edit_history      comment_edit_history[]
 
   @@index([task_id], map: "task_comment_task_id")
   @@index([user_id], map: "task_comment_user_id")
@@ -472,12 +487,12 @@ model task_attachment {
   file_path      String        @db.VarChar(500)
   file_size      Int?
   file_type      String?       @db.VarChar(100)
-  thumbnail_path String?       @db.VarChar(500)
-  preview_url    String?       @db.VarChar(500)
   task_id        Int
   uploaded_by    Int
   comment_id     Int?
   created_at     DateTime      @db.DateTime(0)
+  preview_url    String?       @db.VarChar(500)
+  thumbnail_path String?       @db.VarChar(500)
   comment        task_comment? @relation("CommentAttachments", fields: [comment_id], references: [id], onDelete: Cascade)
   task           task          @relation(fields: [task_id], references: [id], onDelete: Cascade)
   user           user          @relation(fields: [uploaded_by], references: [id], onDelete: Cascade)
@@ -599,7 +614,6 @@ model user {
   role_id                                               Int?
   active                                                Boolean                    @default(true)
   department_id                                         Int?
-  company_id                                            Int?
   work_email                                            String?                    @db.VarChar(255)
   hire_date                                             DateTime?                  @db.DateTime(0)
   termination_date                                      DateTime?                  @db.DateTime(0)
@@ -608,49 +622,81 @@ model user {
   position_id                                           Int?
   created_at                                            DateTime                   @db.DateTime(0)
   updated_at                                            DateTime                   @db.DateTime(0)
-  password_setup_token                                  String?                    @db.VarChar(255)
   password_setup_expires                                DateTime?                  @db.DateTime(0)
-  company                                               company?                   @relation(fields: [company_id], references: [id])
+  password_setup_token                                  String?                    @db.VarChar(255)
+  company_id                                            Int?
   announcements                                         announcement[]
   announcement_reads                                    announcement_read[]
   app_settings_updated                                  app_settings[]
   application                                           application[]
   attendance                                            attendance[]
   audit_logs                                            audit_log[]
+  bonuses_approved                                      bonus[]                    @relation("bonus_approver")
+  bonuses_created                                       bonus[]                    @relation("bonus_creator")
+  bonuses                                               bonus[]
+  comment_edits                                         comment_edit_history[]     @relation("UserCommentEdits")
+  comment_reactions                                     comment_reaction[]         @relation("UserCommentReactions")
   contracts_created                                     contract[]                 @relation("contract_creator")
   contracts                                             contract[]
   conversation                                          conversation[]
   conversation_participant                              conversation_participant[]
   department_department_manager_user_idTouser           department[]               @relation("department_manager_user_idTouser")
   department_announcement                               department_announcement[]
+  development_plans_created                             development_plan[]         @relation("development_plan_creator")
+  development_plans                                     development_plan[]         @relation("development_plan_user")
+  elearning_progress                                    elearning_progress[]       @relation("elearning_user")
+  employee_benefits                                     employee_benefit[]
   employment_contract                                   employment_contract[]
   expense                                               expense[]
   expense_report_approver                               expense_report[]           @relation("expense_report_approver")
   expense_report_user                                   expense_report[]           @relation("expense_report_user")
+  perf_feedback_requested                               feedback_360_request[]     @relation("feedback_requester")
+  perf_feedback_as_reviewer                             feedback_360_request[]     @relation("feedback_reviewer")
+  fund_requests_reviewed                                fund_request[]             @relation("fund_request_reviewer")
+  fund_requests                                         fund_request[]
   job                                                   job[]
+  interviews_as_interviewer                             job_interview[]            @relation("Interviewer")
   leave_balance                                         leave_balance[]
   leave_messages                                        leave_message[]            @relation("user_leave_messages")
+  mentions                                              message_mention[]
   notifications                                         notification[]
+  onboarding_as_employee                                onboarding_process?        @relation("OnboardingEmployee")
+  onboarding_as_mentor                                  onboarding_process[]       @relation("OnboardingMentor")
+  payslips_generated                                    payslip[]                  @relation("payslip_generator")
+  payslips                                              payslip[]
+  perf_improvement_as_employee                          perf_improvement_plan[]    @relation("improvement_employee")
+  perf_improvement_as_manager                           perf_improvement_plan[]    @relation("improvement_manager")
+  perf_campaigns_created                                performance_campaign[]     @relation("campaign_creator")
+  perf_objectives                                       performance_objective[]    @relation("objective_employee")
+  perf_reviews_as_employee                              performance_review[]       @relation("review_employee")
+  perf_reviews_as_manager                               performance_review[]       @relation("review_manager")
   project                                               project[]
   project_member                                        project_member[]
+  perf_recognitions_sent                                recognition[]              @relation("recognition_from")
+  perf_recognitions_received                            recognition[]              @relation("recognition_to")
+  advances_reviewed                                     salary_advance[]           @relation("advance_reviewer")
+  salary_advances                                       salary_advance[]
   task_task_created_by_user_idTouser                    task[]                     @relation("task_created_by_user_idTouser")
   task_task_updated_by_user_idTouser                    task[]                     @relation("task_updated_by_user_idTouser")
   task_activities                                       task_activity[]
   task_assignment                                       task_assignment[]
   task_attachments                                      task_attachment[]
   task_checklist_items_completed                        task_checklist_item[]
-  task_comments_authored                                task_comment[]             @relation("CommentAuthor")
   task_comments_resolved                                task_comment[]             @relation("CommentResolver")
-  comment_reactions                                     comment_reaction[]         @relation("UserCommentReactions")
-  comment_edits                                         comment_edit_history[]     @relation("UserCommentEdits")
+  task_comments_authored                                task_comment[]             @relation("CommentAuthor")
   task_dependencies_created                             task_dependency[]
   task_templates_created                                task_template[]
   task_time_entries                                     task_time_entry[]
-  department                                            department?                @relation("user_department_idTodepartment", fields: [department_id], references: [id], map: "user_ibfk_517")
-  user                                                  user?                      @relation("userTouser", fields: [manager_user_id], references: [id], map: "user_ibfk_518")
+  trainings_created                                     training[]                 @relation("training_creator")
+  training_registrations_approved                       training_registration[]    @relation("training_approver")
+  training_registrations                                training_registration[]    @relation("training_participant")
+  company                                               company?                   @relation(fields: [company_id], references: [id])
+  department                                            department?                @relation("user_department_idTodepartment", fields: [department_id], references: [id])
+  user                                                  user?                      @relation("userTouser", fields: [manager_user_id], references: [id])
   other_user                                            user[]                     @relation("userTouser")
-  position                                              position?                  @relation(fields: [position_id], references: [id], map: "user_ibfk_519")
+  position                                              position?                  @relation(fields: [position_id], references: [id])
   role_relation                                         role?                      @relation(fields: [role_id], references: [id], map: "user_role_fk")
+  user_certifications                                   user_certification[]       @relation("user_certifications")
   user_document_user_document_uploaded_by_user_idTouser user_document[]            @relation("user_document_uploaded_by_user_idTouser")
   user_document_user_document_user_idTouser             user_document[]            @relation("user_document_user_idTouser")
   user_employment_history                               user_employment_history[]
@@ -660,45 +706,6 @@ model user {
   user_personal_event                                   user_personal_event[]
   user_personal_info                                    user_personal_info[]
   user_role                                             user_role[]
-
-  // Payroll relations
-  payslips           payslip[]
-  payslips_generated payslip[]          @relation("payslip_generator")
-  salary_advances    salary_advance[]
-  advances_reviewed  salary_advance[]   @relation("advance_reviewer")
-  bonuses            bonus[]
-  bonuses_created    bonus[]            @relation("bonus_creator")
-  bonuses_approved   bonus[]            @relation("bonus_approver")
-  employee_benefits  employee_benefit[]
-  fund_requests        fund_request[]
-  fund_requests_reviewed fund_request[] @relation("fund_request_reviewer")
-
-  // Recruitment relations
-  interviews_as_interviewer job_interview[]      @relation("Interviewer")
-  onboarding_as_employee    onboarding_process?  @relation("OnboardingEmployee")
-  onboarding_as_mentor      onboarding_process[] @relation("OnboardingMentor")
-  mentions                  message_mention[]
-
-  // Training & Development relations
-  trainings_created            training[]              @relation("training_creator")
-  training_registrations       training_registration[] @relation("training_participant")
-  training_registrations_approved training_registration[] @relation("training_approver")
-  user_certifications          user_certification[]    @relation("user_certifications")
-  development_plans            development_plan[]      @relation("development_plan_user")
-  development_plans_created    development_plan[]      @relation("development_plan_creator")
-  elearning_progress           elearning_progress[]    @relation("elearning_user")
-
-  // Performance Management relations
-  perf_campaigns_created       performance_campaign[]    @relation("campaign_creator")
-  perf_reviews_as_employee     performance_review[]      @relation("review_employee")
-  perf_reviews_as_manager      performance_review[]      @relation("review_manager")
-  perf_objectives              performance_objective[]   @relation("objective_employee")
-  perf_feedback_as_reviewer    feedback_360_request[]    @relation("feedback_reviewer")
-  perf_feedback_requested      feedback_360_request[]    @relation("feedback_requester")
-  perf_improvement_as_employee perf_improvement_plan[]   @relation("improvement_employee")
-  perf_improvement_as_manager  perf_improvement_plan[]   @relation("improvement_manager")
-  perf_recognitions_sent       recognition[]             @relation("recognition_from")
-  perf_recognitions_received   recognition[]             @relation("recognition_to")
 
   @@index([department_id], map: "department_id")
   @@index([manager_user_id], map: "manager_user_id")
@@ -767,47 +774,47 @@ model user_financial_info {
 }
 
 model user_message {
-  id                                        Int           @id @default(autoincrement())
-  text                                      String        @db.Text
+  id                                        Int                  @id @default(autoincrement())
+  text                                      String               @db.Text
   sender_user_id                            Int
   recipient_user_id                         Int?
   conversation_id                           Int?
-  is_read                                   Boolean       @default(false)
-  read_at                                   DateTime?     @db.DateTime(0)
-  created_at                                DateTime      @db.DateTime(0)
-  updated_at                                DateTime      @db.DateTime(0)
-  user_user_message_sender_user_idTouser    user          @relation("user_message_sender_user_idTouser", fields: [sender_user_id], references: [id], onDelete: Cascade, map: "user_message_ibfk_436")
-  user_user_message_recipient_user_idTouser user?         @relation("user_message_recipient_user_idTouser", fields: [recipient_user_id], references: [id], map: "user_message_ibfk_437")
-  conversation                              conversation? @relation(fields: [conversation_id], references: [id], onDelete: Cascade, map: "user_message_ibfk_438")
+  is_read                                   Boolean              @default(false)
+  read_at                                   DateTime?            @db.DateTime(0)
+  created_at                                DateTime             @db.DateTime(0)
+  updated_at                                DateTime             @db.DateTime(0)
+  attachments                               message_attachment[]
+  mentions                                  message_mention[]
+  user_user_message_sender_user_idTouser    user                 @relation("user_message_sender_user_idTouser", fields: [sender_user_id], references: [id], onDelete: Cascade, map: "user_message_ibfk_436")
+  user_user_message_recipient_user_idTouser user?                @relation("user_message_recipient_user_idTouser", fields: [recipient_user_id], references: [id], map: "user_message_ibfk_437")
+  conversation                              conversation?        @relation(fields: [conversation_id], references: [id], onDelete: Cascade, map: "user_message_ibfk_438")
 
   @@index([conversation_id], map: "conversation_id")
   @@index([recipient_user_id], map: "recipient_user_id")
   @@index([sender_user_id], map: "sender_user_id")
-  attachments                               message_attachment[]
-  mentions                                  message_mention[]
 }
 
 model message_attachment {
-  id          Int          @id @default(autoincrement())
-  message_id  Int
-  file_name   String       @db.VarChar(255)
-  file_path   String       @db.VarChar(500)
-  file_type   String       @db.VarChar(100)
-  mime_type   String       @db.VarChar(100)
-  file_size   Int
-  created_at  DateTime     @default(now())
-  message     user_message @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  id         Int          @id @default(autoincrement())
+  message_id Int
+  file_name  String       @db.VarChar(255)
+  file_path  String       @db.VarChar(500)
+  file_type  String       @db.VarChar(100)
+  mime_type  String       @db.VarChar(100)
+  file_size  Int
+  created_at DateTime     @default(now())
+  message    user_message @relation(fields: [message_id], references: [id], onDelete: Cascade)
 
   @@index([message_id])
 }
 
 model message_mention {
-  id          Int          @id @default(autoincrement())
-  message_id  Int
-  user_id     Int
-  created_at  DateTime     @default(now())
-  message     user_message @relation(fields: [message_id], references: [id], onDelete: Cascade)
-  user        user         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  id         Int          @id @default(autoincrement())
+  message_id Int
+  user_id    Int
+  created_at DateTime     @default(now())
+  message    user_message @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  user       user         @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
   @@index([message_id])
@@ -1068,41 +1075,31 @@ model notification {
   @@index([type], map: "notification_type")
 }
 
-// ========================================
-// PAYROLL MODELS
-// ========================================
-
 model payslip {
-  id                Int      @id @default(autoincrement())
-  user_id           Int
-  month             Int // 1-12
-  year              Int // 2024, 2025, etc.
-  salary_basic      Decimal  @db.Decimal(10, 2)
-  salary_gross      Decimal  @db.Decimal(10, 2)
-  salary_net        Decimal  @db.Decimal(10, 2)
-  allowances_total  Decimal  @db.Decimal(10, 2)
-  deductions_total  Decimal  @db.Decimal(10, 2)
-  bonuses_total     Decimal? @db.Decimal(10, 2)
-  advances_deducted Decimal? @db.Decimal(10, 2)
-
-  // Details JSON - store breakdown of allowances, deductions, bonuses
+  id                   Int            @id @default(autoincrement())
+  user_id              Int
+  month                Int
+  year                 Int
+  salary_basic         Decimal        @db.Decimal(10, 2)
+  salary_gross         Decimal        @db.Decimal(10, 2)
+  allowances_total     Decimal        @db.Decimal(10, 2)
   allowances_breakdown Json?
+  deductions_total     Decimal        @db.Decimal(10, 2)
   deductions_breakdown Json?
+  bonuses_total        Decimal?       @db.Decimal(10, 2)
+  advances_deducted    Decimal?       @db.Decimal(10, 2)
   bonuses_breakdown    Json?
-
-  // Metadata
-  status       payslip_status @default(DRAFT)
-  generated_by Int
-  generated_at DateTime       @default(now()) @db.DateTime(0)
-  published_at DateTime?      @db.DateTime(0)
-  pdf_path     String?        @db.VarChar(500)
-  notes        String?        @db.Text
-
-  created_at DateTime @default(now()) @db.DateTime(0)
-  updated_at DateTime @updatedAt @db.DateTime(0)
-
-  user      user @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  generator user @relation("payslip_generator", fields: [generated_by], references: [id])
+  salary_net           Decimal        @db.Decimal(10, 2)
+  status               payslip_status @default(DRAFT)
+  pdf_path             String?        @db.VarChar(500)
+  generated_by         Int
+  generated_at         DateTime       @default(now()) @db.DateTime(0)
+  published_at         DateTime?      @db.DateTime(0)
+  notes                String?        @db.Text
+  created_at           DateTime       @default(now()) @db.DateTime(0)
+  updated_at           DateTime       @updatedAt @db.DateTime(0)
+  generator            user           @relation("payslip_generator", fields: [generated_by], references: [id])
+  user                 user           @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, month, year])
   @@index([user_id], map: "payslip_user_id")
@@ -1112,38 +1109,30 @@ model payslip {
 }
 
 model salary_advance {
-  id             Int       @id @default(autoincrement())
-  user_id        Int
-  amount         Decimal   @db.Decimal(10, 2)
-  reason         String    @db.Text
-  requested_date DateTime  @default(now()) @db.DateTime(0)
-  needed_by_date DateTime? @db.Date
-
-  // Approval workflow
-  status           advance_status @default(DRAFT)
-  submitted_at     DateTime?      @db.DateTime(0)
-  reviewed_by      Int?
-  reviewed_at      DateTime?      @db.DateTime(0)
-  reviewer_comment String?        @db.Text
-
-  // Repayment
-  repayment_months  Int? // Number of months to repay
-  monthly_deduction Decimal?  @db.Decimal(10, 2)
-  total_repaid      Decimal   @default(0) @db.Decimal(10, 2)
-  repayment_start   DateTime? @db.Date
-  fully_repaid_at   DateTime? @db.DateTime(0)
-
-  // Payment
-  paid_at           DateTime? @db.DateTime(0)
-  payment_method    String?   @db.VarChar(50)
-  payment_reference String?   @db.VarChar(100)
-
-  created_at DateTime @default(now()) @db.DateTime(0)
-  updated_at DateTime @updatedAt @db.DateTime(0)
-
-  user       user                @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  reviewer   user?               @relation("advance_reviewer", fields: [reviewed_by], references: [id])
-  repayments advance_repayment[]
+  id                Int                 @id @default(autoincrement())
+  user_id           Int
+  amount            Decimal             @db.Decimal(10, 2)
+  reason            String              @db.Text
+  status            advance_status      @default(DRAFT)
+  needed_by_date    DateTime?           @db.Date
+  repayment_months  Int?
+  monthly_deduction Decimal?            @db.Decimal(10, 2)
+  total_repaid      Decimal             @default(0.00) @db.Decimal(10, 2)
+  repayment_start   DateTime?           @db.Date
+  submitted_at      DateTime?           @db.DateTime(0)
+  reviewed_by       Int?
+  reviewed_at       DateTime?           @db.DateTime(0)
+  reviewer_comment  String?             @db.Text
+  fully_repaid_at   DateTime?           @db.DateTime(0)
+  paid_at           DateTime?           @db.DateTime(0)
+  payment_method    String?             @db.VarChar(50)
+  payment_reference String?             @db.VarChar(100)
+  created_at        DateTime            @default(now()) @db.DateTime(0)
+  updated_at        DateTime            @updatedAt @db.DateTime(0)
+  requested_date    DateTime            @default(now()) @db.DateTime(0)
+  repayments        advance_repayment[]
+  reviewer          user?               @relation("advance_reviewer", fields: [reviewed_by], references: [id])
+  user              user                @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "salary_advance_user_id")
   @@index([status], map: "salary_advance_status")
@@ -1151,79 +1140,65 @@ model salary_advance {
 }
 
 model advance_repayment {
-  id            Int      @id @default(autoincrement())
+  id            Int            @id @default(autoincrement())
   advance_id    Int
   payslip_month Int
   payslip_year  Int
-  amount        Decimal  @db.Decimal(10, 2)
-  deducted_at   DateTime @default(now()) @db.DateTime(0)
-
-  advance salary_advance @relation(fields: [advance_id], references: [id], onDelete: Cascade)
+  amount        Decimal        @db.Decimal(10, 2)
+  deducted_at   DateTime       @default(now()) @db.DateTime(0)
+  advance       salary_advance @relation(fields: [advance_id], references: [id], onDelete: Cascade)
 
   @@index([advance_id], map: "advance_repayment_advance_id")
 }
 
-// --- FUND REQUEST MODEL ---
 model fund_request {
-  id          Int                 @id @default(autoincrement())
-  user_id     Int
-  amount      Decimal             @db.Decimal(10, 2)
-  reason      String              @db.Text
-  project     String?             @db.VarChar(255)
-  department  String?             @db.VarChar(255)
-  needed_by   DateTime?           @db.Date
-  
-  // Workflow
+  id               Int                 @id @default(autoincrement())
+  user_id          Int
+  amount           Decimal             @db.Decimal(10, 2)
+  reason           String              @db.Text
+  project          String?             @db.VarChar(255)
+  department       String?             @db.VarChar(255)
+  needed_by        DateTime?           @db.Date
   status           fund_request_status @default(DRAFT)
   submitted_at     DateTime?           @db.DateTime(0)
   reviewed_by      Int?
   reviewed_at      DateTime?           @db.DateTime(0)
   reviewer_comment String?             @db.Text
-  
-  // Payment tracking
   paid_at          DateTime?           @db.DateTime(0)
   payment_method   String?             @db.VarChar(50)
   payment_ref      String?             @db.VarChar(100)
-  
-  created_at DateTime @default(now()) @db.DateTime(0)
-  updated_at DateTime @updatedAt @db.DateTime(0)
-  
-  user     user  @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  reviewer user? @relation("fund_request_reviewer", fields: [reviewed_by], references: [id])
-  
+  created_at       DateTime            @default(now()) @db.DateTime(0)
+  updated_at       DateTime            @updatedAt @db.DateTime(0)
+  reviewer         user?               @relation("fund_request_reviewer", fields: [reviewed_by], references: [id])
+  user             user                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
   @@index([user_id], map: "fund_request_user_id")
   @@index([status], map: "fund_request_status")
   @@index([reviewed_by], map: "fund_request_reviewer")
 }
 
 model bonus {
-  id          Int        @id @default(autoincrement())
-  user_id     Int
-  bonus_type  bonus_type
-  amount      Decimal    @db.Decimal(10, 2)
-  title       String     @db.VarChar(255)
-  description String?    @db.Text
-  period      String?    @db.VarChar(100) // e.g., "Q4 2024", "Janvier 2025"
-
-  // Approval workflow
+  id               Int          @id @default(autoincrement())
+  user_id          Int
+  bonus_type       bonus_type
+  amount           Decimal      @db.Decimal(10, 2)
+  title            String       @db.VarChar(255)
+  description      String?      @db.Text
+  period           String?      @db.VarChar(100)
   status           bonus_status @default(DRAFT)
   created_by       Int
   submitted_at     DateTime?    @db.DateTime(0)
   approved_by      Int?
   approved_at      DateTime?    @db.DateTime(0)
   approver_comment String?      @db.Text
-
-  // Payment
-  payslip_month Int? // Month included in payslip
-  payslip_year  Int? // Year included in payslip
-  paid_at       DateTime? @db.DateTime(0)
-
-  created_at DateTime @default(now()) @db.DateTime(0)
-  updated_at DateTime @updatedAt @db.DateTime(0)
-
-  user     user  @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  creator  user  @relation("bonus_creator", fields: [created_by], references: [id])
-  approver user? @relation("bonus_approver", fields: [approved_by], references: [id])
+  paid_at          DateTime?    @db.DateTime(0)
+  created_at       DateTime     @default(now()) @db.DateTime(0)
+  updated_at       DateTime     @updatedAt @db.DateTime(0)
+  payslip_month    Int?
+  payslip_year     Int?
+  approver         user?        @relation("bonus_approver", fields: [approved_by], references: [id])
+  creator          user         @relation("bonus_creator", fields: [created_by], references: [id])
+  user             user         @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "bonus_user_id")
   @@index([status], map: "bonus_status")
@@ -1233,56 +1208,42 @@ model bonus {
 }
 
 model benefit_catalog {
-  id               Int                @id @default(autoincrement())
-  name             String             @db.VarChar(255)
-  description      String             @db.Text
-  benefit_type     benefit_type
-  value_type       benefit_value_type // FIXED, PERCENTAGE
-  value_amount     Decimal?           @db.Decimal(10, 2)
-  value_percentage Decimal?           @db.Decimal(5, 2)
-
-  // Eligibility
-  is_active           Boolean @default(true)
-  requires_enrollment Boolean @default(true)
-  eligibility_rules   Json? // {'min_tenure_months': 6, 'roles': ['ROLE_EMPLOYEE']}
-
-  // Cost
-  employer_contribution Decimal? @db.Decimal(10, 2)
-  employee_contribution Decimal? @db.Decimal(10, 2)
-
-  created_at DateTime @default(now()) @db.DateTime(0)
-  updated_at DateTime @updatedAt @db.DateTime(0)
-
-  enrollments employee_benefit[]
+  id                    Int                @id @default(autoincrement())
+  name                  String             @db.VarChar(255)
+  description           String             @db.Text
+  benefit_type          benefit_type
+  value_type            benefit_value_type
+  value_amount          Decimal?           @db.Decimal(10, 2)
+  value_percentage      Decimal?           @db.Decimal(5, 2)
+  employer_contribution Decimal?           @db.Decimal(10, 2)
+  employee_contribution Decimal?           @db.Decimal(10, 2)
+  is_active             Boolean            @default(true)
+  requires_enrollment   Boolean            @default(true)
+  eligibility_rules     Json?
+  created_at            DateTime           @default(now()) @db.DateTime(0)
+  updated_at            DateTime           @updatedAt @db.DateTime(0)
+  enrollments           employee_benefit[]
 
   @@index([benefit_type], map: "benefit_catalog_type")
   @@index([is_active], map: "benefit_catalog_active")
 }
 
 model employee_benefit {
-  id         Int @id @default(autoincrement())
-  user_id    Int
-  benefit_id Int
-
-  // Enrollment
-  enrolled_at DateTime                  @default(now()) @db.DateTime(0)
-  start_date  DateTime                  @db.Date
-  end_date    DateTime?                 @db.Date
-  status      benefit_enrollment_status @default(ACTIVE)
-
-  // Custom values (if different from catalog)
-  custom_value Decimal? @db.Decimal(10, 2)
-
-  // Tracking
-  last_used_at DateTime? @db.DateTime(0)
-  usage_count  Int       @default(0)
-  notes        String?   @db.Text
-
-  created_at DateTime @default(now()) @db.DateTime(0)
-  updated_at DateTime @updatedAt @db.DateTime(0)
-
-  user    user            @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  benefit benefit_catalog @relation(fields: [benefit_id], references: [id], onDelete: Cascade)
+  id           Int                       @id @default(autoincrement())
+  user_id      Int
+  benefit_id   Int
+  enrolled_at  DateTime                  @default(now()) @db.DateTime(0)
+  start_date   DateTime                  @db.Date
+  end_date     DateTime?                 @db.Date
+  status       benefit_enrollment_status @default(ACTIVE)
+  custom_value Decimal?                  @db.Decimal(10, 2)
+  usage_count  Int                       @default(0)
+  notes        String?                   @db.Text
+  last_used_at DateTime?                 @db.DateTime(0)
+  created_at   DateTime                  @default(now()) @db.DateTime(0)
+  updated_at   DateTime                  @updatedAt @db.DateTime(0)
+  benefit      benefit_catalog           @relation(fields: [benefit_id], references: [id], onDelete: Cascade)
+  user         user                      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, benefit_id])
   @@index([user_id], map: "employee_benefit_user_id")
@@ -1290,9 +1251,471 @@ model employee_benefit {
   @@index([status], map: "employee_benefit_status")
 }
 
-// ========================================
-// ENUMS
-// ========================================
+model job_offer {
+  id               Int                     @id @default(autoincrement())
+  title            String                  @db.VarChar(255)
+  description      String?                 @db.Text
+  department       String                  @db.VarChar(255)
+  location         String                  @db.VarChar(255)
+  contract_type    String                  @db.VarChar(50)
+  status           String                  @default("DRAFT") @db.VarChar(50)
+  posted_date      DateTime?               @db.Date
+  created_at       DateTime                @default(now()) @db.DateTime(0)
+  updated_at       DateTime                @updatedAt @db.DateTime(0)
+  min_experience   Int?
+  required_skills  Json?
+  scoring_criteria Json?
+  applications     candidate_application[]
+}
+
+model candidate {
+  id                Int                     @id @default(autoincrement())
+  first_name        String                  @db.VarChar(255)
+  last_name         String                  @db.VarChar(255)
+  email             String                  @unique @db.VarChar(255)
+  phone             String?                 @db.VarChar(50)
+  cv_url            String?                 @db.VarChar(500)
+  linkedin_url      String?                 @db.VarChar(500)
+  rating            Int                     @default(0)
+  skills            Json?
+  is_in_talent_pool Boolean                 @default(false)
+  created_at        DateTime                @default(now()) @db.DateTime(0)
+  updated_at        DateTime                @updatedAt @db.DateTime(0)
+  years_experience  Int                     @default(0)
+  applications      candidate_application[]
+  interviews        job_interview[]
+}
+
+model candidate_application {
+  id              Int             @id @default(autoincrement())
+  job_offer_id    Int
+  candidate_id    Int
+  status          String          @default("NEW") @db.VarChar(50)
+  stage           String          @default("NEW") @db.VarChar(50)
+  created_at      DateTime        @default(now()) @db.DateTime(0)
+  updated_at      DateTime        @updatedAt @db.DateTime(0)
+  score           Int?
+  score_breakdown Json?
+  scored_at       DateTime?       @db.DateTime(0)
+  candidate       candidate       @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
+  job_offer       job_offer       @relation(fields: [job_offer_id], references: [id], onDelete: Cascade)
+  interviews      job_interview[]
+
+  @@index([job_offer_id])
+  @@index([candidate_id])
+}
+
+model job_interview {
+  id             Int                   @id @default(autoincrement())
+  application_id Int
+  candidate_id   Int
+  interview_date DateTime              @db.DateTime(0)
+  interviewer_id Int
+  type           String                @default("VISIO") @db.VarChar(50)
+  status         String                @default("SCHEDULED") @db.VarChar(50)
+  rating         Int?
+  feedback       String?               @db.Text
+  created_at     DateTime              @default(now()) @db.DateTime(0)
+  updated_at     DateTime              @updatedAt @db.DateTime(0)
+  application    candidate_application @relation(fields: [application_id], references: [id], onDelete: Cascade)
+  candidate      candidate             @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
+  interviewer    user                  @relation("Interviewer", fields: [interviewer_id], references: [id])
+
+  @@index([application_id])
+  @@index([candidate_id])
+  @@index([interviewer_id])
+}
+
+model onboarding_process {
+  id          Int      @id @default(autoincrement())
+  employee_id Int      @unique
+  mentor_id   Int?
+  status      String   @default("PRE_BOARDING") @db.VarChar(50)
+  start_date  DateTime @db.Date
+  checklist   Json?
+  created_at  DateTime @default(now()) @db.DateTime(0)
+  updated_at  DateTime @updatedAt @db.DateTime(0)
+  employee    user     @relation("OnboardingEmployee", fields: [employee_id], references: [id], onDelete: Cascade)
+  mentor      user?    @relation("OnboardingMentor", fields: [mentor_id], references: [id])
+
+  @@index([mentor_id])
+}
+
+model training_category {
+  id                Int                @id @default(autoincrement())
+  name              String             @db.VarChar(255)
+  description       String?            @db.Text
+  icon              String?            @db.VarChar(10)
+  color             String?            @db.VarChar(7)
+  is_active         Boolean            @default(true)
+  created_at        DateTime           @default(now()) @db.DateTime(0)
+  updated_at        DateTime           @updatedAt @db.DateTime(0)
+  elearning_modules elearning_module[]
+  trainings         training[]
+}
+
+model training {
+  id                 Int                     @id @default(autoincrement())
+  title              String                  @db.VarChar(255)
+  description        String?                 @db.Text
+  category_id        Int
+  level              training_level          @default(BEGINNER)
+  duration_hours     Int
+  max_participants   Int?
+  is_mandatory       Boolean                 @default(false)
+  is_online          Boolean                 @default(false)
+  is_active          Boolean                 @default(true)
+  instructor_name    String?                 @db.VarChar(255)
+  location           String?                 @db.VarChar(255)
+  prerequisites      String?                 @db.Text
+  objectives         String?                 @db.Text
+  image_url          String?                 @db.VarChar(500)
+  created_by_user_id Int
+  created_at         DateTime                @default(now()) @db.DateTime(0)
+  updated_at         DateTime                @updatedAt @db.DateTime(0)
+  category           training_category       @relation(fields: [category_id], references: [id])
+  creator            user                    @relation("training_creator", fields: [created_by_user_id], references: [id])
+  registrations      training_registration[]
+  sessions           training_session[]
+
+  @@index([category_id])
+  @@index([created_by_user_id])
+}
+
+model training_session {
+  id               Int                     @id @default(autoincrement())
+  training_id      Int
+  start_date       DateTime                @db.DateTime(0)
+  end_date         DateTime                @db.DateTime(0)
+  location         String?                 @db.VarChar(255)
+  max_participants Int?
+  status           session_status          @default(SCHEDULED)
+  notes            String?                 @db.Text
+  created_at       DateTime                @default(now()) @db.DateTime(0)
+  updated_at       DateTime                @updatedAt @db.DateTime(0)
+  registrations    training_registration[]
+  training         training                @relation(fields: [training_id], references: [id], onDelete: Cascade)
+
+  @@index([training_id])
+}
+
+model training_registration {
+  id             Int                 @id @default(autoincrement())
+  user_id        Int
+  training_id    Int
+  session_id     Int?
+  status         registration_status @default(PENDING)
+  requested_at   DateTime            @default(now()) @db.DateTime(0)
+  approved_at    DateTime?           @db.DateTime(0)
+  approved_by_id Int?
+  completed_at   DateTime?           @db.DateTime(0)
+  score          Decimal?            @db.Decimal(5, 2)
+  feedback       String?             @db.Text
+  certificate_id Int?
+  notes          String?             @db.Text
+  created_at     DateTime            @default(now()) @db.DateTime(0)
+  updated_at     DateTime            @updatedAt @db.DateTime(0)
+  approved_by    user?               @relation("training_approver", fields: [approved_by_id], references: [id])
+  certificate    certification?      @relation(fields: [certificate_id], references: [id])
+  session        training_session?   @relation(fields: [session_id], references: [id])
+  training       training            @relation(fields: [training_id], references: [id])
+  user           user                @relation("training_participant", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, training_id, session_id])
+  @@index([training_id])
+  @@index([session_id])
+  @@index([approved_by_id])
+  @@index([certificate_id])
+}
+
+model certification {
+  id                  Int                     @id @default(autoincrement())
+  name                String                  @db.VarChar(255)
+  issuing_org         String?                 @db.VarChar(255)
+  description         String?                 @db.Text
+  validity_months     Int?
+  is_active           Boolean                 @default(true)
+  created_at          DateTime                @default(now()) @db.DateTime(0)
+  updated_at          DateTime                @updatedAt @db.DateTime(0)
+  registrations       training_registration[]
+  user_certifications user_certification[]
+}
+
+model user_certification {
+  id               Int           @id @default(autoincrement())
+  user_id          Int
+  certification_id Int
+  obtained_date    DateTime      @db.DateTime(0)
+  expiry_date      DateTime?     @db.DateTime(0)
+  credential_id    String?       @db.VarChar(255)
+  credential_url   String?       @db.VarChar(500)
+  status           cert_status   @default(ACTIVE)
+  notes            String?       @db.Text
+  created_at       DateTime      @default(now()) @db.DateTime(0)
+  updated_at       DateTime      @updatedAt @db.DateTime(0)
+  certification    certification @relation(fields: [certification_id], references: [id])
+  user             user          @relation("user_certifications", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, certification_id, obtained_date])
+  @@index([certification_id])
+}
+
+model development_plan {
+  id            Int                     @id @default(autoincrement())
+  user_id       Int
+  title         String                  @db.VarChar(255)
+  description   String?                 @db.Text
+  start_date    DateTime                @db.DateTime(0)
+  target_date   DateTime?               @db.DateTime(0)
+  status        plan_status             @default(DRAFT)
+  created_by_id Int
+  created_at    DateTime                @default(now()) @db.DateTime(0)
+  updated_at    DateTime                @updatedAt @db.DateTime(0)
+  objectives    development_objective[]
+  creator       user                    @relation("development_plan_creator", fields: [created_by_id], references: [id])
+  user          user                    @relation("development_plan_user", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([created_by_id])
+}
+
+model development_objective {
+  id           Int                @id @default(autoincrement())
+  plan_id      Int
+  title        String             @db.VarChar(255)
+  description  String?            @db.Text
+  skill_area   String?            @db.VarChar(255)
+  priority     objective_priority @default(MEDIUM)
+  target_date  DateTime?          @db.DateTime(0)
+  completed_at DateTime?          @db.DateTime(0)
+  progress     Int                @default(0)
+  status       objective_status   @default(NOT_STARTED)
+  created_at   DateTime           @default(now()) @db.DateTime(0)
+  updated_at   DateTime           @updatedAt @db.DateTime(0)
+  plan         development_plan   @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+
+  @@index([plan_id])
+}
+
+model elearning_module {
+  id               Int                  @id @default(autoincrement())
+  title            String               @db.VarChar(255)
+  description      String?              @db.Text
+  content_url      String?              @db.VarChar(500)
+  thumbnail_url    String?              @db.VarChar(500)
+  duration_minutes Int
+  level            training_level       @default(BEGINNER)
+  category_id      Int?
+  is_active        Boolean              @default(true)
+  badge_name       String?              @db.VarChar(100)
+  badge_icon       String?              @db.VarChar(10)
+  created_at       DateTime             @default(now()) @db.DateTime(0)
+  updated_at       DateTime             @updatedAt @db.DateTime(0)
+  category         training_category?   @relation(fields: [category_id], references: [id])
+  progress         elearning_progress[]
+
+  @@index([category_id])
+}
+
+model elearning_progress {
+  id               Int              @id @default(autoincrement())
+  user_id          Int
+  module_id        Int
+  progress_percent Int              @default(0)
+  status           elearning_status @default(NOT_STARTED)
+  started_at       DateTime?        @db.DateTime(0)
+  completed_at     DateTime?        @db.DateTime(0)
+  last_accessed_at DateTime?        @db.DateTime(0)
+  score            Decimal?         @db.Decimal(5, 2)
+  badge_earned     Boolean          @default(false)
+  created_at       DateTime         @default(now()) @db.DateTime(0)
+  updated_at       DateTime         @updatedAt @db.DateTime(0)
+  module           elearning_module @relation(fields: [module_id], references: [id], onDelete: Cascade)
+  user             user             @relation("elearning_user", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, module_id])
+  @@index([module_id])
+}
+
+model performance_campaign {
+  id                      Int                  @id @default(autoincrement())
+  title                   String               @db.VarChar(255)
+  description             String?              @db.Text
+  type                    campaign_type        @default(ANNUAL)
+  year                    Int
+  start_date              DateTime             @db.Date
+  end_date                DateTime             @db.Date
+  self_review_deadline    DateTime?            @db.Date
+  manager_review_deadline DateTime?            @db.Date
+  status                  campaign_status      @default(DRAFT)
+  weight_self             Int                  @default(20)
+  weight_manager          Int                  @default(50)
+  weight_feedback360      Int                  @default(30)
+  created_by_id           Int
+  created_at              DateTime             @default(now()) @db.DateTime(0)
+  updated_at              DateTime             @updatedAt @db.DateTime(0)
+  creator                 user                 @relation("campaign_creator", fields: [created_by_id], references: [id])
+  reviews                 performance_review[]
+
+  @@index([created_by_id], map: "perf_campaign_creator")
+  @@index([status], map: "perf_campaign_status")
+  @@index([year], map: "perf_campaign_year")
+}
+
+model performance_review {
+  id                   Int                     @id @default(autoincrement())
+  campaign_id          Int
+  employee_id          Int
+  manager_id           Int
+  status               review_status           @default(PENDING_SELF)
+  self_rating          Int?
+  self_comments        String?                 @db.Text
+  self_submitted_at    DateTime?               @db.DateTime(0)
+  manager_rating       Int?
+  manager_comments     String?                 @db.Text
+  manager_submitted_at DateTime?               @db.DateTime(0)
+  final_rating         Int?
+  final_comments       String?                 @db.Text
+  finalized_at         DateTime?               @db.DateTime(0)
+  created_at           DateTime                @default(now()) @db.DateTime(0)
+  updated_at           DateTime                @updatedAt @db.DateTime(0)
+  feedback_requests    feedback_360_request[]
+  improvement_plan     perf_improvement_plan?
+  objectives           performance_objective[]
+  campaign             performance_campaign    @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  employee             user                    @relation("review_employee", fields: [employee_id], references: [id], onDelete: Cascade)
+  manager              user                    @relation("review_manager", fields: [manager_id], references: [id])
+
+  @@unique([campaign_id, employee_id])
+  @@index([employee_id], map: "perf_review_employee")
+  @@index([manager_id], map: "perf_review_manager")
+  @@index([status], map: "perf_review_status")
+}
+
+model performance_objective {
+  id               Int                    @id @default(autoincrement())
+  review_id        Int?
+  employee_id      Int
+  title            String                 @db.VarChar(255)
+  description      String?                @db.Text
+  type             perf_objective_type    @default(INDIVIDUAL)
+  category         String?                @db.VarChar(100)
+  metric_type      metric_type            @default(PERCENTAGE)
+  target_value     Decimal?               @db.Decimal(10, 2)
+  current_value    Decimal?               @db.Decimal(10, 2)
+  weight           Int                    @default(100)
+  start_date       DateTime               @db.Date
+  due_date         DateTime               @db.Date
+  completed_at     DateTime?              @db.DateTime(0)
+  self_progress    Int?
+  self_comments    String?                @db.Text
+  manager_progress Int?
+  manager_comments String?                @db.Text
+  status           perf_obj_status        @default(NOT_STARTED)
+  created_at       DateTime               @default(now()) @db.DateTime(0)
+  updated_at       DateTime               @updatedAt @db.DateTime(0)
+  key_results      objective_key_result[]
+  employee         user                   @relation("objective_employee", fields: [employee_id], references: [id], onDelete: Cascade)
+  review           performance_review?    @relation(fields: [review_id], references: [id], onDelete: Cascade)
+
+  @@index([review_id], map: "perf_objective_review")
+  @@index([employee_id], map: "perf_objective_employee")
+  @@index([status], map: "perf_objective_status")
+}
+
+model objective_key_result {
+  id            Int                   @id @default(autoincrement())
+  objective_id  Int
+  title         String                @db.VarChar(255)
+  target_value  Decimal?              @db.Decimal(10, 2)
+  current_value Decimal?              @db.Decimal(10, 2)
+  unit          String?               @db.VarChar(50)
+  status        perf_obj_status       @default(NOT_STARTED)
+  created_at    DateTime              @default(now()) @db.DateTime(0)
+  updated_at    DateTime              @updatedAt @db.DateTime(0)
+  objective     performance_objective @relation(fields: [objective_id], references: [id], onDelete: Cascade)
+
+  @@index([objective_id], map: "key_result_objective")
+}
+
+model feedback_360_request {
+  id              Int                @id @default(autoincrement())
+  review_id       Int
+  reviewer_id     Int
+  requested_by_id Int
+  status          feedback_status    @default(PENDING)
+  rating          Int?
+  responses       Json?
+  comments        String?            @db.Text
+  is_anonymous    Boolean            @default(true)
+  submitted_at    DateTime?          @db.DateTime(0)
+  created_at      DateTime           @default(now()) @db.DateTime(0)
+  updated_at      DateTime           @updatedAt @db.DateTime(0)
+  requested_by    user               @relation("feedback_requester", fields: [requested_by_id], references: [id])
+  review          performance_review @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  reviewer        user               @relation("feedback_reviewer", fields: [reviewer_id], references: [id])
+
+  @@unique([review_id, reviewer_id])
+  @@index([reviewer_id], map: "feedback_reviewer")
+  @@index([requested_by_id], map: "feedback_requester")
+  @@index([status], map: "feedback_status")
+}
+
+model perf_improvement_plan {
+  id          Int                  @id @default(autoincrement())
+  review_id   Int?                 @unique
+  employee_id Int
+  manager_id  Int
+  title       String               @db.VarChar(255)
+  reason      String?              @db.Text
+  start_date  DateTime             @db.Date
+  end_date    DateTime             @db.Date
+  status      perf_plan_status     @default(DRAFT)
+  created_at  DateTime             @default(now()) @db.DateTime(0)
+  updated_at  DateTime             @updatedAt @db.DateTime(0)
+  actions     improvement_action[]
+  employee    user                 @relation("improvement_employee", fields: [employee_id], references: [id], onDelete: Cascade)
+  manager     user                 @relation("improvement_manager", fields: [manager_id], references: [id])
+  review      performance_review?  @relation(fields: [review_id], references: [id])
+
+  @@index([employee_id], map: "improvement_employee")
+  @@index([manager_id], map: "improvement_manager")
+  @@index([status], map: "improvement_status")
+}
+
+model improvement_action {
+  id             Int                   @id @default(autoincrement())
+  plan_id        Int
+  title          String                @db.VarChar(255)
+  description    String?               @db.Text
+  due_date       DateTime?             @db.Date
+  completed_at   DateTime?             @db.DateTime(0)
+  status         perf_action_status    @default(PENDING)
+  employee_notes String?               @db.Text
+  manager_notes  String?               @db.Text
+  created_at     DateTime              @default(now()) @db.DateTime(0)
+  updated_at     DateTime              @updatedAt @db.DateTime(0)
+  plan           perf_improvement_plan @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+
+  @@index([plan_id], map: "action_plan")
+}
+
+model recognition {
+  id           Int              @id @default(autoincrement())
+  from_user_id Int
+  to_user_id   Int
+  type         recognition_type @default(KUDOS)
+  badge        String?          @db.VarChar(50)
+  message      String           @db.Text
+  is_public    Boolean          @default(true)
+  created_at   DateTime         @default(now()) @db.DateTime(0)
+  from_user    user             @relation("recognition_from", fields: [from_user_id], references: [id], onDelete: Cascade)
+  to_user      user             @relation("recognition_to", fields: [to_user_id], references: [id], onDelete: Cascade)
+
+  @@index([from_user_id], map: "recognition_from")
+  @@index([to_user_id], map: "recognition_to")
+  @@index([created_at], map: "recognition_date")
+}
 
 enum employment_contract_contract_type {
   PERMANENT
@@ -1474,7 +1897,6 @@ enum notification_type {
   PERFORMANCE_REVIEW_COMPLETED
 }
 
-// Payroll enums
 enum payslip_status {
   DRAFT
   PUBLISHED
@@ -1543,322 +1965,6 @@ enum benefit_enrollment_status {
   TERMINATED
 }
 
-// --- RECRUITMENT MODULE MODELS ---
-
-model job_offer {
-  id            Int       @id @default(autoincrement())
-  title         String    @db.VarChar(255)
-  description   String?   @db.Text
-  department    String    @db.VarChar(255)
-  location      String    @db.VarChar(255)
-  contract_type String    @db.VarChar(50)
-  status        String    @default("DRAFT") @db.VarChar(50)
-  posted_date   DateTime? @db.Date
-
-  // Scoring fields
-  required_skills  Json? // Liste des compétences requises
-  min_experience   Int? // Années d'expérience minimum
-  scoring_criteria Json? // Critères personnalisés {skills: 40, experience: 25, interview: 20, rating: 15}
-
-  created_at DateTime @default(now()) @db.DateTime(0)
-  updated_at DateTime @updatedAt @db.DateTime(0)
-
-  applications candidate_application[]
-}
-
-model candidate {
-  id           Int     @id @default(autoincrement())
-  first_name   String  @db.VarChar(255)
-  last_name    String  @db.VarChar(255)
-  email        String  @unique @db.VarChar(255)
-  phone        String? @db.VarChar(50)
-  cv_url       String? @db.VarChar(500)
-  linkedin_url String? @db.VarChar(500)
-
-  rating           Int   @default(0)
-  skills           Json?
-  years_experience Int   @default(0) // Années d'expérience du candidat
-
-  is_in_talent_pool Boolean @default(false)
-
-  created_at DateTime @default(now()) @db.DateTime(0)
-  updated_at DateTime @updatedAt @db.DateTime(0)
-
-  applications candidate_application[]
-  interviews   job_interview[]
-}
-
-model candidate_application {
-  id           Int @id @default(autoincrement())
-  job_offer_id Int
-  candidate_id Int
-
-  status String @default("NEW") @db.VarChar(50)
-  stage  String @default("NEW") @db.VarChar(50)
-
-  // Scoring fields
-  score           Int? // Score global calculé (0-100)
-  score_breakdown Json? // Détail: {skills: 85, experience: 70, interview: 90, rating: 75}
-  scored_at       DateTime? @db.DateTime(0) // Date du dernier calcul
-
-  created_at DateTime @default(now()) @db.DateTime(0)
-  updated_at DateTime @updatedAt @db.DateTime(0)
-
-  job_offer  job_offer       @relation(fields: [job_offer_id], references: [id], onDelete: Cascade)
-  candidate  candidate       @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
-  interviews job_interview[]
-
-  @@index([job_offer_id])
-  @@index([candidate_id])
-}
-
-model job_interview {
-  id             Int @id @default(autoincrement())
-  application_id Int
-  candidate_id   Int
-
-  interview_date DateTime @db.DateTime(0)
-  interviewer_id Int
-  type           String   @default("VISIO") @db.VarChar(50)
-  status         String   @default("SCHEDULED") @db.VarChar(50)
-  rating         Int?
-  feedback       String?  @db.Text
-
-  created_at DateTime @default(now()) @db.DateTime(0)
-  updated_at DateTime @updatedAt @db.DateTime(0)
-
-  application candidate_application @relation(fields: [application_id], references: [id], onDelete: Cascade)
-  candidate   candidate             @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
-  interviewer user                  @relation("Interviewer", fields: [interviewer_id], references: [id])
-
-  @@index([application_id])
-  @@index([candidate_id])
-  @@index([interviewer_id])
-}
-
-model onboarding_process {
-  id          Int  @id @default(autoincrement())
-  employee_id Int  @unique
-  mentor_id   Int?
-
-  status     String   @default("PRE_BOARDING") @db.VarChar(50)
-  start_date DateTime @db.Date
-
-  checklist Json?
-
-  created_at DateTime @default(now()) @db.DateTime(0)
-  updated_at DateTime @updatedAt @db.DateTime(0)
-
-  employee user  @relation("OnboardingEmployee", fields: [employee_id], references: [id], onDelete: Cascade)
-  mentor   user? @relation("OnboardingMentor", fields: [mentor_id], references: [id])
-
-  @@index([mentor_id])
-}
-
-// ============================================
-// TRAINING & DEVELOPMENT MODULE
-// ============================================
-
-model training_category {
-  id          Int                @id @default(autoincrement())
-  name        String             @db.VarChar(255)
-  description String?            @db.Text
-  icon        String?            @db.VarChar(10)
-  color       String?            @db.VarChar(7)
-  is_active   Boolean            @default(true)
-  created_at  DateTime           @default(now()) @db.DateTime(0)
-  updated_at  DateTime           @updatedAt @db.DateTime(0)
-  trainings   training[]
-  elearning_modules elearning_module[]
-}
-
-model training {
-  id                 Int                     @id @default(autoincrement())
-  title              String                  @db.VarChar(255)
-  description        String?                 @db.Text
-  category_id        Int
-  level              training_level          @default(BEGINNER)
-  duration_hours     Int
-  max_participants   Int?
-  is_mandatory       Boolean                 @default(false)
-  is_online          Boolean                 @default(false)
-  is_active          Boolean                 @default(true)
-  instructor_name    String?                 @db.VarChar(255)
-  location           String?                 @db.VarChar(255)
-  prerequisites      String?                 @db.Text
-  objectives         String?                 @db.Text
-  image_url          String?                 @db.VarChar(500)
-  created_by_user_id Int
-  created_at         DateTime                @default(now()) @db.DateTime(0)
-  updated_at         DateTime                @updatedAt @db.DateTime(0)
-  category           training_category       @relation(fields: [category_id], references: [id])
-  creator            user                    @relation("training_creator", fields: [created_by_user_id], references: [id])
-  sessions           training_session[]
-  registrations      training_registration[]
-
-  @@index([category_id])
-  @@index([created_by_user_id])
-}
-
-model training_session {
-  id            Int                     @id @default(autoincrement())
-  training_id   Int
-  start_date    DateTime                @db.DateTime(0)
-  end_date      DateTime                @db.DateTime(0)
-  location      String?                 @db.VarChar(255)
-  max_participants Int?
-  status        session_status          @default(SCHEDULED)
-  notes         String?                 @db.Text
-  created_at    DateTime                @default(now()) @db.DateTime(0)
-  updated_at    DateTime                @updatedAt @db.DateTime(0)
-  training      training                @relation(fields: [training_id], references: [id], onDelete: Cascade)
-  registrations training_registration[]
-
-  @@index([training_id])
-}
-
-model training_registration {
-  id             Int                 @id @default(autoincrement())
-  user_id        Int
-  training_id    Int
-  session_id     Int?
-  status         registration_status @default(PENDING)
-  requested_at   DateTime            @default(now()) @db.DateTime(0)
-  approved_at    DateTime?           @db.DateTime(0)
-  approved_by_id Int?
-  completed_at   DateTime?           @db.DateTime(0)
-  score          Decimal?            @db.Decimal(5, 2)
-  feedback       String?             @db.Text
-  certificate_id Int?
-  notes          String?             @db.Text
-  created_at     DateTime            @default(now()) @db.DateTime(0)
-  updated_at     DateTime            @updatedAt @db.DateTime(0)
-  user           user                @relation("training_participant", fields: [user_id], references: [id], onDelete: Cascade)
-  training       training            @relation(fields: [training_id], references: [id])
-  session        training_session?   @relation(fields: [session_id], references: [id])
-  approved_by    user?               @relation("training_approver", fields: [approved_by_id], references: [id])
-  certificate    certification?      @relation(fields: [certificate_id], references: [id])
-
-  @@unique([user_id, training_id, session_id])
-  @@index([training_id])
-  @@index([session_id])
-  @@index([approved_by_id])
-  @@index([certificate_id])
-}
-
-model certification {
-  id                  Int                     @id @default(autoincrement())
-  name                String                  @db.VarChar(255)
-  issuing_org         String?                 @db.VarChar(255)
-  description         String?                 @db.Text
-  validity_months     Int?
-  is_active           Boolean                 @default(true)
-  created_at          DateTime                @default(now()) @db.DateTime(0)
-  updated_at          DateTime                @updatedAt @db.DateTime(0)
-  user_certifications user_certification[]
-  registrations       training_registration[]
-}
-
-model user_certification {
-  id               Int           @id @default(autoincrement())
-  user_id          Int
-  certification_id Int
-  obtained_date    DateTime      @db.DateTime(0)
-  expiry_date      DateTime?     @db.DateTime(0)
-  credential_id    String?       @db.VarChar(255)
-  credential_url   String?       @db.VarChar(500)
-  status           cert_status   @default(ACTIVE)
-  notes            String?       @db.Text
-  created_at       DateTime      @default(now()) @db.DateTime(0)
-  updated_at       DateTime      @updatedAt @db.DateTime(0)
-  user             user          @relation("user_certifications", fields: [user_id], references: [id], onDelete: Cascade)
-  certification    certification @relation(fields: [certification_id], references: [id])
-
-  @@unique([user_id, certification_id, obtained_date])
-  @@index([certification_id])
-}
-
-model development_plan {
-  id            Int                     @id @default(autoincrement())
-  user_id       Int
-  title         String                  @db.VarChar(255)
-  description   String?                 @db.Text
-  start_date    DateTime                @db.DateTime(0)
-  target_date   DateTime?               @db.DateTime(0)
-  status        plan_status             @default(DRAFT)
-  created_by_id Int
-  created_at    DateTime                @default(now()) @db.DateTime(0)
-  updated_at    DateTime                @updatedAt @db.DateTime(0)
-  user          user                    @relation("development_plan_user", fields: [user_id], references: [id], onDelete: Cascade)
-  creator       user                    @relation("development_plan_creator", fields: [created_by_id], references: [id])
-  objectives    development_objective[]
-
-  @@index([user_id])
-  @@index([created_by_id])
-}
-
-model development_objective {
-  id           Int                @id @default(autoincrement())
-  plan_id      Int
-  title        String             @db.VarChar(255)
-  description  String?            @db.Text
-  skill_area   String?            @db.VarChar(255)
-  priority     objective_priority @default(MEDIUM)
-  target_date  DateTime?          @db.DateTime(0)
-  completed_at DateTime?          @db.DateTime(0)
-  progress     Int                @default(0)
-  status       objective_status   @default(NOT_STARTED)
-  created_at   DateTime           @default(now()) @db.DateTime(0)
-  updated_at   DateTime           @updatedAt @db.DateTime(0)
-  plan         development_plan   @relation(fields: [plan_id], references: [id], onDelete: Cascade)
-
-  @@index([plan_id])
-}
-
-model elearning_module {
-  id               Int                  @id @default(autoincrement())
-  title            String               @db.VarChar(255)
-  description      String?              @db.Text
-  content_url      String?              @db.VarChar(500)
-  thumbnail_url    String?              @db.VarChar(500)
-  duration_minutes Int
-  level            training_level       @default(BEGINNER)
-  category_id      Int?
-  is_active        Boolean              @default(true)
-  badge_name       String?              @db.VarChar(100)
-  badge_icon       String?              @db.VarChar(10)
-  created_at       DateTime             @default(now()) @db.DateTime(0)
-  updated_at       DateTime             @updatedAt @db.DateTime(0)
-  category         training_category?   @relation(fields: [category_id], references: [id])
-  progress         elearning_progress[]
-
-  @@index([category_id])
-}
-
-model elearning_progress {
-  id               Int              @id @default(autoincrement())
-  user_id          Int
-  module_id        Int
-  progress_percent Int              @default(0)
-  status           elearning_status @default(NOT_STARTED)
-  started_at       DateTime?        @db.DateTime(0)
-  completed_at     DateTime?        @db.DateTime(0)
-  last_accessed_at DateTime?        @db.DateTime(0)
-  score            Decimal?         @db.Decimal(5, 2)
-  badge_earned     Boolean          @default(false)
-  created_at       DateTime         @default(now()) @db.DateTime(0)
-  updated_at       DateTime         @updatedAt @db.DateTime(0)
-  user             user             @relation("elearning_user", fields: [user_id], references: [id], onDelete: Cascade)
-  module           elearning_module @relation(fields: [module_id], references: [id], onDelete: Cascade)
-
-  @@unique([user_id, module_id])
-  @@index([module_id])
-}
-
-// ============================================
-// TRAINING MODULE ENUMS
-// ============================================
-
 enum training_level {
   BEGINNER
   INTERMEDIATE
@@ -1914,224 +2020,6 @@ enum elearning_status {
   IN_PROGRESS
   COMPLETED
 }
-
-// ========================================
-// PERFORMANCE MANAGEMENT MODULE
-// ========================================
-
-model performance_campaign {
-  id                      Int                     @id @default(autoincrement())
-  title                   String                  @db.VarChar(255)
-  description             String?                 @db.Text
-  type                    campaign_type           @default(ANNUAL)
-  year                    Int
-  start_date              DateTime                @db.Date
-  end_date                DateTime                @db.Date
-  self_review_deadline    DateTime?               @db.Date
-  manager_review_deadline DateTime?               @db.Date
-  status                  campaign_status         @default(DRAFT)
-  
-  // Pondération configurable
-  weight_self             Int                     @default(20)
-  weight_manager          Int                     @default(50)
-  weight_feedback360      Int                     @default(30)
-  
-  created_by_id           Int
-  created_at              DateTime                @default(now()) @db.DateTime(0)
-  updated_at              DateTime                @updatedAt @db.DateTime(0)
-  
-  creator                 user                    @relation("campaign_creator", fields: [created_by_id], references: [id])
-  reviews                 performance_review[]
-  
-  @@index([created_by_id], map: "perf_campaign_creator")
-  @@index([status], map: "perf_campaign_status")
-  @@index([year], map: "perf_campaign_year")
-}
-
-model performance_review {
-  id                    Int                     @id @default(autoincrement())
-  campaign_id           Int
-  employee_id           Int
-  manager_id            Int
-  
-  status                review_status           @default(PENDING_SELF)
-  
-  // Auto-évaluation employé
-  self_rating           Int?
-  self_comments         String?                 @db.Text
-  self_submitted_at     DateTime?               @db.DateTime(0)
-  
-  // Évaluation manager
-  manager_rating        Int?
-  manager_comments      String?                 @db.Text
-  manager_submitted_at  DateTime?               @db.DateTime(0)
-  
-  // Score final
-  final_rating          Int?
-  final_comments        String?                 @db.Text
-  finalized_at          DateTime?               @db.DateTime(0)
-  
-  created_at            DateTime                @default(now()) @db.DateTime(0)
-  updated_at            DateTime                @updatedAt @db.DateTime(0)
-  
-  campaign              performance_campaign    @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
-  employee              user                    @relation("review_employee", fields: [employee_id], references: [id], onDelete: Cascade)
-  manager               user                    @relation("review_manager", fields: [manager_id], references: [id])
-  objectives            performance_objective[]
-  feedback_requests     feedback_360_request[]
-  improvement_plan      perf_improvement_plan?
-  
-  @@unique([campaign_id, employee_id])
-  @@index([employee_id], map: "perf_review_employee")
-  @@index([manager_id], map: "perf_review_manager")
-  @@index([status], map: "perf_review_status")
-}
-
-model performance_objective {
-  id                Int                       @id @default(autoincrement())
-  review_id         Int?
-  employee_id       Int
-  
-  title             String                    @db.VarChar(255)
-  description       String?                   @db.Text
-  type              perf_objective_type       @default(INDIVIDUAL)
-  category          String?                   @db.VarChar(100)
-  
-  metric_type       metric_type               @default(PERCENTAGE)
-  target_value      Decimal?                  @db.Decimal(10, 2)
-  current_value     Decimal?                  @db.Decimal(10, 2)
-  weight            Int                       @default(100)
-  
-  start_date        DateTime                  @db.Date
-  due_date          DateTime                  @db.Date
-  completed_at      DateTime?                 @db.DateTime(0)
-  
-  self_progress     Int?
-  self_comments     String?                   @db.Text
-  manager_progress  Int?
-  manager_comments  String?                   @db.Text
-  
-  status            perf_obj_status           @default(NOT_STARTED)
-  created_at        DateTime                  @default(now()) @db.DateTime(0)
-  updated_at        DateTime                  @updatedAt @db.DateTime(0)
-  
-  review            performance_review?       @relation(fields: [review_id], references: [id], onDelete: Cascade)
-  employee          user                      @relation("objective_employee", fields: [employee_id], references: [id], onDelete: Cascade)
-  key_results       objective_key_result[]
-  
-  @@index([review_id], map: "perf_objective_review")
-  @@index([employee_id], map: "perf_objective_employee")
-  @@index([status], map: "perf_objective_status")
-}
-
-model objective_key_result {
-  id              Int                       @id @default(autoincrement())
-  objective_id    Int
-  title           String                    @db.VarChar(255)
-  target_value    Decimal?                  @db.Decimal(10, 2)
-  current_value   Decimal?                  @db.Decimal(10, 2)
-  unit            String?                   @db.VarChar(50)
-  status          perf_obj_status           @default(NOT_STARTED)
-  created_at      DateTime                  @default(now()) @db.DateTime(0)
-  updated_at      DateTime                  @updatedAt @db.DateTime(0)
-  
-  objective       performance_objective     @relation(fields: [objective_id], references: [id], onDelete: Cascade)
-  
-  @@index([objective_id], map: "key_result_objective")
-}
-
-model feedback_360_request {
-  id                Int                     @id @default(autoincrement())
-  review_id         Int
-  reviewer_id       Int
-  requested_by_id   Int
-  
-  status            feedback_status         @default(PENDING)
-  rating            Int?
-  responses         Json?
-  comments          String?                 @db.Text
-  is_anonymous      Boolean                 @default(true)
-  
-  submitted_at      DateTime?               @db.DateTime(0)
-  created_at        DateTime                @default(now()) @db.DateTime(0)
-  updated_at        DateTime                @updatedAt @db.DateTime(0)
-  
-  review            performance_review      @relation(fields: [review_id], references: [id], onDelete: Cascade)
-  reviewer          user                    @relation("feedback_reviewer", fields: [reviewer_id], references: [id])
-  requested_by      user                    @relation("feedback_requester", fields: [requested_by_id], references: [id])
-  
-  @@unique([review_id, reviewer_id])
-  @@index([reviewer_id], map: "feedback_reviewer")
-  @@index([requested_by_id], map: "feedback_requester")
-  @@index([status], map: "feedback_status")
-}
-
-model perf_improvement_plan {
-  id              Int                       @id @default(autoincrement())
-  review_id       Int?                      @unique
-  employee_id     Int
-  manager_id      Int
-  
-  title           String                    @db.VarChar(255)
-  reason          String?                   @db.Text
-  start_date      DateTime                  @db.Date
-  end_date        DateTime                  @db.Date
-  status          perf_plan_status          @default(DRAFT)
-  
-  created_at      DateTime                  @default(now()) @db.DateTime(0)
-  updated_at      DateTime                  @updatedAt @db.DateTime(0)
-  
-  review          performance_review?       @relation(fields: [review_id], references: [id])
-  employee        user                      @relation("improvement_employee", fields: [employee_id], references: [id], onDelete: Cascade)
-  manager         user                      @relation("improvement_manager", fields: [manager_id], references: [id])
-  actions         improvement_action[]
-  
-  @@index([employee_id], map: "improvement_employee")
-  @@index([manager_id], map: "improvement_manager")
-  @@index([status], map: "improvement_status")
-}
-
-model improvement_action {
-  id              Int                       @id @default(autoincrement())
-  plan_id         Int
-  title           String                    @db.VarChar(255)
-  description     String?                   @db.Text
-  due_date        DateTime?                 @db.Date
-  completed_at    DateTime?                 @db.DateTime(0)
-  status          perf_action_status        @default(PENDING)
-  employee_notes  String?                   @db.Text
-  manager_notes   String?                   @db.Text
-  created_at      DateTime                  @default(now()) @db.DateTime(0)
-  updated_at      DateTime                  @updatedAt @db.DateTime(0)
-  
-  plan            perf_improvement_plan     @relation(fields: [plan_id], references: [id], onDelete: Cascade)
-  
-  @@index([plan_id], map: "action_plan")
-}
-
-model recognition {
-  id              Int                       @id @default(autoincrement())
-  from_user_id    Int
-  to_user_id      Int
-  
-  type            recognition_type          @default(KUDOS)
-  badge           String?                   @db.VarChar(50)
-  message         String                    @db.Text
-  is_public       Boolean                   @default(true)
-  
-  created_at      DateTime                  @default(now()) @db.DateTime(0)
-  
-  from_user       user                      @relation("recognition_from", fields: [from_user_id], references: [id], onDelete: Cascade)
-  to_user         user                      @relation("recognition_to", fields: [to_user_id], references: [id], onDelete: Cascade)
-  
-  @@index([from_user_id], map: "recognition_from")
-  @@index([to_user_id], map: "recognition_to")
-  @@index([created_at], map: "recognition_date")
-}
-
-// ========================================
-// PERFORMANCE MANAGEMENT ENUMS
-// ========================================
 
 enum campaign_type {
   ANNUAL

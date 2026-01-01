@@ -13,13 +13,13 @@ import { QueryDepartmentDto } from './dto/query-department.dto';
 export class DepartmentsService {
   constructor(private prisma: PrismaService) { }
 
-  async create(createDepartmentDto: CreateDepartmentDto) {
+  async create(companyId: number, createDepartmentDto: CreateDepartmentDto) {
     if (createDepartmentDto.manager_user_id) {
       const manager = await this.prisma.user.findUnique({
         where: { id: createDepartmentDto.manager_user_id },
       });
-      if (!manager) {
-        throw new BadRequestException('Utilisateur manager introuvable');
+      if (!manager || manager.company_id !== companyId) {
+        throw new BadRequestException('Utilisateur manager introuvable ou n\'appartient pas à votre entreprise');
       }
     }
 
@@ -27,25 +27,29 @@ export class DepartmentsService {
       const parent = await this.prisma.department.findUnique({
         where: { id: createDepartmentDto.parent_department_id },
       });
-      if (!parent) {
+      // Verify parent belongs to company
+      if (!parent || parent.company_id !== companyId) {
         throw new BadRequestException('Département parent introuvable');
       }
     }
 
     const existing = await this.prisma.department.findFirst({
       where: {
-        department_name: createDepartmentDto.department_name,
+        company_id: companyId,
+        name: createDepartmentDto.name,
         parent_department_id: createDepartmentDto.parent_department_id ?? null,
       },
     });
 
     if (existing) {
-      throw new ConflictException('Un département avec ce nom existe déjà');
+      throw new ConflictException('Un département avec ce nom existe déjà dans cette entreprise');
     }
 
     const department = await this.prisma.department.create({
       data: {
-        department_name: createDepartmentDto.department_name,
+        company_id: companyId,
+        name: createDepartmentDto.name,
+        description: createDepartmentDto.description,
         manager_user_id: createDepartmentDto.manager_user_id ?? null,
         parent_department_id: createDepartmentDto.parent_department_id ?? null,
         created_at: new Date(),
@@ -64,14 +68,17 @@ export class DepartmentsService {
     return department;
   }
 
-  async findAll(query: QueryDepartmentDto) {
+  async findAll(companyId: number, query: QueryDepartmentDto) {
     const { page = 1, limit = 10, search } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = {
+      company_id: companyId,
+      is_active: true,
+    };
 
     if (search) {
-      where.department_name = { contains: search };
+      where.name = { contains: search };
     }
 
     const [departments, total] = await Promise.all([
@@ -79,7 +86,7 @@ export class DepartmentsService {
         where,
         skip,
         take: limit,
-        orderBy: { department_name: 'asc' },
+        orderBy: { name: 'asc' },
         include: {
           user_department_manager_user_idTouser: {
             select: {
@@ -114,9 +121,9 @@ export class DepartmentsService {
     };
   }
 
-  async findOne(id: number) {
-    const department = await this.prisma.department.findUnique({
-      where: { id },
+  async findOne(companyId: number, id: number) {
+    const department = await this.prisma.department.findFirst({
+      where: { id, company_id: companyId, is_active: true },
       include: {
         user_department_manager_user_idTouser: {
           select: {
@@ -144,9 +151,9 @@ export class DepartmentsService {
     };
   }
 
-  async update(id: number, updateDepartmentDto: UpdateDepartmentDto) {
-    const department = await this.prisma.department.findUnique({
-      where: { id },
+  async update(companyId: number, id: number, updateDepartmentDto: UpdateDepartmentDto) {
+    const department = await this.prisma.department.findFirst({
+      where: { id, company_id: companyId },
     });
 
     if (!department) {
@@ -157,8 +164,8 @@ export class DepartmentsService {
       const manager = await this.prisma.user.findUnique({
         where: { id: updateDepartmentDto.manager_user_id },
       });
-      if (!manager) {
-        throw new BadRequestException('Utilisateur manager introuvable');
+      if (!manager || manager.company_id !== companyId) {
+        throw new BadRequestException('Utilisateur manager introuvable ou n\'appartient pas à votre entreprise');
       }
     }
 
@@ -166,7 +173,7 @@ export class DepartmentsService {
       const parent = await this.prisma.department.findUnique({
         where: { id: updateDepartmentDto.parent_department_id },
       });
-      if (!parent) {
+      if (!parent || parent.company_id !== companyId) {
         throw new BadRequestException('Département parent introuvable');
       }
       if (parent.id === id) {
@@ -174,11 +181,13 @@ export class DepartmentsService {
       }
     }
 
-    if (updateDepartmentDto.department_name && updateDepartmentDto.department_name !== department.department_name) {
+    const newName = updateDepartmentDto.name; // DTO should support 'name'
+    if (newName && newName !== department.name) {
       const duplicate = await this.prisma.department.findFirst({
         where: {
+          company_id: companyId,
           id: { not: id },
-          department_name: updateDepartmentDto.department_name,
+          name: newName,
           parent_department_id: updateDepartmentDto.parent_department_id ?? department.parent_department_id,
         },
       });
@@ -206,9 +215,9 @@ export class DepartmentsService {
     return updated;
   }
 
-  async remove(id: number) {
-    const department = await this.prisma.department.findUnique({
-      where: { id },
+  async remove(companyId: number, id: number) {
+    const department = await this.prisma.department.findFirst({
+      where: { id, company_id: companyId },
       include: {
         _count: {
           select: {
@@ -226,8 +235,13 @@ export class DepartmentsService {
       throw new ConflictException('Impossible de supprimer un département qui possède des utilisateurs');
     }
 
-    await this.prisma.department.delete({ where: { id } });
+    // Soft delete or Hard delete? Spec said "is_active" for soft delete, but task said "Désactiver (soft delete)".
+    // So I should use is_active = false.
+    await this.prisma.department.update({
+      where: { id },
+      data: { is_active: false }
+    });
 
-    return { message: 'Département supprimé avec succès' };
+    return { message: 'Département supprimé (archivé) avec succès' };
   }
 }

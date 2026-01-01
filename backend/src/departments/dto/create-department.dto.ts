@@ -4,7 +4,7 @@ export class CreateDepartmentDto {
   @IsString()
   @MinLength(2, { message: 'Le nom du département doit contenir au moins 2 caractères' })
   @MaxLength(255, { message: 'Le nom du département ne peut pas dépasser 255 caractères' })
-  department_name: string;
+  name: string;
 
   @IsOptional()
   @IsString()
