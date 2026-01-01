@@ -10,7 +10,11 @@ export class TaskRemindersService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
-  ) {}
+  ) { }
+
+  private sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
   /**
    * Cron job qui s'exécute tous les jours à 8h du matin
@@ -55,6 +59,7 @@ export class TaskRemindersService {
       // Envoyer des notifications pour chaque tâche due aujourd'hui
       for (const task of tasksDueToday) {
         await this.sendReminder(task, 'today');
+        await this.sleep(600); // Respect Resend rate limit (2 req/s)
       }
 
       // 2. Tâches dont l'échéance est DEMAIN
@@ -85,6 +90,7 @@ export class TaskRemindersService {
 
       for (const task of tasksDueTomorrow) {
         await this.sendReminder(task, 'tomorrow');
+        await this.sleep(600); // Respect Resend rate limit (2 req/s)
       }
 
       // 3. Tâches EN RETARD
@@ -111,6 +117,7 @@ export class TaskRemindersService {
 
       for (const task of overdueTasks) {
         await this.sendReminder(task, 'overdue');
+        await this.sleep(600); // Respect Resend rate limit (2 req/s)
       }
 
       this.logger.log(`Rappels envoyés: ${tasksDueToday.length} aujourd'hui, ${tasksDueTomorrow.length} demain, ${overdueTasks.length} en retard`);
@@ -121,7 +128,7 @@ export class TaskRemindersService {
 
   private async sendReminder(task: any, type: 'today' | 'tomorrow' | 'overdue') {
     const assignees = task.task_assignment || [];
-    
+
     // Déterminer le message selon le type
     let title: string;
     let urgencyColor: string;
@@ -145,13 +152,12 @@ export class TaskRemindersService {
         break;
     }
 
-    const message = `La tâche "${task.title}" ${
-      type === 'overdue' 
-        ? 'est en retard' 
-        : type === 'today' 
+    const message = `La tâche "${task.title}" ${type === 'overdue'
+        ? 'est en retard'
+        : type === 'today'
           ? 'doit être terminée aujourd\'hui'
           : 'doit être terminée demain'
-    } dans le projet "${task.project?.name || 'Projet'}"`;
+      } dans le projet "${task.project?.name || 'Projet'}"`;
 
     // Envoyer notification à chaque assigné
     for (const assignment of assignees) {

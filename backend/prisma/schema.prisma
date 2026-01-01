@@ -26,7 +26,6 @@ model company {
   updated_at        DateTime     @updatedAt @db.DateTime(0)
   departments       department[]
   positions         position[]
-  users             user[]
 }
 
 model application {
@@ -96,27 +95,26 @@ model conversation_participant {
 
 model department {
   id                                    Int                       @id @default(autoincrement())
-  name                                  String                    @default("") @db.VarChar(255)
   manager_user_id                       Int?
   parent_department_id                  Int?
   created_at                            DateTime                  @default(now()) @db.DateTime(0)
   updated_at                            DateTime                  @updatedAt @db.DateTime(0)
-  company_id                            Int?                      @default(1)
+  company_id                            Int                       @default(1)
   description                           String?                   @db.Text
   is_active                             Boolean                   @default(true)
+  name                                  String                    @default("") @db.VarChar(255)
   announcements                         announcement[]
-  company                               company?                  @relation(fields: [company_id], references: [id])
   user_department_manager_user_idTouser user?                     @relation("department_manager_user_idTouser", fields: [manager_user_id], references: [id])
   department                            department?               @relation("departmentTodepartment", fields: [parent_department_id], references: [id])
   other_department                      department[]              @relation("departmentTodepartment")
+  company                               company                   @relation(fields: [company_id], references: [id], map: "dept_company_fk")
   department_announcement               department_announcement[]
   expense                               expense[]
   positions                             position[]
-  user_user_department_idTodepartment   user[]                    @relation("user_department_idTodepartment")
 
-  @@index([company_id], map: "department_company_id_fkey")
-  @@index([manager_user_id], map: "department_manager_user_id_fkey")
-  @@index([parent_department_id], map: "department_parent_department_id_fkey")
+  @@index([company_id], map: "dept_company_fk")
+  @@index([manager_user_id], map: "manager_user_id")
+  @@index([parent_department_id], map: "parent_department_id")
 }
 
 model department_announcement {
@@ -263,15 +261,14 @@ model position {
   description   String?     @db.Text
   created_at    DateTime    @default(now()) @db.DateTime(0)
   updated_at    DateTime    @updatedAt @db.DateTime(0)
-  company_id    Int?        @default(1)
+  company_id    Int         @default(1)
   department_id Int?
   is_active     Boolean     @default(true)
-  company       company?    @relation(fields: [company_id], references: [id])
-  department    department? @relation(fields: [department_id], references: [id])
-  user          user[]
+  company       company     @relation(fields: [company_id], references: [id], map: "pos_company_fk")
+  department    department? @relation(fields: [department_id], references: [id], map: "pos_department_fk")
 
-  @@index([company_id], map: "position_company_id_fkey")
-  @@index([department_id], map: "position_department_id_fkey")
+  @@index([company_id], map: "pos_company_fk")
+  @@index([department_id], map: "pos_department_fk")
 }
 
 model project {
@@ -690,11 +687,6 @@ model user {
   trainings_created                                     training[]                 @relation("training_creator")
   training_registrations_approved                       training_registration[]    @relation("training_approver")
   training_registrations                                training_registration[]    @relation("training_participant")
-  company                                               company?                   @relation(fields: [company_id], references: [id])
-  department                                            department?                @relation("user_department_idTodepartment", fields: [department_id], references: [id])
-  user                                                  user?                      @relation("userTouser", fields: [manager_user_id], references: [id])
-  other_user                                            user[]                     @relation("userTouser")
-  position                                              position?                  @relation(fields: [position_id], references: [id])
   role_relation                                         role?                      @relation(fields: [role_id], references: [id], map: "user_role_fk")
   user_certifications                                   user_certification[]       @relation("user_certifications")
   user_document_user_document_uploaded_by_user_idTouser user_document[]            @relation("user_document_uploaded_by_user_idTouser")
