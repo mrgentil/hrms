@@ -1,0 +1,114 @@
+﻿node.exe : 
+Environment 
+variables loaded 
+from .env
+Au caractère C:\Users
+\bedi-\AppData\Roamin
+g\npm\npx.ps1:24 : 5
++     & "node$exe"  "
+$basedir/node_modules
+/npm/bin/npx-cli.js" 
+$args
++     ~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Environ   
+ ment variables l    
+oaded from .env:    
+String) [], Remo    
+teException
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+Prisma schema loaded from prisma\schema.prisma
+
+Error: Prisma schema 
+validation - 
+(validate wasm)
+Error code: P1012
+[1;91merror[0m: 
+[1mError validating 
+field `creator` in 
+model 
+`task_template`: The 
+relation field 
+`creator` on model 
+`task_template` is 
+missing an opposite 
+relation field on 
+the model `User`. 
+Either run `prisma 
+format` or add it 
+manually.[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:595[0m
+[1;94m   | [0m
+[1;94m594 | [0m  
+updated_at      
+DateTime      
+@db.DateTime(0)
+[1;94m595 | [0m  
+[1;91mcreator       
+  User? 
+@relation(fields: 
+[created_by], 
+references: [id], 
+onDelete: Cascade)
+[0m
+[1;94m596 | [0m  
+project         
+project?      
+@relation(fields: 
+[project_id], 
+references: [id], 
+onDelete: Cascade)
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mError validating 
+field `task_templates
+_created` in model 
+`User`: The relation 
+field `task_templates
+_created` on model 
+`User` is missing an 
+opposite relation 
+field on the model 
+`task_template`. 
+Either run `prisma 
+format` or add it 
+manually.[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:699[0m
+[1;94m   | [0m
+[1;94m698 | [0m  ta
+sk_dependencies_creat
+ed                   
+          
+task_dependency[]
+[1;94m699 | [0m  [
+1;91mtask_templates_c
+reated               
+                 
+task_template[]      
+      @relation("task
+_template_creator")
+[0m
+[1;94m700 | [0m  
+task_time_entries    
+                     
+            
+task_time_entry[]
+[1;94m   | [0m
+
+Validation Error 
+Count: 2
+[Context: validate]
+
+Prisma CLI Version : 
+6.17.0

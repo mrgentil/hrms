@@ -53,7 +53,7 @@ model application {
   leave_type_id    Int?
   created_at       DateTime           @db.DateTime(0)
   updated_at       DateTime           @db.DateTime(0)
-  user             user               @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "application_ibfk_303")
+  user             User? @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "application_ibfk_303")
   leave_type       leave_type?        @relation(fields: [leave_type_id], references: [id], map: "application_ibfk_304")
   leave_messages   leave_message[]
 
@@ -68,7 +68,7 @@ model leave_message {
   message        String      @db.Text
   created_at     DateTime    @default(now()) @db.DateTime(0)
   application    application @relation(fields: [application_id], references: [id], onDelete: Cascade, map: "leave_message_ibfk_application")
-  author         user        @relation("user_leave_messages", fields: [author_user_id], references: [id], onDelete: Cascade, map: "leave_message_ibfk_author")
+  author         User? @relation("user_leave_messages", fields: [author_user_id], references: [id], onDelete: Cascade, map: "leave_message_ibfk_author")
 
   @@index([application_id], map: "leave_message_application_id")
   @@index([author_user_id], map: "leave_message_author_user_id")
@@ -81,7 +81,7 @@ model conversation {
   created_by_user_id       Int
   created_at               DateTime                   @db.DateTime(0)
   updated_at               DateTime                   @db.DateTime(0)
-  user                     user                       @relation(fields: [created_by_user_id], references: [id], onDelete: NoAction, map: "conversation_ibfk_1")
+  user                     User? @relation(fields: [created_by_user_id], references: [id], onDelete: NoAction, map: "conversation_ibfk_1")
   conversation_participant conversation_participant[]
   user_message             user_message[]
 
@@ -97,7 +97,7 @@ model conversation_participant {
   conversation_id Int
   user_id         Int
   conversation    conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade, map: "conversation_participant_ibfk_285")
-  user            user         @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "conversation_participant_ibfk_286")
+  user            User? @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "conversation_participant_ibfk_286")
 
   @@unique([conversation_id, user_id], map: "conversation_participant_user_id_conversation_id_unique")
   @@index([user_id], map: "user_id")
@@ -114,8 +114,8 @@ model Department {
   is_active                             Boolean                   @default(true)
   name                                  String                    @default("") @db.VarChar(255)
   announcements                         announcement[]
-  user_department_manager_user_idTouser User?                     @relation("department_manager_user_idTouser", fields: [manager_user_id], references: [id])
-  department                            Department?               @relation("departmentTodepartment", fields: [parent_department_id], references: [id])
+  user_department_manager_user_idTouser User? @relation("department_manager_user_idTouser", fields: [manager_user_id], references: [id])
+  department                            Department? @relation("departmentTodepartment", fields: [parent_department_id], references: [id])
   other_department                      Department[]              @relation("departmentTodepartment")
   company                               Company                   @relation(fields: [company_id], references: [id], map: "dept_company_fk")
   department_announcement               department_announcement[]
@@ -136,8 +136,8 @@ model department_announcement {
   created_at               DateTime    @db.DateTime(0)
   created_by_user_id       Int
   department_id            Int?
-  user                     user        @relation(fields: [created_by_user_id], references: [id], onDelete: Cascade, map: "department_announcement_ibfk_307")
-  department               department? @relation(fields: [department_id], references: [id], map: "department_announcement_ibfk_308")
+  user                     User? @relation(fields: [created_by_user_id], references: [id], onDelete: Cascade, map: "department_announcement_ibfk_307")
+  department               Department? @relation(fields: [department_id], references: [id], map: "department_announcement_ibfk_308")
 
   @@index([created_by_user_id], map: "created_by_user_id")
   @@index([department_id], map: "department_id")
@@ -155,7 +155,7 @@ model employment_contract {
   created_at         DateTime                          @db.DateTime(0)
   updated_at         DateTime                          @db.DateTime(0)
   user_id            Int
-  user               user                              @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "employment_contract_ibfk_1")
+  user               User? @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "employment_contract_ibfk_1")
 
   @@index([user_id], map: "user_id")
 }
@@ -168,8 +168,8 @@ model expense {
   amount             Int
   department_id      Int
   user_id            Int?
-  department         department @relation(fields: [department_id], references: [id], onDelete: NoAction, map: "expense_ibfk_291")
-  user               user?      @relation(fields: [user_id], references: [id], map: "expense_ibfk_292")
+  department         Department? @relation(fields: [department_id], references: [id], onDelete: NoAction, map: "expense_ibfk_291")
+  user               User? @relation(fields: [user_id], references: [id], map: "expense_ibfk_292")
 
   @@index([department_id], map: "department_id")
   @@index([user_id], map: "user_id")
@@ -181,7 +181,7 @@ model job {
   start_date DateTime  @db.DateTime(0)
   end_date   DateTime  @db.DateTime(0)
   user_id    Int
-  user       user      @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "job_ibfk_1")
+  user       User? @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "job_ibfk_1")
   payment    payment[]
 
   @@index([user_id], map: "user_id")
@@ -197,7 +197,7 @@ model leave_balance {
   updated_at        DateTime   @db.DateTime(0)
   user_id           Int
   leave_type_id     Int
-  user              user       @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "leave_balance_ibfk_297")
+  user              User? @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "leave_balance_ibfk_297")
   leave_type        leave_type @relation(fields: [leave_type_id], references: [id], onDelete: Cascade, map: "leave_balance_ibfk_298")
 
   @@index([leave_type_id], map: "leave_type_id")
@@ -295,7 +295,7 @@ model project {
   owner_user_id  Int?
   created_at     DateTime         @db.DateTime(0)
   updated_at     DateTime         @db.DateTime(0)
-  user           user?            @relation(fields: [owner_user_id], references: [id], map: "project_ibfk_1")
+  user           User? @relation(fields: [owner_user_id], references: [id], map: "project_ibfk_1")
   project_member project_member[]
   project_tags   project_tag[]
   task           task[]
@@ -312,7 +312,7 @@ model project_member {
   updated_at DateTime @db.DateTime(0)
   user_id    Int
   project_id Int
-  user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "project_member_ibfk_279")
+  user       User? @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "project_member_ibfk_279")
   project    project  @relation(fields: [project_id], references: [id], onDelete: Cascade, map: "project_member_ibfk_280")
 
   @@unique([user_id, project_id], map: "project_member_project_id_user_id_unique")
@@ -330,7 +330,7 @@ model role {
   created_at      DateTime          @db.DateTime(0)
   updated_at      DateTime          @db.DateTime(0)
   role_permission role_permission[]
-  users           user[]
+  users           User[]
   user_role       user_role[]
 }
 
@@ -368,8 +368,8 @@ model task {
   recurrence_rule                    String?           @db.VarChar(255)
   recurrence_end_date                DateTime?         @db.DateTime(0)
   recurring_parent_id                Int?
-  user_task_created_by_user_idTouser user              @relation("task_created_by_user_idTouser", fields: [created_by_user_id], references: [id], onDelete: Cascade, map: "task_ibfk_548")
-  user_task_updated_by_user_idTouser user?             @relation("task_updated_by_user_idTouser", fields: [updated_by_user_id], references: [id], map: "task_ibfk_549")
+  user_task_created_by_user_idTouser User? @relation("task_created_by_user_idTouser", fields: [created_by_user_id], references: [id], onDelete: Cascade, map: "task_ibfk_548")
+  user_task_updated_by_user_idTouser User? @relation("task_updated_by_user_idTouser", fields: [updated_by_user_id], references: [id], map: "task_ibfk_549")
   task_column                        task_column       @relation(fields: [task_column_id], references: [id], onDelete: Cascade, map: "task_ibfk_550")
   project                            project           @relation(fields: [project_id], references: [id], onDelete: Cascade, map: "task_ibfk_551")
   parent_task                        task?             @relation("subtasks", fields: [parent_task_id], references: [id])
@@ -402,7 +402,7 @@ model task_assignment {
   updated_at  DateTime @db.DateTime(0)
   user_id     Int
   task_id     Int
-  user        user     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "task_assignment_ibfk_271")
+  user        User? @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "task_assignment_ibfk_271")
   task        task     @relation(fields: [task_id], references: [id], onDelete: Cascade, map: "task_assignment_ibfk_272")
 
   @@index([task_id], map: "task_id")
@@ -452,9 +452,9 @@ model task_comment {
   attachments       task_attachment[]      @relation("CommentAttachments")
   parent_comment    task_comment?          @relation("CommentReplies", fields: [parent_comment_id], references: [id], onDelete: Cascade)
   replies           task_comment[]         @relation("CommentReplies")
-  resolver          user?                  @relation("CommentResolver", fields: [resolved_by], references: [id])
+  resolver          User? @relation("CommentResolver", fields: [resolved_by], references: [id])
   task              task                   @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  user              user                   @relation("CommentAuthor", fields: [user_id], references: [id], onDelete: Cascade)
+  user              User? @relation("CommentAuthor", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([task_id], map: "task_comment_task_id")
   @@index([user_id], map: "task_comment_user_id")
@@ -471,7 +471,7 @@ model comment_reaction {
   emoji      String       @db.VarChar(10)
   created_at DateTime     @default(now()) @db.DateTime(0)
   comment    task_comment @relation(fields: [comment_id], references: [id], onDelete: Cascade)
-  user       user         @relation("UserCommentReactions", fields: [user_id], references: [id], onDelete: Cascade)
+  user       User? @relation("UserCommentReactions", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([comment_id, user_id, emoji])
   @@index([comment_id], map: "comment_reaction_comment_id")
@@ -486,7 +486,7 @@ model comment_edit_history {
   new_content String       @db.Text
   edited_at   DateTime     @default(now()) @db.DateTime(0)
   comment     task_comment @relation(fields: [comment_id], references: [id], onDelete: Cascade)
-  user        user         @relation("UserCommentEdits", fields: [user_id], references: [id])
+  user        User? @relation("UserCommentEdits", fields: [user_id], references: [id])
 
   @@index([comment_id], map: "comment_edit_history_comment_id")
   @@index([user_id], map: "comment_edit_history_user_id")
@@ -506,7 +506,7 @@ model task_attachment {
   thumbnail_path String?       @db.VarChar(500)
   comment        task_comment? @relation("CommentAttachments", fields: [comment_id], references: [id], onDelete: Cascade)
   task           task          @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  user           user          @relation(fields: [uploaded_by], references: [id], onDelete: Cascade)
+  user           User? @relation(fields: [uploaded_by], references: [id], onDelete: Cascade)
 
   @@index([task_id], map: "task_attachment_task_id")
   @@index([uploaded_by], map: "task_attachment_uploaded_by")
@@ -537,7 +537,7 @@ model task_checklist_item {
   created_at   DateTime       @db.DateTime(0)
   updated_at   DateTime       @db.DateTime(0)
   checklist    task_checklist @relation(fields: [checklist_id], references: [id], onDelete: Cascade)
-  user         user?          @relation(fields: [completed_by], references: [id])
+  user         User? @relation(fields: [completed_by], references: [id])
 
   @@index([checklist_id], map: "task_checklist_item_checklist_id")
   @@index([completed_by], map: "task_checklist_item_completed_by")
@@ -553,7 +553,7 @@ model task_activity {
   user_id    Int
   created_at DateTime @db.DateTime(0)
   task       task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user       User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([task_id], map: "task_activity_task_id")
   @@index([user_id], map: "task_activity_user_id")
@@ -572,7 +572,7 @@ model task_time_entry {
   created_at  DateTime  @db.DateTime(0)
   updated_at  DateTime  @db.DateTime(0)
   task        task      @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  user        user      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user        User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([task_id], map: "task_time_entry_task_id")
   @@index([user_id], map: "task_time_entry_user_id")
@@ -592,7 +592,7 @@ model task_template {
   created_by      Int
   created_at      DateTime      @db.DateTime(0)
   updated_at      DateTime      @db.DateTime(0)
-  creator         user          @relation(fields: [created_by], references: [id], onDelete: Cascade)
+  creator         User? @relation("task_template_creator", fields: [created_by], references: [id], onDelete: Cascade)
   project         project?      @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
   @@index([project_id], map: "task_template_project_id")
@@ -606,7 +606,7 @@ model task_dependency {
   dependency_type String   @default("BLOCKS") @db.VarChar(50)
   created_at      DateTime @db.DateTime(0)
   created_by      Int?
-  creator         user?    @relation(fields: [created_by], references: [id])
+  creator         User? @relation(fields: [created_by], references: [id])
   depends_on      task     @relation("TaskDependedBy", fields: [depends_on_id], references: [id], onDelete: Cascade)
   task            task     @relation("TaskDependencies", fields: [task_id], references: [id], onDelete: Cascade)
 
@@ -696,8 +696,7 @@ model User {
   task_comments_resolved                                task_comment[]             @relation("CommentResolver")
   task_comments_authored                                task_comment[]             @relation("CommentAuthor")
   task_dependencies_created                             task_dependency[]
-  task_templates_created                                task_template[]
-  task_templates_created_count                          task_template[]            @relation("task_template_creator")
+  task_templates_created                                task_template[]            @relation("task_template_creator")
   task_time_entries                                     task_time_entry[]
   trainings_created                                     training[]                 @relation("training_creator")
   training_registration_approved                        training_registration[]    @relation("training_approver")
@@ -714,7 +713,7 @@ model User {
   user_personal_info                                    user_personal_info[]
   user_role                                             user_role[]
   company                                               Company?                   @relation(fields: [company_id], references: [id], map: "user_company_id_fkey")
-  department                                            Department?                @relation("user_department", fields: [department_id], references: [id], map: "user_department_id_fkey")
+  department                                            Department? @relation("user_department", fields: [department_id], references: [id], map: "user_department_id_fkey")
   position                                              Position?                  @relation(fields: [position_id], references: [id], map: "user_position_id_fkey")
 
   @@index([department_id], map: "department_id")
@@ -737,8 +736,8 @@ model user_document {
   created_at                                   DateTime  @db.DateTime(0)
   updated_at                                   DateTime  @db.DateTime(0)
   user_id                                      Int
-  user_user_document_uploaded_by_user_idTouser user      @relation("user_document_uploaded_by_user_idTouser", fields: [uploaded_by_user_id], references: [id], onDelete: NoAction, map: "user_document_ibfk_1")
-  user_user_document_user_idTouser             user      @relation("user_document_user_idTouser", fields: [user_id], references: [id], onDelete: Cascade, map: "user_document_ibfk_2")
+  user_user_document_uploaded_by_user_idTouser User? @relation("user_document_uploaded_by_user_idTouser", fields: [uploaded_by_user_id], references: [id], onDelete: NoAction, map: "user_document_ibfk_1")
+  user_user_document_user_idTouser             User? @relation("user_document_user_idTouser", fields: [user_id], references: [id], onDelete: Cascade, map: "user_document_ibfk_2")
 
   @@index([uploaded_by_user_id], map: "uploaded_by_user_id")
   @@index([user_id], map: "user_id")
@@ -752,7 +751,7 @@ model user_employment_history {
   created_at     DateTime @db.DateTime(0)
   updated_at     DateTime @db.DateTime(0)
   user_id        Int
-  user           user     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_employment_history_ibfk_1")
+  user           User? @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_employment_history_ibfk_1")
 
   @@index([user_id], map: "user_id")
 }
@@ -779,7 +778,7 @@ model user_financial_info {
   account_number           String?                              @db.VarChar(255)
   iban                     String?                              @db.VarChar(255)
   user_id                  Int
-  user                     user                                 @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_financial_info_ibfk_1")
+  user                     User? @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_financial_info_ibfk_1")
 
   @@index([user_id], map: "user_id")
 }
@@ -796,8 +795,8 @@ model user_message {
   updated_at                                DateTime             @db.DateTime(0)
   attachments                               message_attachment[]
   mentions                                  message_mention[]
-  user_user_message_sender_user_idTouser    user                 @relation("user_message_sender_user_idTouser", fields: [sender_user_id], references: [id], onDelete: Cascade, map: "user_message_ibfk_436")
-  user_user_message_recipient_user_idTouser user?                @relation("user_message_recipient_user_idTouser", fields: [recipient_user_id], references: [id], map: "user_message_ibfk_437")
+  user_user_message_sender_user_idTouser    User? @relation("user_message_sender_user_idTouser", fields: [sender_user_id], references: [id], onDelete: Cascade, map: "user_message_ibfk_436")
+  user_user_message_recipient_user_idTouser User? @relation("user_message_recipient_user_idTouser", fields: [recipient_user_id], references: [id], map: "user_message_ibfk_437")
   conversation                              conversation?        @relation(fields: [conversation_id], references: [id], onDelete: Cascade, map: "user_message_ibfk_438")
 
   @@index([conversation_id], map: "conversation_id")
@@ -825,7 +824,7 @@ model message_mention {
   user_id    Int
   created_at DateTime     @default(now())
   message    user_message @relation(fields: [message_id], references: [id], onDelete: Cascade)
-  user       user         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user       User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
   @@index([message_id])
@@ -838,7 +837,7 @@ model user_personal_event {
   event_start_date  DateTime  @db.DateTime(0)
   event_end_date    DateTime? @db.DateTime(0)
   user_id           Int
-  user              user      @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_personal_event_ibfk_1")
+  user              User? @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_personal_event_ibfk_1")
 
   @@index([user_id], map: "user_id")
 }
@@ -864,7 +863,7 @@ model user_personal_info {
   emergency_contact_secondary_phone    String?                            @db.VarChar(100)
   emergency_contact_secondary_relation String?                            @db.VarChar(255)
   user_id                              Int
-  user                                 user                               @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_personal_info_ibfk_1")
+  user                                 User? @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_personal_info_ibfk_1")
 
   @@index([user_id], map: "user_id")
 }
@@ -875,7 +874,7 @@ model user_role {
   updated_at DateTime @db.DateTime(0)
   user_id    Int?
   role_id    Int?
-  user       user?    @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_role_ibfk_123")
+  user       User? @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user_role_ibfk_123")
   role       role?    @relation(fields: [role_id], references: [id], onDelete: Cascade, map: "user_role_ibfk_124")
 
   @@unique([user_id, role_id], map: "user_role_role_id_user_id_unique")
@@ -896,7 +895,7 @@ model attendance {
   overtime_hours     Float?            @db.Float
   created_at         DateTime          @default(now()) @db.DateTime(0)
   updated_at         DateTime          @updatedAt @db.DateTime(0)
-  user               user              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user               User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, date], map: "attendance_user_date_unique")
   @@index([user_id], map: "attendance_user_id")
@@ -922,8 +921,8 @@ model expense_report {
   payment_ref     String?                 @db.VarChar(100)
   created_at      DateTime                @default(now()) @db.DateTime(0)
   updated_at      DateTime                @updatedAt @db.DateTime(0)
-  approver        user?                   @relation("expense_report_approver", fields: [approved_by], references: [id])
-  user            user                    @relation("expense_report_user", fields: [user_id], references: [id], onDelete: Cascade)
+  approver        User? @relation("expense_report_approver", fields: [approved_by], references: [id])
+  user            User? @relation("expense_report_user", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "expense_report_user_id")
   @@index([status], map: "expense_report_status")
@@ -947,8 +946,8 @@ model contract {
   created_by      Int?
   created_at      DateTime        @default(now()) @db.DateTime(0)
   updated_at      DateTime        @updatedAt @db.DateTime(0)
-  creator         user?           @relation("contract_creator", fields: [created_by], references: [id])
-  user            user            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  creator         User? @relation("contract_creator", fields: [created_by], references: [id])
+  user            User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "contract_user_id")
   @@index([status], map: "contract_status")
@@ -970,8 +969,8 @@ model announcement {
   department_id Int?
   created_at    DateTime              @default(now()) @db.DateTime(0)
   updated_at    DateTime              @updatedAt @db.DateTime(0)
-  author        user                  @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  department    department?           @relation(fields: [department_id], references: [id])
+  author        User? @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  department    Department? @relation(fields: [department_id], references: [id])
   reads         announcement_read[]
 
   @@index([author_id], map: "announcement_author_id")
@@ -986,7 +985,7 @@ model announcement_read {
   user_id         Int
   read_at         DateTime     @default(now()) @db.DateTime(0)
   announcement    announcement @relation(fields: [announcement_id], references: [id], onDelete: Cascade)
-  user            user         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user            User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([announcement_id, user_id])
   @@index([user_id], map: "announcement_read_user_id")
@@ -1040,7 +1039,7 @@ model app_settings {
   updated_by  Int?
   created_at  DateTime @default(now()) @db.DateTime(0)
   updated_at  DateTime @updatedAt @db.DateTime(0)
-  updater     user?    @relation(fields: [updated_by], references: [id])
+  updater     User? @relation(fields: [updated_by], references: [id])
 
   @@index([category], map: "app_settings_category")
   @@index([is_public], map: "app_settings_public")
@@ -1058,7 +1057,7 @@ model audit_log {
   ip_address  String?  @db.VarChar(45)
   user_agent  String?  @db.VarChar(500)
   created_at  DateTime @default(now()) @db.DateTime(0)
-  user        user?    @relation(fields: [user_id], references: [id])
+  user        User? @relation(fields: [user_id], references: [id])
 
   @@index([user_id], map: "audit_log_user_id")
   @@index([action], map: "audit_log_action")
@@ -1078,7 +1077,7 @@ model notification {
   is_read     Boolean           @default(false)
   read_at     DateTime?         @db.DateTime(0)
   created_at  DateTime          @default(now()) @db.DateTime(0)
-  user        user              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user        User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "notification_user_id")
   @@index([is_read], map: "notification_is_read")
@@ -1109,8 +1108,8 @@ model payslip {
   notes                String?        @db.Text
   created_at           DateTime       @default(now()) @db.DateTime(0)
   updated_at           DateTime       @updatedAt @db.DateTime(0)
-  generator            user           @relation("payslip_generator", fields: [generated_by], references: [id])
-  user                 user           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  generator            User? @relation("payslip_generator", fields: [generated_by], references: [id])
+  user                 User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, month, year])
   @@index([user_id], map: "payslip_user_id")
@@ -1142,8 +1141,8 @@ model salary_advance {
   updated_at        DateTime            @updatedAt @db.DateTime(0)
   requested_date    DateTime            @default(now()) @db.DateTime(0)
   repayments        advance_repayment[]
-  reviewer          user?               @relation("advance_reviewer", fields: [reviewed_by], references: [id])
-  user              user                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  reviewer          User? @relation("advance_reviewer", fields: [reviewed_by], references: [id])
+  user              User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "salary_advance_user_id")
   @@index([status], map: "salary_advance_status")
@@ -1180,8 +1179,8 @@ model fund_request {
   payment_ref      String?             @db.VarChar(100)
   created_at       DateTime            @default(now()) @db.DateTime(0)
   updated_at       DateTime            @updatedAt @db.DateTime(0)
-  reviewer         user?               @relation("fund_request_reviewer", fields: [reviewed_by], references: [id])
-  user             user                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  reviewer         User? @relation("fund_request_reviewer", fields: [reviewed_by], references: [id])
+  user             User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "fund_request_user_id")
   @@index([status], map: "fund_request_status")
@@ -1207,9 +1206,9 @@ model bonus {
   updated_at       DateTime     @updatedAt @db.DateTime(0)
   payslip_month    Int?
   payslip_year     Int?
-  approver         user?        @relation("bonus_approver", fields: [approved_by], references: [id])
-  creator          user         @relation("bonus_creator", fields: [created_by], references: [id])
-  user             user         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  approver         User? @relation("bonus_approver", fields: [approved_by], references: [id])
+  creator          User? @relation("bonus_creator", fields: [created_by], references: [id])
+  user             User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "bonus_user_id")
   @@index([status], map: "bonus_status")
@@ -1254,7 +1253,7 @@ model employee_benefit {
   created_at   DateTime                  @default(now()) @db.DateTime(0)
   updated_at   DateTime                  @updatedAt @db.DateTime(0)
   benefit      benefit_catalog           @relation(fields: [benefit_id], references: [id], onDelete: Cascade)
-  user         user                      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user         User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, benefit_id])
   @@index([user_id], map: "employee_benefit_user_id")
@@ -1330,7 +1329,7 @@ model job_interview {
   updated_at     DateTime              @updatedAt @db.DateTime(0)
   application    candidate_application @relation(fields: [application_id], references: [id], onDelete: Cascade)
   candidate      candidate             @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
-  interviewer    user                  @relation("Interviewer", fields: [interviewer_id], references: [id])
+  interviewer    User? @relation("Interviewer", fields: [interviewer_id], references: [id])
 
   @@index([application_id])
   @@index([candidate_id])
@@ -1346,8 +1345,8 @@ model onboarding_process {
   checklist   Json?
   created_at  DateTime @default(now()) @db.DateTime(0)
   updated_at  DateTime @updatedAt @db.DateTime(0)
-  employee    user     @relation("OnboardingEmployee", fields: [employee_id], references: [id], onDelete: Cascade)
-  mentor      user?    @relation("OnboardingMentor", fields: [mentor_id], references: [id])
+  employee    User? @relation("OnboardingEmployee", fields: [employee_id], references: [id], onDelete: Cascade)
+  mentor      User? @relation("OnboardingMentor", fields: [mentor_id], references: [id])
 
   @@index([mentor_id])
 }
@@ -1385,7 +1384,7 @@ model training {
   created_at         DateTime                @default(now()) @db.DateTime(0)
   updated_at         DateTime                @updatedAt @db.DateTime(0)
   category           training_category       @relation(fields: [category_id], references: [id])
-  creator            user                    @relation("training_creator", fields: [created_by_user_id], references: [id])
+  creator            User? @relation("training_creator", fields: [created_by_user_id], references: [id])
   registrations      training_registration[]
   sessions           training_session[]
 
@@ -1426,11 +1425,11 @@ model training_registration {
   notes          String?             @db.Text
   created_at     DateTime            @default(now()) @db.DateTime(0)
   updated_at     DateTime            @updatedAt @db.DateTime(0)
-  approved_by    user?               @relation("training_approver", fields: [approved_by_id], references: [id])
+  approved_by    User? @relation("training_approver", fields: [approved_by_id], references: [id])
   certificate    certification?      @relation(fields: [certificate_id], references: [id])
   session        training_session?   @relation(fields: [session_id], references: [id])
   training       training            @relation(fields: [training_id], references: [id])
-  user           user                @relation("training_participant", fields: [user_id], references: [id], onDelete: Cascade)
+  user           User? @relation("training_participant", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, training_id, session_id])
   @@index([training_id])
@@ -1465,7 +1464,7 @@ model user_certification {
   created_at       DateTime      @default(now()) @db.DateTime(0)
   updated_at       DateTime      @updatedAt @db.DateTime(0)
   certification    certification @relation(fields: [certification_id], references: [id])
-  user             user          @relation("user_certifications", fields: [user_id], references: [id], onDelete: Cascade)
+  user             User? @relation("user_certifications", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, certification_id, obtained_date])
   @@index([certification_id])
@@ -1483,8 +1482,8 @@ model development_plan {
   created_at    DateTime                @default(now()) @db.DateTime(0)
   updated_at    DateTime                @updatedAt @db.DateTime(0)
   objectives    development_objective[]
-  creator       user                    @relation("development_plan_creator", fields: [created_by_id], references: [id])
-  user          user                    @relation("development_plan_user", fields: [user_id], references: [id], onDelete: Cascade)
+  creator       User? @relation("development_plan_creator", fields: [created_by_id], references: [id])
+  user          User? @relation("development_plan_user", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
   @@index([created_by_id])
@@ -1542,7 +1541,7 @@ model elearning_progress {
   created_at       DateTime         @default(now()) @db.DateTime(0)
   updated_at       DateTime         @updatedAt @db.DateTime(0)
   module           elearning_module @relation(fields: [module_id], references: [id], onDelete: Cascade)
-  user             user             @relation("elearning_user", fields: [user_id], references: [id], onDelete: Cascade)
+  user             User? @relation("elearning_user", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, module_id])
   @@index([module_id])
@@ -1565,7 +1564,7 @@ model performance_campaign {
   created_by_id           Int
   created_at              DateTime             @default(now()) @db.DateTime(0)
   updated_at              DateTime             @updatedAt @db.DateTime(0)
-  creator                 user                 @relation("campaign_creator", fields: [created_by_id], references: [id])
+  creator                 User? @relation("campaign_creator", fields: [created_by_id], references: [id])
   reviews                 performance_review[]
 
   @@index([created_by_id], map: "perf_campaign_creator")
@@ -1594,8 +1593,8 @@ model performance_review {
   improvement_plan     perf_improvement_plan?
   objectives           performance_objective[]
   campaign             performance_campaign    @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
-  employee             user                    @relation("review_employee", fields: [employee_id], references: [id], onDelete: Cascade)
-  manager              user                    @relation("review_manager", fields: [manager_id], references: [id])
+  employee             User? @relation("review_employee", fields: [employee_id], references: [id], onDelete: Cascade)
+  manager              User? @relation("review_manager", fields: [manager_id], references: [id])
 
   @@unique([campaign_id, employee_id])
   @@index([employee_id], map: "perf_review_employee")
@@ -1626,7 +1625,7 @@ model performance_objective {
   created_at       DateTime               @default(now()) @db.DateTime(0)
   updated_at       DateTime               @updatedAt @db.DateTime(0)
   key_results      objective_key_result[]
-  employee         user                   @relation("objective_employee", fields: [employee_id], references: [id], onDelete: Cascade)
+  employee         User? @relation("objective_employee", fields: [employee_id], references: [id], onDelete: Cascade)
   review           performance_review?    @relation(fields: [review_id], references: [id], onDelete: Cascade)
 
   @@index([review_id], map: "perf_objective_review")
@@ -1662,9 +1661,9 @@ model feedback_360_request {
   submitted_at    DateTime?          @db.DateTime(0)
   created_at      DateTime           @default(now()) @db.DateTime(0)
   updated_at      DateTime           @updatedAt @db.DateTime(0)
-  requested_by    user               @relation("feedback_requester", fields: [requested_by_id], references: [id])
+  requested_by    User? @relation("feedback_requester", fields: [requested_by_id], references: [id])
   review          performance_review @relation(fields: [review_id], references: [id], onDelete: Cascade)
-  reviewer        user               @relation("feedback_reviewer", fields: [reviewer_id], references: [id])
+  reviewer        User? @relation("feedback_reviewer", fields: [reviewer_id], references: [id])
 
   @@unique([review_id, reviewer_id])
   @@index([reviewer_id], map: "feedback_reviewer")
@@ -1685,8 +1684,8 @@ model perf_improvement_plan {
   created_at  DateTime             @default(now()) @db.DateTime(0)
   updated_at  DateTime             @updatedAt @db.DateTime(0)
   actions     improvement_action[]
-  employee    user                 @relation("improvement_employee", fields: [employee_id], references: [id], onDelete: Cascade)
-  manager     user                 @relation("improvement_manager", fields: [manager_id], references: [id])
+  employee    User? @relation("improvement_employee", fields: [employee_id], references: [id], onDelete: Cascade)
+  manager     User? @relation("improvement_manager", fields: [manager_id], references: [id])
   review      performance_review?  @relation(fields: [review_id], references: [id])
 
   @@index([employee_id], map: "improvement_employee")
@@ -1720,8 +1719,8 @@ model recognition {
   message      String           @db.Text
   is_public    Boolean          @default(true)
   created_at   DateTime         @default(now()) @db.DateTime(0)
-  from_user    user             @relation("recognition_from", fields: [from_user_id], references: [id], onDelete: Cascade)
-  to_user      user             @relation("recognition_to", fields: [to_user_id], references: [id], onDelete: Cascade)
+  from_user    User? @relation("recognition_from", fields: [from_user_id], references: [id], onDelete: Cascade)
+  to_user      User? @relation("recognition_to", fields: [to_user_id], references: [id], onDelete: Cascade)
 
   @@index([from_user_id], map: "recognition_from")
   @@index([to_user_id], map: "recognition_to")

@@ -1,0 +1,594 @@
+﻿node.exe : 
+Environment 
+variables loaded 
+from .env
+Au caractère C:\Users
+\bedi-\AppData\Roamin
+g\npm\npx.ps1:24 : 5
++     & "node$exe"  "
+$basedir/node_modules
+/npm/bin/npx-cli.js" 
+$args
++     ~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Environ   
+ ment variables l    
+oaded from .env:    
+String) [], Remo    
+teException
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+Prisma schema loaded from prisma\schema.prisma
+
+Error: Prisma schema 
+validation - 
+(validate wasm)
+Error code: P1012
+[1;91merror[0m: 
+[1mType 
+"department" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"Department"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:140[0m
+[1;94m   | [0m
+[1;94m139 | [0m  
+user                 
+    User             
+       
+@relation(fields: [cr
+eated_by_user_id], 
+references: [id], 
+onDelete: Cascade, 
+map: "department_anno
+uncement_ibfk_307")
+[1;94m140 | [0m  
+department           
+    [1;91mdepartment
+[0m? 
+@relation(fields: 
+[department_id], 
+references: [id], 
+map: "department_anno
+uncement_ibfk_308")
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType 
+"department" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"Department"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:171[0m
+[1;94m   | [0m
+[1;94m170 | [0m  
+user_id            
+Int?
+[1;94m171 | [0m  
+department         [
+1;91mdepartment[0m 
+@relation(fields: 
+[department_id], 
+references: [id], 
+onDelete: NoAction, 
+map: 
+"expense_ibfk_291")
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:172[0m
+[1;94m   | [0m
+[1;94m171 | [0m  
+department         
+department 
+@relation(fields: 
+[department_id], 
+references: [id], 
+onDelete: NoAction, 
+map: 
+"expense_ibfk_291")
+[1;94m172 | [0m  
+user               
+[1;91muser[0m?     
+ @relation(fields: 
+[user_id], 
+references: [id], 
+map: 
+"expense_ibfk_292")
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:298[0m
+[1;94m   | [0m
+[1;94m297 | [0m  
+updated_at     
+DateTime         
+@db.DateTime(0)
+[1;94m298 | [0m  
+user           
+[1;91muser[0m?     
+       
+@relation(fields: 
+[owner_user_id], 
+references: [id], 
+map: 
+"project_ibfk_1")
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:333[0m
+[1;94m   | [0m
+[1;94m332 | [0m  
+role_permission 
+role_permission[]
+[1;94m333 | [0m  
+users           
+[1;91muser[0m[]
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:372[0m
+[1;94m   | [0m
+[1;94m371 | [0m  us
+er_task_created_by_us
+er_idTouser User     
+               @relat
+ion("task_created_by_
+user_idTouser", 
+fields: [created_by_u
+ser_id], references: 
+[id], onDelete: 
+Cascade, map: 
+"task_ibfk_548")
+[1;94m372 | [0m  us
+er_task_updated_by_us
+er_idTouser 
+[1;91muser[0m?     
+        @relation("ta
+sk_updated_by_user_id
+Touser", fields: [upd
+ated_by_user_id], 
+references: [id], 
+map: "task_ibfk_549")
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:455[0m
+[1;94m   | [0m
+[1;94m454 | [0m  
+replies           
+task_comment[]       
+  @relation("CommentR
+eplies")
+[1;94m455 | [0m  
+resolver          
+[1;91muser[0m?     
+             @relatio
+n("CommentResolver", 
+fields: 
+[resolved_by], 
+references: [id])
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:540[0m
+[1;94m   | [0m
+[1;94m539 | [0m  
+checklist    
+task_checklist 
+@relation(fields: 
+[checklist_id], 
+references: [id], 
+onDelete: Cascade)
+[1;94m540 | [0m  
+user         
+[1;91muser[0m?     
+     
+@relation(fields: 
+[completed_by], 
+references: [id])
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:609[0m
+[1;94m   | [0m
+[1;94m608 | [0m  
+created_by      Int?
+[1;94m609 | [0m  
+creator         
+[1;91muser[0m?    
+@relation(fields: 
+[created_by], 
+references: [id])
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:800[0m
+[1;94m   | [0m
+[1;94m799 | [0m  us
+er_user_message_sende
+r_user_idTouser    
+User                 
+   @relation("user_me
+ssage_sender_user_idT
+ouser", fields: 
+[sender_user_id], 
+references: [id], 
+onDelete: Cascade, 
+map: "user_message_ib
+fk_436")
+[1;94m800 | [0m  us
+er_user_message_recip
+ient_user_idTouser 
+[1;91muser[0m?     
+           @relation(
+"user_message_recipie
+nt_user_idTouser", 
+fields: 
+[recipient_user_id], 
+references: [id], 
+map: "user_message_ib
+fk_437")
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:878[0m
+[1;94m   | [0m
+[1;94m877 | [0m  
+role_id    Int?
+[1;94m878 | [0m  
+user       
+[1;91muser[0m?    
+@relation(fields: 
+[user_id], 
+references: [id], 
+onDelete: Cascade, 
+map: 
+"user_role_ibfk_123")
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:925[0m
+[1;94m   | [0m
+[1;94m924 | [0m  
+updated_at      
+DateTime             
+   @updatedAt 
+@db.DateTime(0)
+[1;94m925 | [0m  
+approver        
+[1;91muser[0m?     
+              @relati
+on("expense_report_ap
+prover", fields: 
+[approved_by], 
+references: [id])
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:950[0m
+[1;94m   | [0m
+[1;94m949 | [0m  
+updated_at      
+DateTime        
+@updatedAt 
+@db.DateTime(0)
+[1;94m950 | [0m  
+creator         
+[1;91muser[0m?     
+      @relation("cont
+ract_creator", 
+fields: 
+[created_by], 
+references: [id])
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType 
+"department" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"Department"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:974[0m
+[1;94m   | [0m
+[1;94m973 | [0m  
+author        User   
+                 
+@relation(fields: 
+[author_id], 
+references: [id], 
+onDelete: Cascade)
+[1;94m974 | [0m  
+department    [1;91m
+department[0m?      
+     
+@relation(fields: 
+[department_id], 
+references: [id])
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:1043[0m
+[1;94m   | [0m
+[1;94m1042 | [0m  
+updated_at  DateTime 
+@updatedAt 
+@db.DateTime(0)
+[1;94m1043 | [0m  
+updater     
+[1;91muser[0m?    
+@relation(fields: 
+[updated_by], 
+references: [id])
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:1061[0m
+[1;94m   | [0m
+[1;94m1060 | [0m  
+created_at  DateTime 
+@default(now()) 
+@db.DateTime(0)
+[1;94m1061 | [0m  
+user        
+[1;91muser[0m?    
+@relation(fields: 
+[user_id], 
+references: [id])
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:1145[0m
+[1;94m   | [0m
+[1;94m1144 | [0m  
+repayments        
+advance_repayment[]
+[1;94m1145 | [0m  
+reviewer          
+[1;91muser[0m?     
+          @relation("
+advance_reviewer", 
+fields: 
+[reviewed_by], 
+references: [id])
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:1183[0m
+[1;94m   | [0m
+[1;94m1182 | [0m  
+updated_at       
+DateTime            
+@updatedAt 
+@db.DateTime(0)
+[1;94m1183 | [0m  
+reviewer         
+[1;91muser[0m?     
+          @relation("
+fund_request_reviewer
+", fields: 
+[reviewed_by], 
+references: [id])
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:1210[0m
+[1;94m   | [0m
+[1;94m1209 | [0m  
+payslip_year     Int?
+[1;94m1210 | [0m  
+approver         
+[1;91muser[0m?     
+   @relation("bonus_a
+pprover", fields: 
+[approved_by], 
+references: [id])
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:1350[0m
+[1;94m   | [0m
+[1;94m1349 | [0m  
+employee    User     
+               @relat
+ion("OnboardingEmploy
+ee", fields: 
+[employee_id], 
+references: [id], 
+onDelete: Cascade)
+[1;94m1350 | [0m  
+mentor      
+[1;91muser[0m?    @
+relation("OnboardingM
+entor", fields: 
+[mentor_id], 
+references: [id])
+[1;94m   | [0m
+[1;91merror[0m: 
+[1mType "user" is 
+neither a built-in 
+type, nor refers to 
+another model, 
+composite type, or 
+enum. Did you mean 
+"User"?[0m
+  [1;94m-->[0m  [4
+mprisma\schema.prisma
+:1429[0m
+[1;94m   | [0m
+[1;94m1428 | [0m  
+updated_at     
+DateTime            
+@updatedAt 
+@db.DateTime(0)
+[1;94m1429 | [0m  
+approved_by    
+[1;91muser[0m?     
+          @relation("
+training_approver", 
+fields: 
+[approved_by_id], 
+references: [id])
+[1;94m   | [0m
+
+Validation Error 
+Count: 21
+[Context: validate]
+
+Prisma CLI Version : 
+6.17.0
