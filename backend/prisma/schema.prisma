@@ -109,7 +109,7 @@ model Department {
   parent_department_id                  Int?
   created_at                            DateTime                  @default(now()) @db.DateTime(0)
   updated_at                            DateTime                  @updatedAt @db.DateTime(0)
-  company_id                            Int                       @default(1)
+  company_id                            Int?
   description                           String?                   @db.Text
   is_active                             Boolean                   @default(true)
   name                                  String                    @default("") @db.VarChar(255)
@@ -117,7 +117,7 @@ model Department {
   user_department_manager_user_idTouser User? @relation("department_manager_user_idTouser", fields: [manager_user_id], references: [id])
   department                            Department? @relation("departmentTodepartment", fields: [parent_department_id], references: [id])
   other_department                      Department[]              @relation("departmentTodepartment")
-  company                               Company                   @relation(fields: [company_id], references: [id], map: "dept_company_fk")
+  company                               Company?                  @relation(fields: [company_id], references: [id], map: "dept_company_fk")
   department_announcement               department_announcement[]
   expense                               expense[]
   positions                             Position[]
@@ -273,10 +273,10 @@ model Position {
   description   String?     @db.Text
   created_at    DateTime    @default(now()) @db.DateTime(0)
   updated_at    DateTime    @updatedAt @db.DateTime(0)
-  company_id    Int         @default(1)
+  company_id    Int?
   department_id Int?
   is_active     Boolean     @default(true)
-  company       Company     @relation(fields: [company_id], references: [id], map: "pos_company_fk")
+  company       Company?    @relation(fields: [company_id], references: [id], map: "pos_company_fk")
   department    Department? @relation(fields: [department_id], references: [id], map: "pos_department_fk")
   users         User[]
 
