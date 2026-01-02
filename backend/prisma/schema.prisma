@@ -16,9 +16,13 @@ model Company {
   logo_url          String?      @db.VarChar(255)
   website           String?      @db.VarChar(255)
   tax_id            String?      @db.VarChar(255)
+  country           String?      @db.VarChar(100)
   currency          String       @default("$") @db.VarChar(10)
   timezone          String       @default("UTC") @db.VarChar(50)
+  language          String       @default("fr") @db.VarChar(10)
   date_format       String       @default("YYYY-MM-DD") @db.VarChar(20)
+  primary_color     String?      @db.VarChar(7)
+  secondary_color   String?      @db.VarChar(7)
   working_days      Json?
   daily_work_hours  Int?
   probation_period  Int?
@@ -32,6 +36,7 @@ model Company {
 
   @@map("company")
 }
+
 
 model application {
   id               Int                @id @default(autoincrement())

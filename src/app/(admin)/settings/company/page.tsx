@@ -3,19 +3,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import axios from '@/lib/axios';
+import { apiClient } from '@/services/api.client';
 import { toast } from 'react-hot-toast';
 import {
-    BuildingIcon,
-    MapIcon,
-    ClockIcon,
-    CurrencyDollarIcon,
-    GlobeIcon,
-    PhotographIcon,
-    ColorSwatchIcon,
-    CalendarIcon,
-    BriefcaseIcon
-} from '@heroicons/react/outline';
+    BoxCubeIcon,
+    CalenderIcon,
+    TimeIcon,
+    DollarLineIcon,
+    PencilIcon,
+} from '@/icons';
 
 interface CompanySettings {
     id: number;
@@ -166,7 +162,7 @@ export default function CompanySettingsPage() {
                 <div className="md:col-span-1 space-y-6">
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                            <PhotographIcon className="h-5 w-5 text-indigo-500" /> Branding
+                            <PencilIcon className="h-5 w-5 text-indigo-500" /> Branding
                         </h2>
 
                         <div className="mb-6 text-center">
@@ -252,7 +248,7 @@ export default function CompanySettingsPage() {
                 <div className="md:col-span-2 space-y-6">
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                            <BuildingIcon className="h-5 w-5 text-indigo-500" /> Informations Générales
+                            <BoxCubeIcon className="h-5 w-5 text-indigo-500" /> Informations Générales
                         </h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -273,7 +269,7 @@ export default function CompanySettingsPage() {
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Pays (Siège)</label>
                                 <div className="mt-1 flex rounded-md shadow-sm">
                                     <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-                                        <MapIcon className="h-4 w-4" />
+                                        <BoxCubeIcon className="h-4 w-4" />
                                     </span>
                                     <input
                                         type="text"
@@ -290,7 +286,7 @@ export default function CompanySettingsPage() {
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fuseau Horaire</label>
                                 <div className="mt-1 flex rounded-md shadow-sm">
                                     <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-                                        <GlobeIcon className="h-4 w-4" />
+                                        <BoxCubeIcon className="h-4 w-4" />
                                     </span>
                                     <select
                                         name="timezone"
@@ -312,7 +308,7 @@ export default function CompanySettingsPage() {
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Devise (Défaut)</label>
                                 <div className="mt-1 flex rounded-md shadow-sm">
                                     <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-                                        <CurrencyDollarIcon className="h-4 w-4" />
+                                        <DollarLineIcon className="h-4 w-4" />
                                     </span>
                                     <input
                                         type="text"
@@ -346,7 +342,7 @@ export default function CompanySettingsPage() {
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                            <BriefcaseIcon className="h-5 w-5 text-indigo-500" /> Règles RH & Organisation
+                            <CalenderIcon className="h-5 w-5 text-indigo-500" /> Règles RH & Organisation
                         </h2>
 
                         <div className="space-y-6">
@@ -360,8 +356,8 @@ export default function CompanySettingsPage() {
                                             onClick={() => canEdit && handleDayToggle(day)}
                                             disabled={!canEdit}
                                             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${(company.working_days || []).includes(day)
-                                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                                    : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200'
+                                                ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                                : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200'
                                                 }`}
                                         >
                                             {day}
@@ -375,7 +371,7 @@ export default function CompanySettingsPage() {
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Heures / Jour</label>
                                     <div className="mt-1 relative rounded-md shadow-sm">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <ClockIcon className="h-4 w-4 text-gray-400" />
+                                            <TimeIcon className="h-4 w-4 text-gray-400" />
                                         </div>
                                         <input
                                             type="number"
@@ -394,7 +390,7 @@ export default function CompanySettingsPage() {
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Période d'essai (Mois)</label>
                                     <div className="mt-1 relative rounded-md shadow-sm">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <CalendarIcon className="h-4 w-4 text-gray-400" />
+                                            <CalenderIcon className="h-4 w-4 text-gray-400" />
                                         </div>
                                         <input
                                             type="number"

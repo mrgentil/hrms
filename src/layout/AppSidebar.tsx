@@ -207,6 +207,7 @@ const systemNavItems: NavItem[] = [
     requiredPermission: "roles.manage",
     allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
     subItems: [
+      { name: "Entreprises", path: "/companies", allowedRoles: ["ROLE_SUPER_ADMIN"] },
       { name: "Utilisateurs", path: "/users" },
       { name: "Rôles & Permissions", path: "/users/roles" },
       { name: "Configuration Menus", path: "/users/menus" },
