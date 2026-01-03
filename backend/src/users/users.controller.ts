@@ -55,7 +55,10 @@ export class UsersController {
     @Query(ValidationPipe) queryParams: QueryParamsDto,
     @CurrentUser() currentUser: any,
   ) {
-    const result = await this.usersService.findAll(queryParams, currentUser.company_id);
+    // Si Super Admin, on passe undefined pour lui permettre de choisir l'entreprise via les queryParams
+    // Sinon, on force l'entreprise de l'utilisateur courant
+    const companyId = currentUser.role === UserRole.ROLE_SUPER_ADMIN ? undefined : currentUser.company_id;
+    const result = await this.usersService.findAll(queryParams, companyId);
     return {
       success: true,
       ...result,

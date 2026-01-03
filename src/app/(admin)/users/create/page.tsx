@@ -7,6 +7,8 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import SearchableSelect from "@/components/common/SearchableSelect";
 import { useToast } from "@/hooks/useToast";
 import { useCreateUser, useUserAdminOptions } from "@/hooks/useUsers";
+import { companiesService, Company } from "@/services/companies.service";
+import { useAuth } from "@/contexts/AuthContext";
 import { CreateUserDto, UserRole } from "@/types/api";
 import { formatUserRole, ROLE_CATEGORIES, sortRolesByHierarchy, getRoleEmoji } from "@/lib/roleLabels";
 
@@ -23,6 +25,7 @@ type FormState = {
   hire_date: string;
   active: "true" | "false";
   send_invitation: boolean;
+  company_id: string;
 };
 
 const initialFormState: FormState = {
@@ -38,12 +41,23 @@ const initialFormState: FormState = {
   hire_date: "",
   active: "true",
   send_invitation: false,
+  company_id: "",
 };
 
 export default function CreateUser() {
   const router = useRouter();
   const toast = useToast();
+  const { user } = useAuth();
   const [formState, setFormState] = useState<FormState>(initialFormState);
+  const [companies, setCompanies] = useState<Company[]>([]);
+
+  const isSuperAdmin = user?.role === 'ROLE_SUPER_ADMIN';
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      companiesService.getAll().then(setCompanies).catch(console.error);
+    }
+  }, [isSuperAdmin]);
 
   const {
     data: adminOptionsResponse,
@@ -130,6 +144,9 @@ export default function CreateUser() {
     if (formState.hire_date) {
       payload.hire_date = new Date(formState.hire_date).toISOString();
     }
+    if (formState.company_id && isSuperAdmin) {
+      payload.company_id = Number(formState.company_id);
+    }
 
     console.log("DEBUG: Payload final envoyé au backend:", JSON.stringify(payload, null, 2));
     toast.info("Création de l'utilisateur en cours...");
@@ -214,6 +231,32 @@ export default function CreateUser() {
                 />
               </div>
             </div>
+
+            {isSuperAdmin && (
+              <div className="mb-6">
+                <label className="mb-2.5 block text-black dark:text-white">
+                  Entreprise <span className="text-meta-1">*</span>
+                </label>
+                <select
+                  name="company_id"
+                  value={formState.company_id}
+                  onChange={handleInputChange}
+                  disabled={isFormDisabled || isSubmitting}
+                  className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-not-allowed disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                  required
+                >
+                  <option value="">Sélectionner une entreprise</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name} {company.active ? '' : '(Inactive)'}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  En tant que Super Admin, vous devez assigner l'utilisateur à une entreprise.
+                </p>
+              </div>
+            )}
 
             <div className="flex items-center space-x-3 mb-6">
               <input

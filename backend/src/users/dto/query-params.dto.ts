@@ -37,4 +37,9 @@ export class QueryParamsDto {
   @Type(() => Number)
   @IsInt()
   department_id?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  company_id?: number;
 }

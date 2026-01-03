@@ -54,4 +54,8 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   profile_photo_url?: string;
+
+  @IsOptional()
+  @IsInt({ message: 'L\'ID de l\'entreprise doit être un nombre' })
+  company_id?: number;
 }

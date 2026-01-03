@@ -215,4 +215,5 @@ export interface QueryParams {
   sort?: string;
   order?: 'ASC' | 'DESC';
   filter?: Record<string, any>;
+  company_id?: number;
 }

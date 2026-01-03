@@ -61,7 +61,24 @@ export class UsersService {
     const roleToAssign = createUserDto.role ?? UserRole.ROLE_EMPLOYEE;
     await this.validateRoleAssignment(currentUserId, roleToAssign);
 
-    // Si companyId n'est pas fourni, essayer de le récupérer depuis l'utilisateur courant
+    // Si companyId est fourni dans le DTO (super admin), on l'utilise
+    // Sinon, on garde celui passé en paramètre (celui de l'utilisateur courant) ou fallback
+    if (createUserDto.company_id) {
+      // TODO: Ajouter une vérification de sécurité ici pour s'assurer que SEUL un Super Admin peut passer company_id via DTO
+      // Cependant, comme le paramètre `companyId` vient du contrôleur (qui lit le token), 
+      // si l'utilisateur n'est pas super admin, il est restreint à son propre scope via le contrôleur.
+      // Mais pour être sûr, on devrait vérifier le rôle de l'appelant. 
+      // Pour l'instant, on fait confiance à l'appelant user courant (qui est super admin si companyId est null dans le contexte)
+
+      // En fait, le plus simple est de vérifier si l'utilisateur courant a le droit de définir company_id
+      // (ce qui est implicite si currentUserId a le rôle SUPER_ADMIN)
+      const currentUser = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+      if (currentUser?.role === UserRole.ROLE_SUPER_ADMIN) {
+        companyId = createUserDto.company_id;
+      }
+    }
+
+    // Si toujours pas de companyId, essayer de le récupérer depuis l'utilisateur courant
     if (!companyId) {
       const currentUser = await this.prisma.user.findUnique({ where: { id: currentUserId } });
       companyId = currentUser?.company_id || undefined;

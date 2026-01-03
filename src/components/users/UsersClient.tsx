@@ -12,6 +12,8 @@ import {
   useExportUsers,
   useImportUsers
 } from "@/hooks/useUsers";
+import { useAuth } from "@/contexts/AuthContext";
+import { companiesService, Company } from "@/services/companies.service";
 import { formatUserRole, getRoleBadgeClass, getRoleEmoji } from "@/lib/roleLabels";
 import { Can, PERMISSIONS } from "@/contexts/PermissionsContext";
 
@@ -19,12 +21,24 @@ export default function UsersClient() {
   const toast = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const { user } = useAuth();
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<number | undefined>(undefined);
+
+  const isSuperAdmin = user?.role === 'ROLE_SUPER_ADMIN';
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      companiesService.getAll().then(setCompanies).catch(console.error);
+    }
+  }, [isSuperAdmin]);
 
   // Hooks pour les données API
   const { data: usersData, isLoading: usersLoading, error: usersError } = useUsers({
     page: currentPage,
     limit: 10,
     search: searchTerm || undefined,
+    company_id: selectedCompany,
   });
 
   const { data: statsData, isLoading: statsLoading } = useUserStats();
@@ -241,6 +255,27 @@ export default function UsersClient() {
             />
           </div>
         </ComponentCard>
+
+        {/* Filtre Entreprise (Super Admin) */}
+        {isSuperAdmin && (
+          <ComponentCard title="Filtrer par entreprise">
+            <select
+              value={selectedCompany || ''}
+              onChange={(e) => {
+                setSelectedCompany(e.target.value ? Number(e.target.value) : undefined);
+                setCurrentPage(1);
+              }}
+              className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+            >
+              <option value="">Toutes les entreprises</option>
+              {companies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          </ComponentCard>
+        )}
 
         {/* Liste des utilisateurs */}
         <ComponentCard title={`Liste des Utilisateurs (${totalUsers} résultats)`}>
