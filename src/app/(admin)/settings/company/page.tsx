@@ -48,13 +48,27 @@ export default function CompanySettingsPage() {
 
     const fetchCompanySettings = async () => {
         try {
+            console.log('=== DEBUG: Fetching company settings ===');
+            console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
             const response = await apiClient.get('/company/me');
+            console.log('=== DEBUG: Response received ===', response);
+            console.log('Response data:', response.data);
             if (response.data.success) {
                 setCompany(response.data.data);
+            } else {
+                console.error('Response not successful:', response.data);
+                toast.error(response.data.message || 'Erreur lors du chargement');
             }
-        } catch (error) {
-            console.error('Error fetching company settings:', error);
-            toast.error('Impossible de charger les paramètres de l\'entreprise');
+        } catch (error: any) {
+            console.error('=== DEBUG: Error fetching company settings ===');
+            console.error('Error message:', error?.message);
+            console.error('Error response:', error?.response);
+            console.error('Error response data:', error?.response?.data);
+            console.error('Error status:', error?.response?.status);
+            console.error('Full error:', error);
+
+            const errorMessage = error?.response?.data?.message || 'Impossible de charger les paramètres de l\'entreprise';
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
