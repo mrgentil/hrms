@@ -108,6 +108,16 @@ export class UsersController {
     };
   }
 
+  @Get('admin/options')
+  @RequirePermissions(SYSTEM_PERMISSIONS.USERS_CREATE)
+  async getAdminOptions(@CurrentUser() currentUser: any) {
+    const options = await this.usersService.getAdminOptions(currentUser.id);
+    return {
+      success: true,
+      data: options,
+    };
+  }
+
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const user = await this.usersService.findOne(id);
@@ -175,15 +185,7 @@ export class UsersController {
     };
   }
 
-  @Get('admin/options')
-  @RequirePermissions(SYSTEM_PERMISSIONS.USERS_CREATE)
-  async getAdminOptions(@CurrentUser() currentUser: any) {
-    const options = await this.usersService.getAdminOptions(currentUser.id);
-    return {
-      success: true,
-      data: options,
-    };
-  }
+
 
   @Delete(':id')
   remove(@Param('id') id: string) {
