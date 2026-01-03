@@ -48,7 +48,7 @@ export default function CompanySettingsPage() {
 
     const fetchCompanySettings = async () => {
         try {
-            const response = await axios.get('/company/me');
+            const response = await apiClient.get('/company/me');
             if (response.data.success) {
                 setCompany(response.data.data);
             }
@@ -90,7 +90,7 @@ export default function CompanySettingsPage() {
         const toastId = toast.loading('Téléchargement du logo...');
 
         try {
-            const response = await axios.post('/company/me/logo', formData, {
+            const response = await apiClient.post('/company/me/logo', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
@@ -118,7 +118,7 @@ export default function CompanySettingsPage() {
                 daily_work_hours: company.daily_work_hours ? Number(company.daily_work_hours) : undefined,
             };
 
-            const response = await axios.patch('/company/me', payload);
+            const response = await apiClient.patch('/company/me', payload);
             if (response.data.success) {
                 toast.success('Paramètres sauvegardés');
                 setCompany(response.data.data);
