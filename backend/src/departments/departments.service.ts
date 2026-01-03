@@ -133,7 +133,7 @@ export class DepartmentsService {
         },
         _count: {
           select: {
-            user_user_department_idTodepartment: true,
+            users: true,
           },
         },
       },
@@ -147,7 +147,7 @@ export class DepartmentsService {
 
     return {
       ...rest,
-      employees_count: _count.user_user_department_idTodepartment,
+      employees_count: _count.users,
     };
   }
 
@@ -221,7 +221,7 @@ export class DepartmentsService {
       include: {
         _count: {
           select: {
-            user_user_department_idTodepartment: true,
+            users: true,
           },
         },
       },

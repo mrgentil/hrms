@@ -74,7 +74,7 @@ export class PositionsService {
           },
           _count: {
             select: {
-              user: true,
+              users: true,
             },
           },
         },
@@ -84,7 +84,7 @@ export class PositionsService {
 
     const mapped = positions.map(({ _count, ...rest }) => ({
       ...rest,
-      employees_count: _count.user,
+      employees_count: _count.users,
     }));
 
     return {
@@ -105,7 +105,7 @@ export class PositionsService {
         },
         _count: {
           select: {
-            user: true,
+            users: true,
           },
         },
       },
@@ -119,7 +119,7 @@ export class PositionsService {
 
     return {
       ...rest,
-      employees_count: _count.user,
+      employees_count: _count.users,
     };
   }
 
@@ -178,7 +178,7 @@ export class PositionsService {
       include: {
         _count: {
           select: {
-            user: true,
+            users: true,
           },
         },
       },
@@ -188,7 +188,7 @@ export class PositionsService {
       throw new NotFoundException('Poste non trouvé');
     }
 
-    if (position._count.user > 0) {
+    if (position._count.users > 0) {
       throw new ConflictException('Impossible de supprimer un poste assigné à des utilisateurs');
     }
 

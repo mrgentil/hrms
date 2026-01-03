@@ -20,7 +20,7 @@ import { SYSTEM_PERMISSIONS } from '../roles/roles.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { user } from '@prisma/client';
+import { User } from '@prisma/client';
 
 @Controller('departments')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -30,10 +30,10 @@ export class DepartmentsController {
   @Post()
   @RequirePermissions(SYSTEM_PERMISSIONS.DEPARTMENTS_CREATE)
   async create(
-    @CurrentUser() user: user,
+    @CurrentUser() currentUser: User,
     @Body(ValidationPipe) createDepartmentDto: CreateDepartmentDto,
   ) {
-    const department = await this.departmentsService.create(user.company_id, createDepartmentDto);
+    const department = await this.departmentsService.create(currentUser.company_id, createDepartmentDto);
     return {
       success: true,
       data: department,
@@ -44,10 +44,10 @@ export class DepartmentsController {
   @Get()
   @RequirePermissions(SYSTEM_PERMISSIONS.DEPARTMENTS_VIEW)
   async findAll(
-    @CurrentUser() user: user,
+    @CurrentUser() currentUser: User,
     @Query(ValidationPipe) query: QueryDepartmentDto,
   ) {
-    const result = await this.departmentsService.findAll(user.company_id, query);
+    const result = await this.departmentsService.findAll(currentUser.company_id, query);
     return {
       success: true,
       ...result,
@@ -57,10 +57,10 @@ export class DepartmentsController {
   @Get(':id')
   @RequirePermissions(SYSTEM_PERMISSIONS.DEPARTMENTS_VIEW)
   async findOne(
-    @CurrentUser() user: user,
+    @CurrentUser() currentUser: User,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    const department = await this.departmentsService.findOne(user.company_id, id);
+    const department = await this.departmentsService.findOne(currentUser.company_id, id);
     return {
       success: true,
       data: department,
@@ -70,11 +70,11 @@ export class DepartmentsController {
   @Patch(':id')
   @RequirePermissions(SYSTEM_PERMISSIONS.DEPARTMENTS_EDIT)
   async update(
-    @CurrentUser() user: user,
+    @CurrentUser() currentUser: User,
     @Param('id', ParseIntPipe) id: number,
     @Body(ValidationPipe) updateDepartmentDto: UpdateDepartmentDto,
   ) {
-    const department = await this.departmentsService.update(user.company_id, id, updateDepartmentDto);
+    const department = await this.departmentsService.update(currentUser.company_id, id, updateDepartmentDto);
     return {
       success: true,
       data: department,
@@ -85,10 +85,10 @@ export class DepartmentsController {
   @Delete(':id')
   @RequirePermissions(SYSTEM_PERMISSIONS.DEPARTMENTS_DELETE)
   async remove(
-    @CurrentUser() user: user,
+    @CurrentUser() currentUser: User,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    const response = await this.departmentsService.remove(user.company_id, id);
+    const response = await this.departmentsService.remove(currentUser.company_id, id);
     return {
       success: true,
       ...response,
