@@ -248,12 +248,6 @@ export class EmployeesService {
         user_employment_history: {
           orderBy: { effective_date: 'desc' },
         },
-        user: {
-          select: { id: true, full_name: true },
-        },
-        other_user: {
-          select: { id: true, full_name: true },
-        },
       },
     });
 
@@ -954,9 +948,6 @@ export class EmployeesService {
           select: { id: true, name: true, color: true, icon: true },
         },
         user_personal_info: true,
-        user: {
-          select: { id: true, full_name: true },
-        },
       },
       orderBy: { full_name: 'asc' },
       take: 50, // Limiter les résultats pour les performances
@@ -974,16 +965,9 @@ export class EmployeesService {
         position: {
           select: { id: true, title: true, level: true },
         },
-        user: {
-          select: { id: true, full_name: true },
-        },
-        other_user: {
-          select: { id: true, full_name: true, position: { select: { title: true } } },
-        },
       },
       orderBy: [
         { department_id: 'asc' },
-        { position: { level: 'asc' } },
         { full_name: 'asc' }
       ],
     });
@@ -1011,8 +995,7 @@ export class EmployeesService {
         full_name: employee.full_name,
         position: employee.position?.title || 'Poste non défini',
         level: employee.position?.level,
-        manager: employee.user,
-        subordinates: employee.other_user,
+        manager_user_id: employee.manager_user_id,
         profile_photo_url: employee.profile_photo_url,
         work_email: employee.work_email,
       });

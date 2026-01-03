@@ -293,12 +293,6 @@ export class UsersService {
             level: true,
           },
         },
-        user: {
-          select: {
-            id: true,
-            full_name: true,
-          },
-        },
         role_relation: {
           select: {
             id: true,
@@ -380,7 +374,7 @@ export class UsersService {
     return {
       ...user,
       department: user.department,
-      manager: user.user,
+      manager_user_id: (user as any).manager_user_id,
     };
   }
 
@@ -705,12 +699,6 @@ export class UsersService {
             id: true,
             title: true,
             level: true,
-          },
-        },
-        user: {
-          select: {
-            id: true,
-            full_name: true,
           },
         },
       },

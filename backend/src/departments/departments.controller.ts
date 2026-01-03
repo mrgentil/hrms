@@ -20,7 +20,7 @@ import { SYSTEM_PERMISSIONS } from '../roles/roles.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Controller('departments')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
