@@ -46,6 +46,7 @@ export interface CreateUserDto {
   hire_date?: string;
   active?: boolean;
   send_invitation?: boolean;
+  company_id?: number;
 }
 
 export interface UpdateUserDto {

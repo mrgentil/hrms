@@ -248,7 +248,7 @@ export default function CreateUser() {
                   <option value="">Sélectionner une entreprise</option>
                   {companies.map((company) => (
                     <option key={company.id} value={company.id}>
-                      {company.name} {company.active ? '' : '(Inactive)'}
+                      {company.name} {company.is_active ? '' : '(Inactive)'}
                     </option>
                   ))}
                 </select>
@@ -386,7 +386,7 @@ export default function CreateUser() {
                   <option value="">Aucun</option>
                   {adminOptions?.departments?.map((department) => (
                     <option key={department.id} value={department.id}>
-                      {department.name}
+                      {department.name || `Sans nom (ID: ${department.id})`}
                     </option>
                   ))}
                 </select>

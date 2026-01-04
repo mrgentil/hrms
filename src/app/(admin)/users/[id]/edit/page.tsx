@@ -469,7 +469,7 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
                   <option value="">Sélectionner...</option>
                   {departments.map((dept) => (
                     <option key={dept.id} value={dept.id}>
-                      {dept.name}
+                      {dept.name || `Sans nom (ID: ${dept.id})`}
                     </option>
                   ))}
                 </select>

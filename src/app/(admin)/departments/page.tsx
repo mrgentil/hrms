@@ -201,7 +201,7 @@ export default function DepartmentsPage() {
                       <td className="border-b border-[#eee] px-4 py-4 pl-9 dark:border-strokedark xl:pl-11">
                         <div>
                           <h5 className="font-semibold text-black dark:text-white">
-                            {department.name}
+                            {department.name || <span className="italic text-gray-500">Sans nom (ID: {department.id})</span>}
                           </h5>
                           {department.description && (
                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">

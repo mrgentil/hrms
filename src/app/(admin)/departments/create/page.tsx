@@ -132,7 +132,7 @@ export default function CreateDepartmentPage() {
                   </option>
                   {parentDepartments.map((department) => (
                     <option key={department.id} value={department.id}>
-                      {department.name}
+                      {department.name || `Sans nom (ID: ${department.id})`}
                     </option>
                   ))}
                 </select>
