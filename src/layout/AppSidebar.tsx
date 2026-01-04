@@ -211,7 +211,6 @@ const systemNavItems: NavItem[] = [
       { name: "Utilisateurs", path: "/users" },
       { name: "Rôles & Permissions", path: "/users/roles" },
       { name: "Configuration Menus", path: "/users/menus" },
-      { name: "Entreprise", path: "/settings/company" },
     ],
   },
   {
