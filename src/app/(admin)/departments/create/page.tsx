@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import SearchableSelect from "@/components/common/SearchableSelect";
 import {
   useCreateDepartment,
   useDepartmentOptions,
@@ -53,6 +54,22 @@ export default function CreateDepartmentPage() {
   );
   const managers = useMemo(() => options?.managers ?? [], [options]);
 
+  // Options mapping for SearchableSelect
+  const companyOptions = useMemo(() =>
+    companies.map(c => ({ id: c.id, full_name: c.name })),
+    [companies]
+  );
+
+  const managerOptions = useMemo(() =>
+    managers.map(m => ({ id: m.id, full_name: m.full_name })),
+    [managers]
+  );
+
+  const parentDepartmentOptions = useMemo(() =>
+    parentDepartments.map(d => ({ id: d.id, full_name: d.name || `Sans nom (ID: ${d.id})` })),
+    [parentDepartments]
+  );
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -90,23 +107,13 @@ export default function CreateDepartmentPage() {
                 <label className="mb-2 block text-black dark:text-white">
                   Entreprise <span className="text-meta-1">*</span>
                 </label>
-                <select
+                <SearchableSelect
+                  options={companyOptions}
                   value={formState.company_id}
-                  onChange={(event) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      company_id: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded border border-stroke px-5 py-3 text-sm text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                >
-                  <option value="">Sélectionner une entreprise</option>
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setFormState(prev => ({ ...prev, company_id: value }))}
+                  placeholder="Sélectionner une entreprise"
+                  className="w-full"
+                />
               </div>
             ) : (
               <div className="mb-4">
@@ -146,50 +153,26 @@ export default function CreateDepartmentPage() {
                 <label className="mb-2 block text-black dark:text-white">
                   Manager
                 </label>
-                <select
+                <SearchableSelect
+                  options={managerOptions}
                   value={formState.manager_user_id}
-                  onChange={(event) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      manager_user_id: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded border border-stroke px-5 py-3 text-sm text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                >
-                  <option value="">
-                    {optionsLoading ? "Chargement..." : "Aucun"}
-                  </option>
-                  {managers.map((manager) => (
-                    <option key={manager.id} value={manager.id}>
-                      {manager.full_name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setFormState(prev => ({ ...prev, manager_user_id: value }))}
+                  placeholder={optionsLoading ? "Chargement..." : "Sélectionner un manager"}
+                  className="w-full"
+                />
               </div>
 
               <div>
                 <label className="mb-2 block text-black dark:text-white">
                   Departement parent
                 </label>
-                <select
+                <SearchableSelect
+                  options={parentDepartmentOptions}
                   value={formState.parent_department_id}
-                  onChange={(event) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      parent_department_id: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded border border-stroke px-5 py-3 text-sm text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                >
-                  <option value="">
-                    {optionsLoading ? "Chargement..." : "Aucun (racine)"}
-                  </option>
-                  {parentDepartments.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name || `Sans nom (ID: ${department.id})`}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setFormState(prev => ({ ...prev, parent_department_id: value }))}
+                  placeholder={optionsLoading ? "Chargement..." : "Sélectionner un département parent"}
+                  className="w-full"
+                />
               </div>
             </div>
 

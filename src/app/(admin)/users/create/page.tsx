@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent, ChangeEvent } from "react";
+import { useState, useEffect, FormEvent, ChangeEvent, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
@@ -86,6 +86,22 @@ export default function CreateUser() {
       [name]: type === 'checkbox' ? (event.target as HTMLInputElement).checked : value,
     }));
   };
+
+  // Options mapping for SearchableSelect
+  const companyOptions = useMemo(() =>
+    companies.map(c => ({ id: c.id, full_name: c.name })),
+    [companies]
+  );
+
+  const departmentOptions = useMemo(() =>
+    (adminOptions?.departments || []).map(d => ({ id: d.id, full_name: d.name || `Sans nom (ID: ${d.id})` })),
+    [adminOptions?.departments]
+  );
+
+  const positionOptions = useMemo(() =>
+    (adminOptions?.positions || []).map(p => ({ id: p.id, full_name: p.title })),
+    [adminOptions?.positions]
+  );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -237,21 +253,14 @@ export default function CreateUser() {
                 <label className="mb-2.5 block text-black dark:text-white">
                   Entreprise <span className="text-meta-1">*</span>
                 </label>
-                <select
-                  name="company_id"
+                <SearchableSelect
+                  options={companyOptions}
                   value={formState.company_id}
-                  onChange={handleInputChange}
+                  onChange={(value) => setFormState(prev => ({ ...prev, company_id: value }))}
+                  placeholder="Sélectionner une entreprise"
+                  className="w-full"
                   disabled={isFormDisabled || isSubmitting}
-                  className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-not-allowed disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                  required
-                >
-                  <option value="">Sélectionner une entreprise</option>
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.name} {company.is_active ? '' : '(Inactive)'}
-                    </option>
-                  ))}
-                </select>
+                />
                 <p className="mt-1 text-xs text-gray-500">
                   En tant que Super Admin, vous devez assigner l'utilisateur à une entreprise.
                 </p>
@@ -391,40 +400,28 @@ export default function CreateUser() {
                 <label className="mb-2.5 block text-black dark:text-white">
                   Departement
                 </label>
-                <select
-                  name="department_id"
+                <SearchableSelect
+                  options={departmentOptions}
                   value={formState.department_id}
-                  onChange={handleInputChange}
+                  onChange={(value) => setFormState(prev => ({ ...prev, department_id: value }))}
+                  placeholder={adminOptionsLoading ? "Chargement..." : "Sélectionner un département"}
+                  className="w-full"
                   disabled={isFormDisabled || isSubmitting}
-                  className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-not-allowed disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                >
-                  <option value="">Aucun</option>
-                  {adminOptions?.departments?.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name || `Sans nom (ID: ${department.id})`}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div>
                 <label className="mb-2.5 block text-black dark:text-white">
                   Poste
                 </label>
-                <select
-                  name="position_id"
+                <SearchableSelect
+                  options={positionOptions}
                   value={formState.position_id}
-                  onChange={handleInputChange}
+                  onChange={(value) => setFormState(prev => ({ ...prev, position_id: value }))}
+                  placeholder={adminOptionsLoading ? "Chargement..." : "Sélectionner un poste"}
+                  className="w-full"
                   disabled={isFormDisabled || isSubmitting}
-                  className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-not-allowed disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                >
-                  <option value="">Aucun</option>
-                  {adminOptions?.positions?.map((position) => (
-                    <option key={position.id} value={position.id}>
-                      {position.title}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 

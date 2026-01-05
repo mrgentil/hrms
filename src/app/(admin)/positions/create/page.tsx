@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import SearchableSelect from "@/components/common/SearchableSelect";
 import { useCreatePosition } from "@/hooks/usePositions";
 import { useToast } from "@/hooks/useToast";
 import { departmentService } from "@/services/departmentService";
@@ -62,6 +63,17 @@ export default function CreatePositionPage() {
     [departmentsResponse],
   );
 
+  // Options mapping for SearchableSelect
+  const companyOptions = useMemo(() =>
+    companies.map(c => ({ id: c.id, full_name: c.name })),
+    [companies]
+  );
+
+  const departmentOptions = useMemo(() =>
+    departments.map(d => ({ id: d.id, full_name: d.name })),
+    [departments]
+  );
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -98,23 +110,13 @@ export default function CreatePositionPage() {
                 <label className="mb-2 block text-black dark:text-white">
                   Entreprise <span className="text-meta-1">*</span>
                 </label>
-                <select
+                <SearchableSelect
+                  options={companyOptions}
                   value={formState.company_id}
-                  onChange={(event) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      company_id: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                >
-                  <option value="">Sélectionner une entreprise</option>
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setFormState(prev => ({ ...prev, company_id: value }))}
+                  placeholder="Sélectionner une entreprise"
+                  className="w-full"
+                />
               </div>
             ) : (
               <div className="mb-4">
@@ -173,25 +175,13 @@ export default function CreatePositionPage() {
               <label className="mb-2 block text-black dark:text-white">
                 Departement
               </label>
-              <select
+              <SearchableSelect
+                options={departmentOptions}
                 value={formState.department_id}
-                onChange={(event) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    department_id: event.target.value,
-                  }))
-                }
-                className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-              >
-                <option value="">
-                  {departmentsLoading ? "Chargement..." : "Aucun"}
-                </option>
-                {departments.map((department) => (
-                  <option key={department.id} value={department.id}>
-                    {department.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setFormState(prev => ({ ...prev, department_id: value }))}
+                placeholder={departmentsLoading ? "Chargement..." : "Sélectionner un département"}
+                className="w-full"
+              />
             </div>
 
             <div>

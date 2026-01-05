@@ -460,35 +460,26 @@ export default function EditUser({ params }: { params: Promise<{ id: string }> }
               </div>
               <div>
                 <label className={labelClass}>Département</label>
-                <select
+                <SearchableSelect
                   name="department_id"
                   value={formData.department_id}
-                  onChange={handleChange}
-                  className={inputClass}
-                >
-                  <option value="">Sélectionner...</option>
-                  {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name || `Sans nom (ID: ${dept.id})`}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setFormData(prev => ({ ...prev, department_id: value }))}
+                  options={departments.map(d => ({ id: d.id, full_name: d.name || `Sans nom (ID: ${d.id})` }))}
+                  placeholder="Sélectionner..."
+                  className={inputClass.replace("px-4 py-3", "p-0").replace("border active:border-primary", "border-none")}
+                // Note: SearchableSelect has its own styling, passing className might need adjustment or wrapper
+                />
               </div>
               <div>
                 <label className={labelClass}>Poste</label>
-                <select
+                <SearchableSelect
                   name="position_id"
                   value={formData.position_id}
-                  onChange={handleChange}
-                  className={inputClass}
-                >
-                  <option value="">Sélectionner...</option>
-                  {positions.map((pos) => (
-                    <option key={pos.id} value={pos.id}>
-                      {pos.title}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setFormData(prev => ({ ...prev, position_id: value }))}
+                  options={positions.map(p => ({ id: p.id, full_name: p.title }))}
+                  placeholder="Sélectionner..."
+                  className={inputClass.replace("px-4 py-3", "p-0").replace("border active:border-primary", "border-none")}
+                />
               </div>
             </div>
 

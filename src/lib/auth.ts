@@ -25,6 +25,10 @@ export interface User {
     id: number;
     name: string;
   };
+  company?: {
+    id: number;
+    name: string;
+  };
 }
 
 export interface AuthTokens {
