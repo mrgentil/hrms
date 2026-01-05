@@ -1,6 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+    datasources: {
+        db: {
+            url: process.env.DATABASE_URL || undefined,
+        },
+    },
+});
 
 async function main() {
     console.log('Start seeding companies and departments...');
@@ -63,6 +69,45 @@ async function main() {
             });
             console.log(`  - Created department: ${deptData.name} for ${companyName}`);
         }
+    }
+
+    // FORCE SEED FOR COMPANY ID 1 (Usually the default company where the user is logged in)
+    console.log('Ensuring departments for Company ID 1...');
+    const company1 = await prisma.company.findUnique({ where: { id: 1 } });
+    if (company1) {
+        console.log(`Seeding departments for Company 1 (${company1.name})...`);
+        for (const deptData of departmentsList) {
+            await prisma.department.create({
+                data: {
+                    name: deptData.name,
+                    description: deptData.description,
+                    company_id: 1,
+                    is_active: true
+                }
+            });
+            console.log(`  - Created department for Company 1: ${deptData.name}`);
+        }
+    } else {
+        console.log('Company ID 1 not found. Creating it...');
+        await prisma.company.create({
+            data: {
+                id: 1,
+                name: 'Entreprise Principale',
+                email: 'contact@example.com',
+                currency: 'USD',
+                timezone: 'UTC',
+                language: 'fr',
+                is_active: true,
+                departments: {
+                    create: departmentsList.map(d => ({
+                        name: d.name,
+                        description: d.description,
+                        is_active: true
+                    }))
+                }
+            }
+        });
+        console.log('Created Company ID 1 with departments.');
     }
 
     console.log('Seeding finished.');
