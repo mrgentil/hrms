@@ -139,9 +139,33 @@ export class DepartmentsService {
             full_name: true,
           },
         },
+        department: { // Parent department
+          select: {
+            id: true,
+            name: true,
+          }
+        },
+        company: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        positions: {
+          where: { is_active: true },
+          include: {
+            users: {
+              select: { id: true, full_name: true, profile_photo_url: true }
+            }
+          }
+        },
+        users: { // All employees in this dept
+          select: { id: true, full_name: true, position: { select: { title: true } }, profile_photo_url: true }
+        },
         _count: {
           select: {
             users: true,
+            positions: true, // Also count positions
           },
         },
       },

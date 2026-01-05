@@ -41,7 +41,12 @@ export class UsersController {
     @Body(ValidationPipe) createUserDto: CreateUserDto,
     @CurrentUser() currentUser: any,
   ) {
-    const user = await this.usersService.create(createUserDto, currentUser.id, currentUser.company_id);
+    // Si Super Admin, on utilise l'entreprise du DTO, sinon on force l'entreprise de l'utilisateur courant
+    const targetCompanyId = currentUser.role === UserRole.ROLE_SUPER_ADMIN
+      ? createUserDto.company_id
+      : currentUser.company_id;
+
+    const user = await this.usersService.create(createUserDto, currentUser.id, targetCompanyId);
     return {
       success: true,
       data: user,

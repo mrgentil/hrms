@@ -18,4 +18,8 @@ export class CreatePositionDto {
   @IsOptional()
   @IsInt()
   department_id?: number;
+
+  @IsOptional()
+  @IsInt()
+  company_id?: number;
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useMemo, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import ComponentCard from "@/components/common/ComponentCard";
@@ -10,12 +10,15 @@ import { useCreatePosition } from "@/hooks/usePositions";
 import { useToast } from "@/hooks/useToast";
 import { departmentService } from "@/services/departmentService";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { companiesService, Company } from "@/services/companies.service";
+import { useAuth } from "@/contexts/AuthContext";
 
 type FormState = {
   title: string;
   level: string;
   description: string;
   department_id: string;
+  company_id: string;
 };
 
 const initialState: FormState = {
@@ -23,12 +26,29 @@ const initialState: FormState = {
   level: "",
   description: "",
   department_id: "",
+  company_id: "",
 };
 
 export default function CreatePositionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const departmentIdParam = searchParams.get("department_id");
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'ROLE_SUPER_ADMIN';
+
   const toast = useToast();
-  const [formState, setFormState] = useState<FormState>(initialState);
+  const [formState, setFormState] = useState<FormState>({
+    ...initialState,
+    department_id: departmentIdParam ?? "",
+  });
+
+  const [companies, setCompanies] = useState<Company[]>([]);
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      companiesService.getAll().then(setCompanies).catch(console.error);
+    }
+  }, [isSuperAdmin]);
 
   const createPositionMutation = useCreatePosition();
   const { data: departmentsResponse, isLoading: departmentsLoading } = useQuery({
@@ -53,6 +73,7 @@ export default function CreatePositionPage() {
         department_id: formState.department_id
           ? Number(formState.department_id)
           : undefined,
+        company_id: isSuperAdmin && formState.company_id ? Number(formState.company_id) : undefined,
       },
       {
         onSuccess: () => {
@@ -70,6 +91,45 @@ export default function CreatePositionPage() {
 
         <ComponentCard title="Informations du poste">
           <form className="space-y-6" onSubmit={handleSubmit}>
+
+            {/* Company Selection Multi-Tenancy Logic */}
+            {isSuperAdmin ? (
+              <div className="mb-4">
+                <label className="mb-2 block text-black dark:text-white">
+                  Entreprise <span className="text-meta-1">*</span>
+                </label>
+                <select
+                  value={formState.company_id}
+                  onChange={(event) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      company_id: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                >
+                  <option value="">Sélectionner une entreprise</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="mb-4">
+                <label className="mb-2 block text-black dark:text-white">
+                  Entreprise
+                </label>
+                <input
+                  type="text"
+                  value={user?.company?.name || "Votre Entreprise"}
+                  disabled
+                  className="w-full rounded border-[1.5px] border-stroke bg-gray-100 px-5 py-3 text-black opacity-60 outline-none dark:bg-boxdark-2 dark:text-white"
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-black dark:text-white">

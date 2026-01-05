@@ -20,7 +20,7 @@ import { SYSTEM_PERMISSIONS } from '../roles/roles.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { User } from '@prisma/client';
+import { User, UserRole } from '@prisma/client';
 
 @Controller('positions')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -30,10 +30,14 @@ export class PositionsController {
   @Post()
   @RequirePermissions(SYSTEM_PERMISSIONS.POSITIONS_CREATE)
   async create(
-    @CurrentUser() currentUser: User,
+    @CurrentUser() currentUser: any,
     @Body(ValidationPipe) createPositionDto: CreatePositionDto,
   ) {
-    const position = await this.positionsService.create(currentUser.company_id, createPositionDto);
+    const targetCompanyId = currentUser.role === UserRole.ROLE_SUPER_ADMIN && createPositionDto.company_id
+      ? createPositionDto.company_id
+      : currentUser.company_id;
+
+    const position = await this.positionsService.create(targetCompanyId, createPositionDto);
     return {
       success: true,
       data: position,
@@ -44,10 +48,14 @@ export class PositionsController {
   @Get()
   @RequirePermissions(SYSTEM_PERMISSIONS.POSITIONS_VIEW)
   async findAll(
-    @CurrentUser() currentUser: User,
+    @CurrentUser() currentUser: any,
     @Query(ValidationPipe) query: QueryPositionDto,
   ) {
-    const result = await this.positionsService.findAll(currentUser.company_id, query);
+    const targetCompanyId = currentUser.role === UserRole.ROLE_SUPER_ADMIN
+      ? undefined
+      : currentUser.company_id;
+
+    const result = await this.positionsService.findAll(targetCompanyId, query);
     return {
       success: true,
       ...result,

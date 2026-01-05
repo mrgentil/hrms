@@ -20,7 +20,7 @@ import { SYSTEM_PERMISSIONS } from '../roles/roles.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { User } from '@prisma/client';
+import { User, UserRole } from '@prisma/client';
 
 @Controller('departments')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -30,10 +30,14 @@ export class DepartmentsController {
   @Post()
   @RequirePermissions(SYSTEM_PERMISSIONS.DEPARTMENTS_CREATE)
   async create(
-    @CurrentUser() currentUser: User,
+    @CurrentUser() currentUser: any,
     @Body(ValidationPipe) createDepartmentDto: CreateDepartmentDto,
   ) {
-    const department = await this.departmentsService.create(currentUser.company_id, createDepartmentDto);
+    const targetCompanyId = currentUser.role === UserRole.ROLE_SUPER_ADMIN && createDepartmentDto.company_id
+      ? createDepartmentDto.company_id
+      : currentUser.company_id;
+
+    const department = await this.departmentsService.create(targetCompanyId, createDepartmentDto);
     return {
       success: true,
       data: department,

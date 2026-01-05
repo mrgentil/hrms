@@ -17,4 +17,8 @@ export class CreateDepartmentDto {
   @IsOptional()
   @IsInt()
   parent_department_id?: number;
+
+  @IsOptional()
+  @IsInt()
+  company_id?: number;
 }

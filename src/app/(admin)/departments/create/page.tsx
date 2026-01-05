@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import ComponentCard from "@/components/common/ComponentCard";
@@ -11,12 +11,15 @@ import {
   useDepartmentOptions,
 } from "@/hooks/useDepartments";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { companiesService, Company } from "@/services/companies.service";
+import { useAuth } from "@/contexts/AuthContext";
 
 type FormState = {
   name: string;
   description: string;
   manager_user_id: string;
   parent_department_id: string;
+  company_id: string;
 };
 
 const initialState: FormState = {
@@ -24,11 +27,22 @@ const initialState: FormState = {
   description: "",
   manager_user_id: "",
   parent_department_id: "",
+  company_id: "",
 };
 
 export default function CreateDepartmentPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'ROLE_SUPER_ADMIN';
+
   const [formState, setFormState] = useState<FormState>(initialState);
+  const [companies, setCompanies] = useState<Company[]>([]);
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      companiesService.getAll().then(setCompanies).catch(console.error);
+    }
+  }, [isSuperAdmin]);
 
   const { data: options, isLoading: optionsLoading } = useDepartmentOptions();
   const createDepartmentMutation = useCreateDepartment();
@@ -52,6 +66,7 @@ export default function CreateDepartmentPage() {
         parent_department_id: formState.parent_department_id
           ? Number(formState.parent_department_id)
           : undefined,
+        company_id: isSuperAdmin && formState.company_id ? Number(formState.company_id) : undefined,
       },
       {
         onSuccess: () => {
@@ -68,6 +83,45 @@ export default function CreateDepartmentPage() {
 
         <ComponentCard title="Informations du departement">
           <form className="space-y-6" onSubmit={handleSubmit}>
+
+            {/* Company Selection Multi-Tenancy Logic */}
+            {isSuperAdmin ? (
+              <div className="mb-4">
+                <label className="mb-2 block text-black dark:text-white">
+                  Entreprise <span className="text-meta-1">*</span>
+                </label>
+                <select
+                  value={formState.company_id}
+                  onChange={(event) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      company_id: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded border border-stroke px-5 py-3 text-sm text-black outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                >
+                  <option value="">Sélectionner une entreprise</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="mb-4">
+                <label className="mb-2 block text-black dark:text-white">
+                  Entreprise
+                </label>
+                <input
+                  type="text"
+                  value={user?.company?.name || "Votre Entreprise"}
+                  disabled
+                  className="w-full rounded border border-stroke px-5 py-3 text-sm text-black opacity-60 outline-none dark:bg-boxdark-2 dark:text-white"
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="md:col-span-2">
                 <label className="mb-2 block text-black dark:text-white">

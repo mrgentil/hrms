@@ -232,7 +232,7 @@ export default function CreateUser() {
               </div>
             </div>
 
-            {isSuperAdmin && (
+            {isSuperAdmin ? (
               <div className="mb-6">
                 <label className="mb-2.5 block text-black dark:text-white">
                   Entreprise <span className="text-meta-1">*</span>
@@ -254,6 +254,21 @@ export default function CreateUser() {
                 </select>
                 <p className="mt-1 text-xs text-gray-500">
                   En tant que Super Admin, vous devez assigner l'utilisateur à une entreprise.
+                </p>
+              </div>
+            ) : (
+              <div className="mb-6">
+                <label className="mb-2.5 block text-black dark:text-white">
+                  Entreprise
+                </label>
+                <input
+                  type="text"
+                  value={user?.department?.name ? `${user.department.name} (Votre département)` : (user?.company?.name || "Votre Entreprise")}
+                  disabled
+                  className="w-full rounded border-[1.5px] border-stroke bg-gray-100 px-5 py-3 text-black opacity-60 outline-none dark:bg-boxdark-2 dark:text-white"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  L'utilisateur sera automatiquement assigné à votre entreprise.
                 </p>
               </div>
             )}

@@ -11,6 +11,7 @@ export interface User {
   username: string;
   full_name: string;
   work_email?: string;
+  profile_photo_url?: string | null;
   role: UserRole; // Enum principal
   role_id?: number; // Nouveau système
   role_info?: {
@@ -24,6 +25,10 @@ export interface User {
   current_role?: string; // Nom du rôle actuel
   department_id?: number;
   department?: {
+    id: number;
+    name: string;
+  };
+  company?: {
     id: number;
     name: string;
   };
@@ -81,6 +86,17 @@ export interface Department {
   employees_count?: number;
   created_at: string;
   updated_at: string;
+  // Expanded fields
+  department?: {
+    id: number;
+    name: string;
+  } | null;
+  company?: {
+    id: number;
+    name: string;
+  };
+  positions?: Array<Position>;
+  users?: Array<User & { position?: { title: string } }>;
 }
 
 export interface CreateDepartmentDto {
@@ -88,6 +104,7 @@ export interface CreateDepartmentDto {
   description?: string;
   manager_user_id?: number;
   parent_department_id?: number;
+  company_id?: number;
 }
 
 export interface UpdateDepartmentDto extends Partial<CreateDepartmentDto> { }
@@ -154,6 +171,7 @@ export interface Position {
   department?: Department;
   level?: string;
   employees_count?: number;
+  users?: Array<{ id: number; full_name: string; profile_photo_url?: string | null }>;
   created_at: string;
   updated_at: string;
 }
@@ -163,6 +181,7 @@ export interface CreatePositionDto {
   level?: string;
   description?: string;
   department_id?: number;
+  company_id?: number;
 }
 
 export interface UpdatePositionDto extends Partial<CreatePositionDto> { }
