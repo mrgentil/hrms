@@ -68,14 +68,22 @@ export class DepartmentsService {
     return department;
   }
 
-  async findAll(companyId: number, query: QueryDepartmentDto) {
+  async findAll(user: any, query: QueryDepartmentDto) {
     const { page = 1, limit = 10, search } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {
-      company_id: companyId,
       is_active: true,
     };
+
+    // If NOT Super Admin, filter by their company
+    if (user.role !== 'ROLE_SUPER_ADMIN') {
+      where.company_id = user.company_id;
+    } else {
+      // If Super Admin, checking if a specific company filter is requested via query could be nice, 
+      // but for now let's just show all or allow query.company_id if QueryDepartmentDto supports it.
+      // Assuming QueryDepartmentDto doesn't have company_id yet, we just return all.
+    }
 
     if (search) {
       where.name = { contains: search };

@@ -47,7 +47,7 @@ export class DepartmentsController {
     @CurrentUser() currentUser: User,
     @Query(ValidationPipe) query: QueryDepartmentDto,
   ) {
-    const result = await this.departmentsService.findAll(currentUser.company_id, query);
+    const result = await this.departmentsService.findAll(currentUser, query);
     return {
       success: true,
       ...result,
