@@ -157,6 +157,9 @@ export const PermissionsProvider: React.FC<PermissionsProviderProps> = ({ childr
         // Super admin a toutes les permissions
         if (isSuperAdmin) return true;
 
+        // Admin système a toutes les permissions
+        if (permissions.includes('system.admin')) return true;
+
         if (Array.isArray(permission)) {
             return permission.some(p => permissions.includes(p));
         }
@@ -166,11 +169,13 @@ export const PermissionsProvider: React.FC<PermissionsProviderProps> = ({ childr
 
     const hasAnyPermission = useMemo(() => (requiredPermissions: string[]): boolean => {
         if (isSuperAdmin) return true;
+        if (permissions.includes('system.admin')) return true;
         return requiredPermissions.some(p => permissions.includes(p));
     }, [permissions, isSuperAdmin]);
 
     const hasAllPermissions = useMemo(() => (requiredPermissions: string[]): boolean => {
         if (isSuperAdmin) return true;
+        if (permissions.includes('system.admin')) return true;
         return requiredPermissions.every(p => permissions.includes(p));
     }, [permissions, isSuperAdmin]);
 

@@ -15,6 +15,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     PrismaModule,
     ConfigModule,
     PassportModule,
+    RolesModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

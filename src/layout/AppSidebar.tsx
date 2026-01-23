@@ -469,7 +469,7 @@ const AppSidebar: React.FC = () => {
         </Link>
       </div>
 
-      <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
+      <div className="flex-1 custom-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
         {roleLoading ? (
           <div className="flex flex-1 items-center justify-center py-10 text-sm text-gray-500 dark:text-gray-400">Chargement du menu...</div>
         ) : !userRole ? (

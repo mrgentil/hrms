@@ -10,6 +10,7 @@ import {
   Query,
   UseGuards,
   ValidationPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import { DepartmentsService } from './departments.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
@@ -33,16 +34,33 @@ export class DepartmentsController {
     @CurrentUser() currentUser: any,
     @Body(ValidationPipe) createDepartmentDto: CreateDepartmentDto,
   ) {
+    console.log('--- Create Department Request ---');
+    console.log('User:', currentUser);
+    console.log('Payload:', createDepartmentDto);
+
     const targetCompanyId = currentUser.role === UserRole.ROLE_SUPER_ADMIN && createDepartmentDto.company_id
       ? createDepartmentDto.company_id
       : currentUser.company_id;
 
-    const department = await this.departmentsService.create(targetCompanyId, createDepartmentDto);
-    return {
-      success: true,
-      data: department,
-      message: 'Département créé avec succès',
-    };
+    console.log('Target Company ID:', targetCompanyId);
+
+    if (currentUser.role !== UserRole.ROLE_SUPER_ADMIN && !targetCompanyId) {
+      console.error('CRITICAL: User is not Super Admin but has no company_id!');
+      throw new BadRequestException("Erreur critique: Votre compte administrateur n'est lié à aucune entreprise. Contactez le support.");
+    }
+
+    try {
+      const department = await this.departmentsService.create(targetCompanyId, createDepartmentDto);
+      console.log('Department created:', department);
+      return {
+        success: true,
+        data: department,
+        message: 'Département créé avec succès',
+      };
+    } catch (error) {
+      console.error('Error creating department:', error);
+      throw error;
+    }
   }
 
   @Get()

@@ -10,12 +10,15 @@ import { AuthResponseDto } from './dto/auth-response.dto';
 import { UserRole } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 
+import { RolesService } from '../roles/roles.service';
+
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private auditService: AuditService,
+    private rolesService: RolesService,
   ) { }
 
   async validateUser(username: string, password: string): Promise<any> {
@@ -36,27 +39,8 @@ export class AuthService {
       throw new UnauthorizedException('Nom d\'utilisateur ou mot de passe incorrect');
     }
 
-    // Récupérer les permissions de l'utilisateur via son rôle
-    let permissions: string[] = [];
-    if (user.role_id) {
-      const roleWithPermissions = await this.prisma.role.findUnique({
-        where: { id: user.role_id },
-        include: {
-          role_permission: {
-            include: {
-              permission: {
-                select: { name: true },
-              },
-            },
-          },
-        },
-      });
-      if (roleWithPermissions) {
-        permissions = roleWithPermissions.role_permission
-          .map(rp => rp.permission?.name)
-          .filter(Boolean) as string[];
-      }
-    }
+    // Récupérer les permissions de l'utilisateur
+    const permissions = await this.rolesService.getUserPermissions(user.id);
 
     const payload = {
       username: user.username,
@@ -174,26 +158,7 @@ export class AuthService {
       }
 
       // Récupérer les permissions pour le nouveau token
-      let permissions: string[] = [];
-      if (user.role_id) {
-        const roleWithPermissions = await this.prisma.role.findUnique({
-          where: { id: user.role_id },
-          include: {
-            role_permission: {
-              include: {
-                permission: {
-                  select: { name: true },
-                },
-              },
-            },
-          },
-        });
-        if (roleWithPermissions) {
-          permissions = roleWithPermissions.role_permission
-            .map(rp => rp.permission?.name)
-            .filter(Boolean) as string[];
-        }
-      }
+      const permissions = await this.rolesService.getUserPermissions(user.id);
 
       const newPayload = {
         username: user.username,
@@ -270,7 +235,7 @@ export class AuthService {
       department: user.department,
       role_info: user.role_relation, // Nouveau système de rôles
       current_role: user.role_relation?.name || user.role, // Fallback vers l'ancien système
-      permissions: user.role_relation?.role_permission?.map(rp => rp.permission?.name).filter(Boolean) || [],
+      permissions: await this.rolesService.getUserPermissions(userId),
     };
   }
 

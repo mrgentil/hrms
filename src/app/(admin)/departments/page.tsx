@@ -101,6 +101,7 @@ export default function DepartmentsPage() {
             {canCreateDepartment && (
               <Link
                 href="/departments/create"
+                onClick={() => console.log('Bouton Nouveau departement cliqué !')}
                 className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
               >
                 Nouveau departement

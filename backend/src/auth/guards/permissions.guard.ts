@@ -36,7 +36,7 @@ export class PermissionsGuard implements CanActivate {
     */
 
     // Vérifier si l'utilisateur a toutes les permissions requises
-    const hasAllPermissions = requiredPermissions.every(permission =>
+    const hasAllPermissions = userPermissions.includes('system.admin') || requiredPermissions.every(permission =>
       userPermissions.includes(permission)
     );
 
