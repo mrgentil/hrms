@@ -35,6 +35,8 @@ export default function CompaniesPage() {
         timezone: 'UTC',
         language: 'fr',
     });
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
     const isSuperAdmin = user?.role === 'ROLE_SUPER_ADMIN';
 
@@ -65,6 +67,14 @@ export default function CompaniesPage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setLogoFile(file);
+            setLogoPreview(URL.createObjectURL(file));
+        }
+    };
+
     const openCreateModal = () => {
         setEditingCompany(null);
         setFormData({
@@ -76,6 +86,8 @@ export default function CompaniesPage() {
             timezone: 'UTC',
             language: 'fr',
         });
+        setLogoFile(null);
+        setLogoPreview(null);
         setShowModal(true);
     };
 
@@ -90,6 +102,8 @@ export default function CompaniesPage() {
             timezone: company.timezone,
             language: company.language,
         });
+        setLogoFile(null);
+        setLogoPreview(company.logo_url || null);
         setShowModal(true);
     };
 
@@ -104,9 +118,15 @@ export default function CompaniesPage() {
         try {
             if (editingCompany) {
                 await companiesService.update(editingCompany.id, formData);
+                if (logoFile) {
+                    await companiesService.uploadLogo(editingCompany.id, logoFile);
+                }
                 toast.success('Entreprise mise à jour');
             } else {
-                await companiesService.create(formData);
+                const newCompany = await companiesService.create(formData);
+                if (logoFile) {
+                    await companiesService.uploadLogo(newCompany.id, logoFile);
+                }
                 toast.success('Entreprise créée');
             }
             setShowModal(false);
@@ -351,6 +371,31 @@ export default function CompaniesPage() {
                                 </div>
 
                                 <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+                                    {/* Logo Upload */}
+                                    <div className="flex justify-center mb-6">
+                                        <div className="relative group cursor-pointer">
+                                            <div className={`h-24 w-24 rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-700 ${logoPreview ? 'border-primary' : 'border-gray-300 dark:border-gray-600'}`}>
+                                                {logoPreview ? (
+                                                    <img src={logoPreview} alt="Logo" className="h-full w-full object-contain p-2" />
+                                                ) : (
+                                                    <div className="text-center">
+                                                        <BoxCubeIcon className="h-8 w-8 text-gray-400 mx-auto mb-1" />
+                                                        <span className="text-xs text-gray-400">Logo</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <input
+                                                type="file"
+                                                accept="image/png, image/jpeg, image/webp"
+                                                onChange={handleLogoChange}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            />
+                                            <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                <PencilIcon className="h-6 w-6 text-white" />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             Nom de l'entreprise *

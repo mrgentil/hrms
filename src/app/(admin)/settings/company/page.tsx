@@ -16,6 +16,11 @@ import {
 interface CompanySettings {
     id: number;
     name: string;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+    website: string | null;
+    tax_id: string | null;
     logo_url: string | null;
     primary_color: string | null;
     secondary_color: string | null;
@@ -264,6 +269,67 @@ export default function CompanySettingsPage() {
                                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50 disabled:bg-gray-100"
                                 />
                                 {!isAdmin && <p className="mt-1 text-xs text-gray-500">Seuls les administrateurs peuvent modifier le nom.</p>}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Contact</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={company.email || ''}
+                                    onChange={handleInputChange}
+                                    disabled={!canEdit}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Téléphone</label>
+                                <input
+                                    type="text"
+                                    name="phone"
+                                    value={company.phone || ''}
+                                    onChange={handleInputChange}
+                                    disabled={!canEdit}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Site Web</label>
+                                <input
+                                    type="url"
+                                    name="website"
+                                    value={company.website || ''}
+                                    onChange={handleInputChange}
+                                    disabled={!canEdit}
+                                    placeholder="https://example.com"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Numéro Fiscal (Tax ID)</label>
+                                <input
+                                    type="text"
+                                    name="tax_id"
+                                    value={company.tax_id || ''}
+                                    onChange={handleInputChange}
+                                    disabled={!canEdit}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600"
+                                />
+                            </div>
+
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Adresse Complète</label>
+                                <input
+                                    type="text" // Using text input for simplicity as requested, textarea could be better but sticking to basic inputs.
+                                    name="address"
+                                    value={company.address || ''}
+                                    onChange={handleInputChange}
+                                    disabled={!canEdit}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600"
+                                />
                             </div>
 
                             <div>

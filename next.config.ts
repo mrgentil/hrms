@@ -81,6 +81,18 @@ const nextConfig: NextConfig = {
       '@tanstack/react-query',
     ],
   },
+
+  async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+    const backendUrl = apiUrl.replace(/\/api\/?$/, '');
+
+    return [
+      {
+        source: '/uploads/:path*',
+        destination: `${backendUrl}/uploads/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

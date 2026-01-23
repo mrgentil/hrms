@@ -219,7 +219,8 @@ const systemNavItems: NavItem[] = [
     requiredPermission: "system.admin",
     allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
     subItems: [
-      { name: "Paramètres", path: "/settings" },
+      { name: "Paramètres", path: "/settings", allowedRoles: ["ROLE_SUPER_ADMIN"] },
+      { name: "Configuration Entreprise", path: "/settings/company", requiredPermission: "system.settings", allowedRoles: ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"] },
       { name: "Logs & Audit", path: "/admin/logs" },
     ],
   },

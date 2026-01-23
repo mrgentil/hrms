@@ -15,13 +15,16 @@ import { CreateMenuItemDto, UpdateMenuItemDto } from './dto/create-menu-item.dto
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
-import { SYSTEM_PERMISSIONS } from '../roles/roles.service';
+import { SYSTEM_PERMISSIONS, RolesService } from '../roles/roles.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('permissions')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class PermissionsController {
-  constructor(private readonly permissionsService: PermissionsService) {}
+  constructor(
+    private readonly permissionsService: PermissionsService,
+    private readonly rolesService: RolesService,
+  ) { }
 
   // ============== PERMISSIONS ==============
 
@@ -88,8 +91,9 @@ export class PermissionsController {
 
   @Get('menus/user')
   async findMenuItemsForUser(@CurrentUser() user: any) {
-    // Récupérer les permissions de l'utilisateur depuis le token/session
-    const userPermissions = user.permissions || [];
+    // Récupérer les permissions de l'utilisateur actualisées depuis la BD
+    // Cela corrige le problème où le token contient des anciennes permissions ou aucune
+    const userPermissions = await this.rolesService.getUserPermissions(user.id);
     const menus = await this.permissionsService.findMenuItemsForUser(userPermissions);
     return { success: true, data: menus };
   }

@@ -168,7 +168,8 @@ export class CompanyService {
             throw new BadRequestException('Format de fichier non supporté (JPG, PNG, WEBP uniquement)');
         }
 
-        const uploadDir = join(process.cwd(), 'public', 'uploads', 'companies', companyId.toString());
+        // Alignement avec ServeStaticModule (AppModule) qui sert ../../uploads
+        const uploadDir = join(process.cwd(), '..', 'uploads', 'companies', companyId.toString());
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
