@@ -5,8 +5,21 @@ import { PrismaService } from '../prisma/prisma.service';
 export class AnalyticsService {
   constructor(private prisma: PrismaService) { }
 
+  private getCompanyFilter(user: any) {
+    // Si l'utilisateur n'a pas de company_id (Super Admin?), pas de filtre
+    // Mais la demande est spécifique pour restreindre l'admin.
+    // On suppose que user.company_id est présent.
+    if (!user.company_id) return {};
+    return { company_id: user.company_id };
+  }
+
+  private getUserScopeFilter(user: any) {
+    if (!user.company_id) return {};
+    return { user: { company_id: user.company_id } };
+  }
+
   // Dashboard principal - Vue d'ensemble
-  async getDashboardOverview() {
+  async getDashboardOverview(user: any) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -16,6 +29,9 @@ export class AnalyticsService {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     const startOfYear = new Date(today.getFullYear(), 0, 1);
+
+    const companyFilter = this.getCompanyFilter(user);
+    const userScopeFilter = this.getUserScopeFilter(user);
 
     const [
       totalEmployees,
@@ -28,33 +44,35 @@ export class AnalyticsService {
       totalExpensesMonth,
     ] = await Promise.all([
       // Total employés
-      this.prisma.user.count(),
+      this.prisma.user.count({ where: { ...companyFilter } }),
       // Employés actifs
-      this.prisma.user.count({ where: { active: true } }),
+      this.prisma.user.count({ where: { ...companyFilter, active: true } }),
       // Nouvelles embauches ce mois
       this.prisma.user.count({
-        where: { hire_date: { gte: startOfMonth, lte: endOfMonth } },
+        where: { ...companyFilter, hire_date: { gte: startOfMonth, lte: endOfMonth } },
       }),
       // Nombre de départements
-      this.prisma.department.count(),
+      this.prisma.department.count({ where: { ...companyFilter } }),
       // Présences aujourd'hui (plage de dates)
       this.prisma.attendance.count({
         where: {
+          user: { ...companyFilter }, // Attendance -> User -> Company
           date: { gte: today, lte: endOfToday },
           check_in: { not: null },
         },
       }),
       // Congés en attente
       this.prisma.application.count({
-        where: { status: 'Pending' },
+        where: { ...userScopeFilter, status: 'Pending' },
       }),
       // Notes de frais en attente
       this.prisma.expense_report.count({
-        where: { status: 'PENDING' },
+        where: { ...userScopeFilter, status: 'PENDING' },
       }),
       // Total dépenses du mois
       this.prisma.expense_report.aggregate({
         where: {
+          ...userScopeFilter,
           status: { in: ['APPROVED', 'PAID'] },
           expense_date: { gte: startOfMonth, lte: endOfMonth },
         },
@@ -88,8 +106,10 @@ export class AnalyticsService {
   }
 
   // Statistiques des employés par département
-  async getEmployeesByDepartment() {
+  async getEmployeesByDepartment(user: any) {
+    const companyFilter = this.getCompanyFilter(user);
     const departments = await this.prisma.department.findMany({
+      where: { ...companyFilter },
       include: {
         users: true,
       },
@@ -102,9 +122,10 @@ export class AnalyticsService {
   }
 
   // Tendance des présences (7 derniers jours)
-  async getAttendanceTrend() {
+  async getAttendanceTrend(user: any) {
     const days: { start: Date; end: Date; display: Date }[] = [];
     const today = new Date();
+    const userScopeFilter = this.getUserScopeFilter(user);
 
     for (let i = 6; i >= 0; i--) {
       const start = new Date(today);
@@ -121,6 +142,7 @@ export class AnalyticsService {
       days.map(async ({ start, end, display }) => {
         const count = await this.prisma.attendance.count({
           where: {
+            ...userScopeFilter, // Filter via user relation
             date: {
               gte: start,
               lte: end,
@@ -140,13 +162,17 @@ export class AnalyticsService {
   }
 
   // Statistiques des congés par type
-  async getLeavesByType() {
+  async getLeavesByType(user: any) {
+    const userScopeFilter = this.getUserScopeFilter(user);
+    // leave_type is global usually, but applications are company-specific
     const leaveTypes = await this.prisma.leave_type.findMany({
       select: {
         id: true,
         name: true,
         _count: {
-          select: { application: true },
+          select: {
+            application: { where: { ...userScopeFilter } }
+          },
         },
       },
     });
@@ -159,9 +185,11 @@ export class AnalyticsService {
   }
 
   // Statistiques des congés par statut
-  async getLeavesByStatus() {
+  async getLeavesByStatus(user: any) {
+    const userScopeFilter = this.getUserScopeFilter(user);
     const statuses = await this.prisma.application.groupBy({
       by: ['status'],
+      where: { ...userScopeFilter },
       _count: true,
     });
 
@@ -172,14 +200,16 @@ export class AnalyticsService {
   }
 
   // Dépenses par catégorie (mois en cours)
-  async getExpensesByCategory() {
+  async getExpensesByCategory(user: any) {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
+    const userScopeFilter = this.getUserScopeFilter(user);
 
     const expenses = await this.prisma.expense_report.groupBy({
       by: ['category'],
       where: {
+        ...userScopeFilter,
         expense_date: { gte: startOfMonth },
       },
       _sum: { amount: true },
@@ -194,9 +224,10 @@ export class AnalyticsService {
   }
 
   // Évolution des dépenses (6 derniers mois)
-  async getExpensesTrend() {
+  async getExpensesTrend(user: any) {
     const months: Array<{ start: Date; end: Date; label: string }> = [];
     const today = new Date();
+    const userScopeFilter = this.getUserScopeFilter(user);
 
     for (let i = 5; i >= 0; i--) {
       const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
@@ -211,6 +242,7 @@ export class AnalyticsService {
       months.map(async ({ start, end, label }) => {
         const result = await this.prisma.expense_report.aggregate({
           where: {
+            ...userScopeFilter,
             expense_date: { gte: start, lte: end },
             status: { in: ['APPROVED', 'PAID'] },
           },
@@ -227,14 +259,17 @@ export class AnalyticsService {
   }
 
   // Top 5 employés avec le plus de dépenses ce mois
-  async getTopSpenders() {
+  async getTopSpenders(user: any) {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
+    const userScopeFilter = this.getUserScopeFilter(user);
+    const companyFilter = this.getCompanyFilter(user);
 
     const topSpenders = await this.prisma.expense_report.groupBy({
       by: ['user_id'],
       where: {
+        ...userScopeFilter,
         expense_date: { gte: startOfMonth },
         status: { in: ['APPROVED', 'PAID'] },
       },
@@ -245,7 +280,10 @@ export class AnalyticsService {
 
     const userIds = topSpenders.map(s => s.user_id);
     const users = await this.prisma.user.findMany({
-      where: { id: { in: userIds } },
+      where: {
+        id: { in: userIds },
+        ...companyFilter // Redundant check but safe
+      },
       select: { id: true, full_name: true },
     });
 
@@ -256,14 +294,16 @@ export class AnalyticsService {
   }
 
   // Anniversaires du mois
-  async getUpcomingBirthdays() {
+  async getUpcomingBirthdays(user: any) {
     const today = new Date();
     const currentMonth = today.getMonth() + 1;
+    const userScopeFilter = this.getUserScopeFilter(user);
 
     const birthdays = await this.prisma.user_personal_info.findMany({
       where: {
         AND: [
           { date_of_birth: { not: null } },
+          { ...userScopeFilter } // PersonalInfo -> User -> Company
         ],
       },
       select: {
@@ -287,15 +327,17 @@ export class AnalyticsService {
   }
 
   // Contrats arrivant à échéance (30 jours)
-  async getExpiringContracts() {
+  async getExpiringContracts(user: any) {
     const today = new Date();
     const in30Days = new Date(today);
     in30Days.setDate(in30Days.getDate() + 30);
+    const userScopeFilter = this.getUserScopeFilter(user);
 
     const contracts = await this.prisma.employment_contract.findMany({
       where: {
         end_date: { gte: today, lte: in30Days },
         status: 'ACTIVE',
+        ...userScopeFilter // Contract -> User -> Company
       },
       include: {
         user: { select: { id: true, full_name: true } },
@@ -312,10 +354,14 @@ export class AnalyticsService {
   }
 
   // Activité récente
-  async getRecentActivity() {
+  async getRecentActivity(user: any) {
+    const userScopeFilter = this.getUserScopeFilter(user);
+    const companyFilter = this.getCompanyFilter(user);
+
     const [recentLeaves, recentExpenses, recentHires] = await Promise.all([
       // Dernières demandes de congés
       this.prisma.application.findMany({
+        where: { ...userScopeFilter },
         take: 3,
         orderBy: { created_at: 'desc' },
         include: {
@@ -325,6 +371,7 @@ export class AnalyticsService {
       }),
       // Dernières notes de frais
       this.prisma.expense_report.findMany({
+        where: { ...userScopeFilter },
         take: 3,
         orderBy: { created_at: 'desc' },
         include: {
@@ -333,6 +380,7 @@ export class AnalyticsService {
       }),
       // Dernières embauches
       this.prisma.user.findMany({
+        where: { ...companyFilter },
         take: 3,
         orderBy: { created_at: 'desc' },
         select: { full_name: true, created_at: true, hire_date: true },
