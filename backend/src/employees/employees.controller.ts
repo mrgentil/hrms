@@ -45,7 +45,7 @@ type UploadedFile = {
 @Controller('employees')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class EmployeesController {
-  constructor(private readonly employeesService: EmployeesService) {}
+  constructor(private readonly employeesService: EmployeesService) { }
 
   @Post()
   @RequirePermissions(SYSTEM_PERMISSIONS.USERS_CREATE)
@@ -68,12 +68,14 @@ export class EmployeesController {
     @Query('limit') limit = 10,
     @Query('search') search?: string,
     @Query('department_id') department_id?: number,
+    @CurrentUser() currentUser?: any,
   ) {
     const result = await this.employeesService.findAll(
       +page,
       +limit,
       search,
       department_id ? +department_id : undefined,
+      currentUser,
     );
     return {
       success: true,
@@ -82,8 +84,8 @@ export class EmployeesController {
   }
 
   @Get('stats')
-  async getStats() {
-    const stats = await this.employeesService.getStats();
+  async getStats(@CurrentUser() currentUser: any) {
+    const stats = await this.employeesService.getStats(currentUser);
     return {
       success: true,
       data: stats,
@@ -93,7 +95,7 @@ export class EmployeesController {
 
   @Get('search')
   @RequirePermissions(SYSTEM_PERMISSIONS.USERS_VIEW)
-  async search(@Query('q') query: string) {
+  async search(@Query('q') query: string, @CurrentUser() currentUser: any) {
     if (!query || query.trim().length < 2) {
       return {
         success: false,
@@ -102,7 +104,7 @@ export class EmployeesController {
       };
     }
 
-    const employees = await this.employeesService.search(query.trim());
+    const employees = await this.employeesService.search(query.trim(), currentUser);
     return {
       success: true,
       data: employees,
@@ -112,8 +114,8 @@ export class EmployeesController {
 
   @Get('organization-chart')
   @RequirePermissions(SYSTEM_PERMISSIONS.USERS_VIEW)
-  async getOrganizationChart() {
-    const chart = await this.employeesService.getOrganizationChart();
+  async getOrganizationChart(@CurrentUser() currentUser: any) {
+    const chart = await this.employeesService.getOrganizationChart(currentUser);
     return {
       success: true,
       data: chart,
@@ -374,7 +376,7 @@ export class EmployeesController {
         const allowedTypes = /pdf|doc|docx|jpg|jpeg|png|gif/;
         const extName = allowedTypes.test(extname(file.originalname).toLowerCase());
         const mimeType = allowedTypes.test(file.mimetype);
-        
+
         if (mimeType && extName) {
           return cb(null, true);
         } else {

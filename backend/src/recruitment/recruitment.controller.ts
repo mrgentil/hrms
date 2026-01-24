@@ -19,6 +19,7 @@ import { CreateCandidateDto, UpdateCandidateDto } from './dto/candidate.dto';
 import { CreateApplicationDto } from './dto/application.dto';
 import { CreateInterviewDto, UpdateInterviewDto } from './dto/interview.dto';
 import { CreateOnboardingDto, UpdateOnboardingDto } from './dto/onboarding.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('recruitment')
 @UseGuards(JwtAuthGuard)
@@ -35,8 +36,9 @@ export class RecruitmentController {
         @Query('page') page: number = 1,
         @Query('limit') limit: number = 10,
         @Query('search') search?: string,
+        @CurrentUser() user?: any,
     ) {
-        return this.recruitmentService.findAllJobOffers({ page, limit, search });
+        return this.recruitmentService.findAllJobOffers({ page, limit, search }, user);
     }
 
     @Get('jobs/:id')
@@ -82,8 +84,9 @@ export class RecruitmentController {
         @Query('page') page: number = 1,
         @Query('limit') limit: number = 10,
         @Query('search') search?: string,
+        @CurrentUser() user?: any,
     ) {
-        return this.recruitmentService.findAllCandidates({ page, limit, search });
+        return this.recruitmentService.findAllCandidates({ page, limit, search }, user);
     }
 
     @Get('candidates/:id')
@@ -108,8 +111,8 @@ export class RecruitmentController {
 
     // ===================== APPLICATIONS =====================
     @Get('applications')
-    findAllApplications(@Query('jobOfferId') jobOfferId?: string) {
-        return this.recruitmentService.findAllApplications(jobOfferId ? parseInt(jobOfferId) : undefined);
+    findAllApplications(@Query('jobOfferId') jobOfferId?: string, @CurrentUser() user?: any) {
+        return this.recruitmentService.findAllApplications(jobOfferId ? parseInt(jobOfferId) : undefined, user);
     }
 
     @Get('applications/kanban')
@@ -153,8 +156,8 @@ export class RecruitmentController {
 
     // ===================== INTERVIEWS =====================
     @Get('interviews')
-    findAllInterviews() {
-        return this.recruitmentService.findAllInterviews();
+    findAllInterviews(@CurrentUser() user?: any) {
+        return this.recruitmentService.findAllInterviews(user);
     }
 
     @Post('interviews')
@@ -169,8 +172,8 @@ export class RecruitmentController {
 
     // ===================== ONBOARDING =====================
     @Get('onboarding')
-    findAllOnboarding() {
-        return this.recruitmentService.findAllOnboarding();
+    findAllOnboarding(@CurrentUser() user?: any) {
+        return this.recruitmentService.findAllOnboarding(user);
     }
 
     @Post('onboarding')

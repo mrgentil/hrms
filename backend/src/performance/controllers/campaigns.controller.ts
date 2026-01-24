@@ -33,8 +33,8 @@ export class CampaignsController {
   }
 
   @Get()
-  async findAll(@Query() query: CampaignQueryDto) {
-    const result = await this.campaignsService.findAll(query);
+  async findAll(@Query() query: CampaignQueryDto, @Request() req: any) {
+    const result = await this.campaignsService.findAll(query, req.user);
     return {
       success: true,
       ...result,

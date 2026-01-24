@@ -22,7 +22,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @Controller('announcements')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class AnnouncementsController {
-  constructor(private readonly announcementsService: AnnouncementsService) {}
+  constructor(private readonly announcementsService: AnnouncementsService) { }
 
   @Post()
   @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE)
@@ -40,13 +40,14 @@ export class AnnouncementsController {
     @Query('type') type?: string,
     @Query('department_id') departmentId?: string,
     @Query('include_expired') includeExpired?: string,
+    @CurrentUser() user?: any,
   ) {
     return this.announcementsService.findAll({
       is_published: isPublished === 'true' ? true : isPublished === 'false' ? false : undefined,
       type,
       department_id: departmentId ? parseInt(departmentId) : undefined,
       include_expired: includeExpired === 'true',
-    });
+    }, user);
   }
 
   @Get('my')
@@ -60,8 +61,10 @@ export class AnnouncementsController {
 
   @Get('stats')
   @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW)
-  getStats() {
-    return this.announcementsService.getStats();
+  @Get('stats')
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_VIEW)
+  getStats(@CurrentUser() user: any) {
+    return this.announcementsService.getStats(user);
   }
 
   @Get(':id')
@@ -72,8 +75,10 @@ export class AnnouncementsController {
 
   @Get(':id/readers')
   @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE)
-  getReaders(@Param('id', ParseIntPipe) id: number) {
-    return this.announcementsService.getReaders(id);
+  @Get(':id/readers')
+  @RequirePermissions(SYSTEM_PERMISSIONS.ANNOUNCEMENTS_MANAGE)
+  getReaders(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+    return this.announcementsService.getReaders(id, user);
   }
 
   @Patch(':id')

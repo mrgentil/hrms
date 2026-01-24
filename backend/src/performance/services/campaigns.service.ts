@@ -63,13 +63,18 @@ export class CampaignsService {
     });
   }
 
-  async findAll(query: CampaignQueryDto) {
+  async findAll(query: CampaignQueryDto, user?: any) {
     const { year, status, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {};
     if (year) where.year = year;
     if (status) where.status = status;
+
+    if (user && user.company_id) {
+      // Filter campaigns created by users in the same company
+      where.creator = { company_id: user.company_id };
+    }
 
     const [campaigns, total] = await Promise.all([
       this.prisma.performance_campaign.findMany({

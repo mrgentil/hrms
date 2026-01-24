@@ -182,8 +182,8 @@ export class ExpensesController {
 
   @Get('pending')
   @RequirePermissions(SYSTEM_PERMISSIONS.EXPENSES_APPROVE)
-  async findPending() {
-    const expenses = await this.expensesService.findPending();
+  async findPending(@CurrentUser() user: any) {
+    const expenses = await this.expensesService.findPending(user);
     return { success: true, data: expenses };
   }
 
@@ -194,27 +194,28 @@ export class ExpensesController {
     @Query('userId') userId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @CurrentUser() user?: any,
   ) {
     const expenses = await this.expensesService.findAll({
       status,
       userId: userId ? parseInt(userId) : undefined,
       startDate,
       endDate,
-    });
+    }, user);
     return { success: true, data: expenses };
   }
 
   @Get('stats')
   @RequirePermissions(SYSTEM_PERMISSIONS.USERS_VIEW)
-  async getStats() {
-    const stats = await this.expensesService.getStats();
+  async getStats(@CurrentUser() user: any) {
+    const stats = await this.expensesService.getStats(undefined, user);
     return { success: true, data: stats };
   }
 
   @Get('stats/monthly')
   @RequirePermissions(SYSTEM_PERMISSIONS.USERS_VIEW)
-  async getMonthlyStats() {
-    const stats = await this.expensesService.getMonthlyStats();
+  async getMonthlyStats(@CurrentUser() user: any) {
+    const stats = await this.expensesService.getMonthlyStats(user);
     return { success: true, data: stats };
   }
 

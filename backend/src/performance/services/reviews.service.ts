@@ -21,7 +21,7 @@ export class ReviewsService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
-  ) {}
+  ) { }
 
   private readonly userSelect = {
     id: true,
@@ -164,7 +164,7 @@ export class ReviewsService {
     return results;
   }
 
-  async findAll(query: ReviewQueryDto) {
+  async findAll(query: ReviewQueryDto, user?: any) {
     const { campaign_id, employee_id, manager_id, status, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
@@ -173,6 +173,10 @@ export class ReviewsService {
     if (employee_id) where.employee_id = employee_id;
     if (manager_id) where.manager_id = manager_id;
     if (status) where.status = status;
+
+    if (user && user.company_id) {
+      where.employee = { company_id: user.company_id };
+    }
 
     const [reviews, total] = await Promise.all([
       this.prisma.performance_review.findMany({
@@ -491,7 +495,7 @@ export class ReviewsService {
       feedback_avg:
         review.feedback_requests.length > 0
           ? review.feedback_requests.reduce((sum, f) => sum + (f.rating || 0), 0) /
-            review.feedback_requests.length
+          review.feedback_requests.length
           : null,
       weights: {
         self: weight_self,

@@ -13,12 +13,18 @@ export interface OrgChartNode {
 
 @Injectable()
 export class OrgchartService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  async getOrgChart(): Promise<OrgChartNode[]> {
+  async getOrgChart(user?: any): Promise<OrgChartNode[]> {
+    const where: any = { active: true };
+
+    if (user && user.company_id) {
+      where.company_id = user.company_id;
+    }
+
     // Récupérer tous les utilisateurs actifs avec leurs relations
     const users = await this.prisma.user.findMany({
-      where: { active: true },
+      where,
       select: {
         id: true,
         full_name: true,
@@ -97,10 +103,16 @@ export class OrgchartService {
     });
   }
 
-  async getOrgChartOptimized(): Promise<OrgChartNode[]> {
+  async getOrgChartOptimized(user?: any): Promise<OrgChartNode[]> {
+    const where: any = { active: true };
+
+    if (user && user.company_id) {
+      where.company_id = user.company_id;
+    }
+
     // Version optimisée avec construction récursive en une passe
     const users = await this.prisma.user.findMany({
-      where: { active: true },
+      where,
       select: {
         id: true,
         full_name: true,

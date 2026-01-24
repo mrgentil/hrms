@@ -20,10 +20,20 @@ export class RecruitmentService {
     ) { }
 
     // ===================== JOB OFFERS =====================
-    async findAllJobOffers(params: { page?: number; limit?: number; search?: string } = {}) {
+    async findAllJobOffers(params: { page?: number; limit?: number; search?: string } = {}, user?: any) {
         const { page = 1, limit = 10, search } = params;
         const skip = (page - 1) * limit;
         const where: Prisma.job_offerWhereInput = {};
+
+        if (user && user.company_id) {
+            // Heuristic: filter by department name matching company departments
+            const companyDepartments = await this.prisma.department.findMany({
+                where: { company_id: user.company_id },
+                select: { name: true },
+            });
+            const deptNames = companyDepartments.map(d => d.name);
+            where.department = { in: deptNames };
+        }
 
         if (search) {
             where.OR = [
@@ -108,10 +118,27 @@ export class RecruitmentService {
     }
 
     // ===================== CANDIDATES =====================
-    async findAllCandidates(params: { page?: number; limit?: number; search?: string } = {}) {
+    async findAllCandidates(params: { page?: number; limit?: number; search?: string } = {}, user?: any) {
         const { page = 1, limit = 10, search } = params;
         const skip = (page - 1) * limit;
         const where: Prisma.candidateWhereInput = {};
+
+        if (user && user.company_id) {
+            const companyDepartments = await this.prisma.department.findMany({
+                where: { company_id: user.company_id },
+                select: { name: true },
+            });
+            const deptNames = companyDepartments.map(d => d.name);
+
+            // Candidates who applied to jobs in these departments
+            where.applications = {
+                some: {
+                    job_offer: {
+                        department: { in: deptNames }
+                    }
+                }
+            };
+        }
 
         if (search) {
             where.OR = [
@@ -200,9 +227,24 @@ export class RecruitmentService {
     }
 
     // ===================== APPLICATIONS =====================
-    async findAllApplications(jobOfferId?: number) {
+    async findAllApplications(jobOfferId?: number, user?: any) {
+        const where: Prisma.candidate_applicationWhereInput = {};
+
+        if (jobOfferId) {
+            where.job_offer_id = jobOfferId;
+        }
+
+        if (user && user.company_id) {
+            const companyDepartments = await this.prisma.department.findMany({
+                where: { company_id: user.company_id },
+                select: { name: true },
+            });
+            const deptNames = companyDepartments.map(d => d.name);
+            where.job_offer = { department: { in: deptNames } };
+        }
+
         return this.prisma.candidate_application.findMany({
-            where: jobOfferId ? { job_offer_id: jobOfferId } : undefined,
+            where,
             include: {
                 candidate: true,
                 job_offer: true,
@@ -387,8 +429,15 @@ export class RecruitmentService {
     }
 
     // ===================== INTERVIEWS =====================
-    async findAllInterviews() {
+    async findAllInterviews(user?: any) {
+        const where: Prisma.job_interviewWhereInput = {};
+
+        if (user && user.company_id) {
+            where.interviewer = { company_id: user.company_id };
+        }
+
         return this.prisma.job_interview.findMany({
+            where,
             include: {
                 candidate: true,
                 application: { include: { job_offer: true } },
@@ -460,8 +509,15 @@ export class RecruitmentService {
     }
 
     // ===================== ONBOARDING =====================
-    async findAllOnboarding() {
+    async findAllOnboarding(user?: any) {
+        const where: Prisma.onboarding_processWhereInput = {};
+
+        if (user && user.company_id) {
+            where.employee = { company_id: user.company_id };
+        }
+
         return this.prisma.onboarding_process.findMany({
+            where,
             include: {
                 employee: { select: { id: true, full_name: true, profile_photo_url: true, position: true } },
                 mentor: { select: { id: true, full_name: true } },

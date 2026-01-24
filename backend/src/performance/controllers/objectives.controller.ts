@@ -22,7 +22,7 @@ import {
 
 @Controller('performance/objectives')
 export class ObjectivesController {
-  constructor(private readonly objectivesService: ObjectivesService) {}
+  constructor(private readonly objectivesService: ObjectivesService) { }
 
   @Post()
   async create(@Body() dto: CreateObjectiveDto, @Request() req: any) {
@@ -35,8 +35,8 @@ export class ObjectivesController {
   }
 
   @Get()
-  async findAll(@Query() query: ObjectiveQueryDto) {
-    const result = await this.objectivesService.findAll(query);
+  async findAll(@Query() query: ObjectiveQueryDto, @Request() req: any) {
+    const result = await this.objectivesService.findAll(query, req.user);
     return {
       success: true,
       ...result,

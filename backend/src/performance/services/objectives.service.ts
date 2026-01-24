@@ -15,7 +15,7 @@ import {
 
 @Injectable()
 export class ObjectivesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(dto: CreateObjectiveDto, creatorId: number) {
     // Si lié à une review, vérifier que l'utilisateur est manager
@@ -51,14 +51,14 @@ export class ObjectivesService {
         status: 'NOT_STARTED',
         key_results: dto.key_results?.length
           ? {
-              create: dto.key_results.map((kr) => ({
-                title: kr.title,
-                target_value: kr.target_value,
-                current_value: kr.current_value || 0,
-                unit: kr.unit,
-                status: 'NOT_STARTED',
-              })),
-            }
+            create: dto.key_results.map((kr) => ({
+              title: kr.title,
+              target_value: kr.target_value,
+              current_value: kr.current_value || 0,
+              unit: kr.unit,
+              status: 'NOT_STARTED',
+            })),
+          }
           : undefined,
       },
       include: {
@@ -75,7 +75,7 @@ export class ObjectivesService {
     return objective;
   }
 
-  async findAll(query: ObjectiveQueryDto) {
+  async findAll(query: ObjectiveQueryDto, user?: any) {
     const { employee_id, review_id, status, type, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
@@ -84,6 +84,10 @@ export class ObjectivesService {
     if (review_id) where.review_id = review_id;
     if (status) where.status = status;
     if (type) where.type = type;
+
+    if (user && user.company_id) {
+      where.employee = { company_id: user.company_id };
+    }
 
     const [objectives, total] = await Promise.all([
       this.prisma.performance_objective.findMany({

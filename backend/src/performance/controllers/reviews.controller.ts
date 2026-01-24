@@ -20,7 +20,7 @@ import {
 
 @Controller('performance/reviews')
 export class ReviewsController {
-  constructor(private readonly reviewsService: ReviewsService) {}
+  constructor(private readonly reviewsService: ReviewsService) { }
 
   @Post()
   async create(@Body() dto: CreateReviewDto) {
@@ -43,8 +43,8 @@ export class ReviewsController {
   }
 
   @Get()
-  async findAll(@Query() query: ReviewQueryDto) {
-    const result = await this.reviewsService.findAll(query);
+  async findAll(@Query() query: ReviewQueryDto, @Request() req: any) {
+    const result = await this.reviewsService.findAll(query, req.user);
     return {
       success: true,
       ...result,

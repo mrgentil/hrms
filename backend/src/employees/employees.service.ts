@@ -164,10 +164,14 @@ export class EmployeesService {
     });
   }
 
-  async findAll(page = 1, limit = 10, search?: string, department_id?: number) {
+  async findAll(page = 1, limit = 10, search?: string, department_id?: number, user?: any) {
     const skip = (page - 1) * limit;
 
     const where: any = {};
+
+    if (user && user.company_id) {
+      where.company_id = user.company_id;
+    }
 
     if (search) {
       where.OR = [
@@ -908,35 +912,41 @@ export class EmployeesService {
   }
 
   // Recherche d'employés
-  async search(query: string) {
-    return await this.prisma.user.findMany({
-      where: {
-        OR: [
-          { full_name: { contains: query } },
-          { username: { contains: query } },
-          { work_email: { contains: query } },
-          {
-            user_personal_info: {
-              some: {
-                OR: [
-                  { mobile: { contains: query } },
-                  { email_address: { contains: query } },
-                ]
-              }
-            }
-          },
-          {
-            department: {
-              name: { contains: query }
-            }
-          },
-          {
-            position: {
-              title: { contains: query }
-            }
+  async search(query: string, user?: any) {
+    const where: any = {};
+
+    if (user && user.company_id) {
+      where.company_id = user.company_id;
+    }
+
+    where.OR = [
+      { full_name: { contains: query } },
+      { username: { contains: query } },
+      { work_email: { contains: query } },
+      {
+        user_personal_info: {
+          some: {
+            OR: [
+              { mobile: { contains: query } },
+              { email_address: { contains: query } },
+            ]
           }
-        ]
+        }
       },
+      {
+        department: {
+          name: { contains: query }
+        }
+      },
+      {
+        position: {
+          title: { contains: query }
+        }
+      }
+    ];
+
+    return await this.prisma.user.findMany({
+      where,
       include: {
         department: {
           select: { id: true, name: true },
@@ -955,9 +965,15 @@ export class EmployeesService {
   }
 
   // Organigramme - Récupérer la hiérarchie des employés
-  async getOrganizationChart() {
+  async getOrganizationChart(user?: any) {
+    const where: any = { active: true };
+
+    if (user && user.company_id) {
+      where.company_id = user.company_id;
+    }
+
     const employees = await this.prisma.user.findMany({
-      where: { active: true },
+      where,
       include: {
         department: {
           select: { id: true, name: true },
@@ -1141,7 +1157,13 @@ export class EmployeesService {
   }
 
   // Statistiques
-  async getStats() {
+  async getStats(user?: any) {
+    const where: any = {};
+
+    if (user && user.company_id) {
+      where.company_id = user.company_id;
+    }
+
     const [
       totalEmployees,
       activeEmployees,
@@ -1149,16 +1171,17 @@ export class EmployeesService {
       employeesByDepartment,
       recentHires,
     ] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.user.count({ where: { active: true } }),
-      this.prisma.user.count({ where: { active: false } }),
+      this.prisma.user.count({ where }),
+      this.prisma.user.count({ where: { ...where, active: true } }),
+      this.prisma.user.count({ where: { ...where, active: false } }),
       this.prisma.user.groupBy({
         by: ['department_id'],
         _count: { id: true },
-        where: { department_id: { not: null } },
+        where: { ...where, department_id: { not: null } },
       }),
       this.prisma.user.count({
         where: {
+          ...where,
           hire_date: {
             gte: new Date(new Date().setDate(new Date().getDate() - 30)),
           },

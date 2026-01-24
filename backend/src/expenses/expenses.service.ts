@@ -230,9 +230,15 @@ export class ExpensesService {
   // === ADMIN / MANAGER ===
 
   // Obtenir les notes à approuver
-  async findPending() {
+  async findPending(user?: any) {
+    const where: any = { status: 'PENDING' };
+
+    if (user && user.company_id) {
+      where.user = { company_id: user.company_id };
+    }
+
     return this.prisma.expense_report.findMany({
-      where: { status: 'PENDING' },
+      where,
       orderBy: { submitted_at: 'asc' },
       include: {
         user: {
@@ -253,8 +259,12 @@ export class ExpensesService {
     userId?: number;
     startDate?: string;
     endDate?: string;
-  }) {
+  }, user?: any) {
     const where: any = {};
+
+    if (user && user.company_id) {
+      where.user = { company_id: user.company_id };
+    }
 
     if (filters?.status) where.status = filters.status;
     if (filters?.userId) where.user_id = filters.userId;
@@ -396,8 +406,12 @@ export class ExpensesService {
   }
 
   // Statistiques
-  async getStats(userId?: number) {
-    const where = userId ? { user_id: userId } : {};
+  async getStats(userId?: number, user?: any) {
+    const where: any = userId ? { user_id: userId } : {};
+
+    if (user && user.company_id) {
+      where.user = { company_id: user.company_id };
+    }
 
     const [totals, byCategory, byStatus] = await Promise.all([
       this.prisma.expense_report.aggregate({
@@ -428,22 +442,27 @@ export class ExpensesService {
   }
 
   // Stats du mois en cours
-  async getMonthlyStats() {
+  async getMonthlyStats(user?: any) {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
+    const whereBase: any = {};
+    if (user && user.company_id) {
+      whereBase.user = { company_id: user.company_id };
+    }
+
     const [pending, approved, paid, totalAmount] = await Promise.all([
-      this.prisma.expense_report.count({ where: { status: 'PENDING' } }),
+      this.prisma.expense_report.count({ where: { ...whereBase, status: 'PENDING' } }),
       this.prisma.expense_report.count({
-        where: { status: 'APPROVED', approved_at: { gte: startOfMonth, lte: endOfMonth } },
+        where: { ...whereBase, status: 'APPROVED', approved_at: { gte: startOfMonth, lte: endOfMonth } },
       }),
       this.prisma.expense_report.aggregate({
-        where: { status: 'PAID', payment_date: { gte: startOfMonth, lte: endOfMonth } },
+        where: { ...whereBase, status: 'PAID', payment_date: { gte: startOfMonth, lte: endOfMonth } },
         _sum: { amount: true },
       }),
       this.prisma.expense_report.aggregate({
-        where: { expense_date: { gte: startOfMonth, lte: endOfMonth } },
+        where: { ...whereBase, expense_date: { gte: startOfMonth, lte: endOfMonth } },
         _sum: { amount: true },
       }),
     ]);

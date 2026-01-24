@@ -14,22 +14,22 @@ export class AnnouncementsService {
     private auditService: AuditService,
     private notificationsService: NotificationsService,
     private mailService: MailService,
-  ) {}
+  ) { }
 
   async create(createAnnouncementDto: CreateAnnouncementDto, authorId: number) {
     // Si aucun département n'est sélectionné, l'annonce est pour tous
     const targetAll = !createAnnouncementDto.department_id;
-    
+
     const announcement = await this.prisma.announcement.create({
       data: {
         ...createAnnouncementDto,
         author_id: authorId,
         target_all: targetAll,
-        publish_date: createAnnouncementDto.publish_date 
-          ? new Date(createAnnouncementDto.publish_date) 
+        publish_date: createAnnouncementDto.publish_date
+          ? new Date(createAnnouncementDto.publish_date)
           : createAnnouncementDto.is_published ? new Date() : null,
-        expire_date: createAnnouncementDto.expire_date 
-          ? new Date(createAnnouncementDto.expire_date) 
+        expire_date: createAnnouncementDto.expire_date
+          ? new Date(createAnnouncementDto.expire_date)
           : null,
       },
       include: {
@@ -56,9 +56,19 @@ export class AnnouncementsService {
     type?: string;
     department_id?: number;
     include_expired?: boolean;
-  }) {
+  }, user?: any) {
     const where: any = {};
     const andConditions: any[] = [];
+
+    // Filter by company (using author's company typically, or explicit field if exists)
+    // Assuming for now filtering by author -> user -> company_id is safest if no direct field
+    // OR if we want to see only announcements targeted to my company?
+    // Usually announcements are created BY the company admins FOR the company.
+    // So filtering by author.company_id likely matches user.company_id.
+
+    if (user && user.company_id) {
+      where.author = { company_id: user.company_id };
+    }
 
     if (params?.is_published !== undefined) {
       where.is_published = params.is_published;
@@ -255,8 +265,8 @@ export class AnnouncementsService {
         ...(shouldNotifyAll
           ? {}
           : {
-              department_id: existing.department_id ?? undefined,
-            }),
+            department_id: existing.department_id ?? undefined,
+          }),
       },
       select: {
         id: true,
@@ -368,9 +378,14 @@ export class AnnouncementsService {
   }
 
   // Obtenir la liste des lecteurs d'une annonce
-  async getReaders(announcementId: number) {
+  async getReaders(announcementId: number, user?: any) {
+    const where: any = { id: announcementId };
+    if (user && user.company_id) {
+      where.author = { company_id: user.company_id };
+    }
+
     const announcement = await this.prisma.announcement.findUnique({
-      where: { id: announcementId },
+      where,
     });
 
     if (!announcement) {
@@ -437,17 +452,24 @@ export class AnnouncementsService {
   }
 
   // Statistiques
-  async getStats() {
+  async getStats(user?: any) {
+    const where: any = {};
+    if (user && user.company_id) {
+      where.author = { company_id: user.company_id };
+    }
+
     const [total, published, byType, byPriority] = await Promise.all([
-      this.prisma.announcement.count(),
-      this.prisma.announcement.count({ where: { is_published: true } }),
+      this.prisma.announcement.count({ where }),
+      this.prisma.announcement.count({ where: { ...where, is_published: true } }),
       this.prisma.announcement.groupBy({
         by: ['type'],
         _count: true,
+        where,
       }),
       this.prisma.announcement.groupBy({
         by: ['priority'],
         _count: true,
+        where,
       }),
     ]);
 
