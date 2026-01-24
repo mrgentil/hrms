@@ -29,7 +29,7 @@ import { application_status } from '@prisma/client';
 @Controller('leaves')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class LeavesController {
-  constructor(private readonly leavesService: LeavesService) {}
+  constructor(private readonly leavesService: LeavesService) { }
 
   @Post()
   @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_CREATE)
@@ -206,8 +206,8 @@ export class LeavesController {
 
   @Get()
   @RequirePermissions(SYSTEM_PERMISSIONS.LEAVES_VIEW_ALL)
-  async findAllLeaves() {
-    const leaves = await this.leavesService.findAllLeaves();
+  async findAllLeaves(@CurrentUser() currentUser: any) {
+    const leaves = await this.leavesService.findAllLeaves(currentUser);
     return {
       success: true,
       data: leaves,

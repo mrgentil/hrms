@@ -17,8 +17,8 @@ export class BonusesController {
     constructor(private readonly bonusesService: BonusesService) { }
 
     @Get()
-    async findAll() {
-        return await this.bonusesService.getBonuses({});
+    async findAll(@CurrentUser() user: any) {
+        return await this.bonusesService.getBonuses({}, user);
     }
 
     @Get('my')

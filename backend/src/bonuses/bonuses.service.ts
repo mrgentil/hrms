@@ -1,32 +1,37 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class BonusesService {
     private readonly logger = new Logger(BonusesService.name);
 
-    async getBonuses(filters: any) {
-        this.logger.warn('Using MOCK bonuses service - implement real service later');
+    constructor(private readonly prisma: PrismaService) { }
 
-        // Mock data
-        const mockBonuses = [
-            {
-                id: 1,
-                user_id: 1,
-                bonus_type: 'PERFORMANCE',
-                amount: 1500,
-                title: 'Prime de performance Q4',
-                description: 'Excellent travail ce trimestre',
-                period: 'Q4 2024',
-                status: 'APPROVED',
-                created_at: new Date('2024-12-01'),
-                user: { id: 1, full_name: 'John Doe' },
+    async getBonuses(filters: any, user?: any) {
+        const where: any = {};
+
+        if (user && user.company_id) {
+            where.user = { company_id: user.company_id };
+        }
+
+        const bonuses = await this.prisma.bonus.findMany({
+            where,
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        full_name: true,
+                        work_email: true,
+                    }
+                }
             },
-        ];
+            orderBy: { created_at: 'desc' }
+        });
 
         return {
             success: true,
-            data: mockBonuses,
-            total: mockBonuses.length,
+            data: bonuses,
+            total: bonuses.length,
         };
     }
 

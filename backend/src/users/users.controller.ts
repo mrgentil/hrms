@@ -71,8 +71,10 @@ export class UsersController {
   }
 
   @Get('stats')
-  async getStats() {
-    const stats = await this.usersService.getStats();
+  @RequirePermissions(SYSTEM_PERMISSIONS.USERS_VIEW)
+  async getStats(@CurrentUser() currentUser: any) {
+    const companyId = currentUser.role === UserRole.ROLE_SUPER_ADMIN ? undefined : currentUser.company_id;
+    const stats = await this.usersService.getStats(companyId);
     return {
       success: true,
       data: stats,
@@ -81,8 +83,9 @@ export class UsersController {
   }
 
   @Get('search')
-  async search(@Query('q') query: string) {
-    const users = await this.usersService.search(query);
+  async search(@Query('q') query: string, @CurrentUser() currentUser: any) {
+    const companyId = currentUser.role === UserRole.ROLE_SUPER_ADMIN ? undefined : currentUser.company_id;
+    const users = await this.usersService.search(query, companyId);
     return {
       success: true,
       data: users,
@@ -94,8 +97,10 @@ export class UsersController {
   async export(
     @Query('format') format: 'csv' | 'xlsx' = 'csv',
     @Res() res: Response,
+    @CurrentUser() currentUser: any,
   ) {
-    const buffer = await this.usersService.exportUsers(format);
+    const companyId = currentUser.role === UserRole.ROLE_SUPER_ADMIN ? undefined : currentUser.company_id;
+    const buffer = await this.usersService.exportUsers(format, companyId);
 
     res.set({
       'Content-Type': format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

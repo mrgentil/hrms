@@ -37,6 +37,7 @@ export class FundRequestsController {
         @Query('status') status?: fund_request_status,
         @Query('page') page?: string,
         @Query('limit') limit?: string,
+        @CurrentUser() currentUser?: any,
     ) {
         const filters = {
             user_id: userId ? parseInt(userId) : undefined,
@@ -45,7 +46,7 @@ export class FundRequestsController {
             limit: limit ? parseInt(limit) : undefined,
         };
 
-        return await this.fundRequestsService.findAll(filters);
+        return await this.fundRequestsService.findAll(filters, currentUser);
     }
 
     /**

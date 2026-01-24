@@ -78,8 +78,12 @@ export class FundRequestsService {
         status?: fund_request_status;
         page?: number;
         limit?: number;
-    }) {
+    }, user?: any) {
         const where: any = {};
+
+        if (user && user.company_id) {
+            where.user = { company_id: user.company_id };
+        }
 
         if (filters?.user_id) {
             where.user_id = filters.user_id;
@@ -276,6 +280,7 @@ export class FundRequestsService {
                         id: true,
                         full_name: true,
                         work_email: true,
+                        company_id: true,
                     },
                 },
             },
@@ -300,9 +305,14 @@ export class FundRequestsService {
                                 },
                             },
                         },
+                        // Restrict reviewers to same company as requester (except super admin)
+                        // Note: Super Admin might not have company_id, so the OR logic handles it above usually?
+                        // Actually, better logic: 
+                        // (Role is SuperAdmin) OR (HasPermission AND Company matches)
+                        company_id: updated.user.company_id,
                     },
                 ],
-                active: true, // Only active users
+                active: true,
             },
             select: { id: true, work_email: true, full_name: true },
         });

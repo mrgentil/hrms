@@ -816,19 +816,25 @@ export class UsersService {
     return { message: 'Utilisateur supprimé avec succès' };
   }
 
-  async search(query: string) {
+  async search(query: string, companyId?: number) {
     if (!query || query.length < 2) {
       return [];
     }
 
+    const where: any = {
+      OR: [
+        { username: { contains: query } },
+        { full_name: { contains: query } },
+        { work_email: { contains: query } },
+      ],
+    };
+
+    if (companyId) {
+      where.company_id = companyId;
+    }
+
     const users = await this.prisma.user.findMany({
-      where: {
-        OR: [
-          { username: { contains: query } },
-          { full_name: { contains: query } },
-          { work_email: { contains: query } },
-        ],
-      },
+      where,
       take: 10,
       select: {
         id: true,
@@ -843,19 +849,25 @@ export class UsersService {
     return users;
   }
 
-  async getStats() {
+  async getStats(companyId?: number) {
+    const where: any = {};
+    if (companyId) {
+      where.company_id = companyId;
+    }
+
     const [total, active, inactive, roleStats, departmentStats] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.user.count({ where: { active: true } }),
-      this.prisma.user.count({ where: { active: false } }),
+      this.prisma.user.count({ where }),
+      this.prisma.user.count({ where: { ...where, active: true } }),
+      this.prisma.user.count({ where: { ...where, active: false } }),
       this.prisma.user.groupBy({
         by: ['role'],
         _count: { role: true },
+        where,
       }),
       this.prisma.user.groupBy({
         by: ['department_id'],
         _count: { department_id: true },
-        where: { department_id: { not: null } },
+        where: { ...where, department_id: { not: null } },
       }),
     ]);
 
@@ -894,8 +906,14 @@ export class UsersService {
     };
   }
 
-  async exportUsers(format: 'csv' | 'xlsx' = 'csv'): Promise<Buffer> {
+  async exportUsers(format: 'csv' | 'xlsx' = 'csv', companyId?: number): Promise<Buffer> {
+    const where: any = {};
+    if (companyId) {
+      where.company_id = companyId;
+    }
+
     const users = await this.prisma.user.findMany({
+      where,
       select: {
         id: true,
         username: true,

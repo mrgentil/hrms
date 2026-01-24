@@ -30,7 +30,7 @@ export class LeavesService {
     private readonly prisma: PrismaService,
     private readonly rolesService: RolesService,
     private readonly mailService: MailService,
-  ) {}
+  ) { }
 
 
   private async ensureLeaveAccess(leaveId: number, userId: number) {
@@ -97,7 +97,7 @@ export class LeavesService {
 
     }
 
- 
+
     const value = typeof date === 'string' ? new Date(date) : date;
 
     return value.toLocaleDateString('fr-FR');
@@ -764,11 +764,11 @@ export class LeavesService {
 
           ? this.prisma.leave_type.findUnique({
 
-              where: { id: dto.leave_type_id },
+            where: { id: dto.leave_type_id },
 
-              select: { name: true },
+            select: { name: true },
 
-            })
+          })
 
           : Promise.resolve(null),
 
@@ -987,19 +987,19 @@ export class LeavesService {
 
         ? this.prisma.user.findUnique({
 
-            where: { id: leaveAccess.approver_user_id },
+          where: { id: leaveAccess.approver_user_id },
 
-            select: {
+          select: {
 
-              full_name: true,
+            full_name: true,
 
-              work_email: true,
+            work_email: true,
 
-              username: true,
+            username: true,
 
-            },
+          },
 
-          })
+        })
 
         : Promise.resolve(null),
 
@@ -1363,8 +1363,14 @@ export class LeavesService {
 
 
 
-  async findAllLeaves() {
+  async findAllLeaves(user?: any) {
+    const where: any = {};
+    if (user && user.company_id) {
+      where.user = { company_id: user.company_id };
+    }
+
     return this.prisma.application.findMany({
+      where,
       include: {
         leave_type: true,
         user: {

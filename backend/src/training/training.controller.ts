@@ -46,8 +46,8 @@ export class TrainingController {
 
     @Get()
     @RequirePermissions('training.view')
-    async getAllTrainings(@Query() filters: any) {
-        return this.trainingService.getAllTrainings(filters);
+    async getAllTrainings(@Query() filters: any, @CurrentUser() user: any) {
+        return this.trainingService.getAllTrainings(filters, user);
     }
 
     @Get('recommendations')
@@ -122,14 +122,14 @@ export class TrainingController {
 
     @Get('registrations/all')
     @RequirePermissions('training.manage')
-    async getAllRegistrations() {
-        return this.trainingService.getAllRegistrations();
+    async getAllRegistrations(@CurrentUser() user: any) {
+        return this.trainingService.getAllRegistrations(user);
     }
 
     @Get('registrations/pending-count')
     @RequirePermissions('training.manage')
-    async getPendingRegistrationsCount() {
-        const count = await this.trainingService.getPendingRegistrationsCount();
+    async getPendingRegistrationsCount(@CurrentUser() user: any) {
+        const count = await this.trainingService.getPendingRegistrationsCount(user);
         return { count };
     }
 
@@ -211,8 +211,8 @@ export class TrainingController {
 
     @Get('elearning/modules')
     @RequirePermissions('training.view')
-    async getElearningModules(@Query() filters: any) {
-        return this.trainingService.getElearningModules(filters);
+    async getElearningModules(@Query() filters: any, @CurrentUser() user: any) {
+        return this.trainingService.getElearningModules(filters, user);
     }
 
     @Post('elearning/modules')

@@ -21,7 +21,7 @@ import { SYSTEM_PERMISSIONS } from '../roles/roles.service';
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class AttendanceController {
-  constructor(private readonly attendanceService: AttendanceService) {}
+  constructor(private readonly attendanceService: AttendanceService) { }
 
   // ==========================================
   // ENDPOINTS EMPLOYÉ (self-service)
@@ -102,11 +102,15 @@ export class AttendanceController {
 
   @Get()
   @RequirePermissions(SYSTEM_PERMISSIONS.USERS_VIEW)
-  async getAllAttendance(@Query(ValidationPipe) query: GetAttendanceQueryDto) {
+  async getAllAttendance(
+    @Query(ValidationPipe) query: GetAttendanceQueryDto,
+    @CurrentUser() currentUser: any,
+  ) {
     const attendances = await this.attendanceService.getAllAttendance(
       query.startDate,
       query.endDate,
       query.userId ? parseInt(query.userId) : undefined,
+      currentUser,
     );
     return {
       success: true,
@@ -116,8 +120,8 @@ export class AttendanceController {
 
   @Get('stats/global')
   @RequirePermissions(SYSTEM_PERMISSIONS.USERS_VIEW)
-  async getGlobalStats(@Query('date') date?: string) {
-    const stats = await this.attendanceService.getGlobalStats(date);
+  async getGlobalStats(@Query('date') date?: string, @CurrentUser() currentUser?: any) {
+    const stats = await this.attendanceService.getGlobalStats(date, currentUser);
     return {
       success: true,
       data: stats,

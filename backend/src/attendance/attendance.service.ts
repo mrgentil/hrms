@@ -19,7 +19,7 @@ export class AttendanceService {
   constructor(
     private prisma: PrismaService,
     private auditService: AuditService,
-  ) {}
+  ) { }
 
   // Récupérer les paramètres d'horaires depuis app_settings
   private async getWorkSchedule() {
@@ -28,7 +28,7 @@ export class AttendanceService {
         key: {
           in: [
             'work_start_hour',
-            'work_start_minute', 
+            'work_start_minute',
             'work_end_hour',
             'work_end_minute',
             'late_tolerance_minutes',
@@ -39,7 +39,7 @@ export class AttendanceService {
     });
 
     const schedule = { ...this.defaultWorkSchedule };
-    
+
     for (const setting of settings) {
       const value = parseInt(setting.value || '0', 10);
       switch (setting.key) {
@@ -71,16 +71,16 @@ export class AttendanceService {
   async checkIn(userId: number, dto: CheckInDto) {
     const now = new Date();
     const schedule = await this.getWorkSchedule();
-    
+
     // Date du jour à minuit UTC (pour correspondre au format stocké en DB)
     const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
 
     // Calculer l'heure limite d'arrivée (avec tolérance)
     const limitHour = schedule.workStartHour;
     const limitMinute = schedule.workStartMinute + schedule.lateToleranceMinutes;
-    
-    const isLate = now.getHours() > limitHour || 
-                   (now.getHours() === limitHour && now.getMinutes() > limitMinute);
+
+    const isLate = now.getHours() > limitHour ||
+      (now.getHours() === limitHour && now.getMinutes() > limitMinute);
 
     const status = dto.status || (isLate ? attendance_status.LATE : attendance_status.PRESENT);
 
@@ -149,11 +149,11 @@ export class AttendanceService {
     }
 
     const checkInTime = new Date(attendance.check_in);
-    
+
     // Calcul des heures travaillées
     const diffMs = now.getTime() - checkInTime.getTime();
     const workedHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
-    
+
     // Calcul des heures supplémentaires (> 8h)
     const overtimeHours = workedHours > 8 ? Math.round((workedHours - 8) * 100) / 100 : 0;
 
@@ -250,8 +250,12 @@ export class AttendanceService {
   }
 
   // Admin: Liste des pointages de tous les employés
-  async getAllAttendance(startDate?: string, endDate?: string, userId?: number) {
+  async getAllAttendance(startDate?: string, endDate?: string, userId?: number, user?: any) {
     const where: any = {};
+
+    if (user && user.company_id) {
+      where.user = { company_id: user.company_id };
+    }
 
     if (userId) where.user_id = userId;
 
@@ -288,14 +292,22 @@ export class AttendanceService {
   }
 
   // Admin: Statistiques globales
-  async getGlobalStats(date?: string) {
+  async getGlobalStats(date?: string, user?: any) {
     const targetDate = date ? new Date(date) : new Date();
     targetDate.setHours(0, 0, 0, 0);
 
+    const userWhere: any = { active: true };
+    const attendanceWhere: any = { date: targetDate };
+
+    if (user && user.company_id) {
+      userWhere.company_id = user.company_id;
+      attendanceWhere.user = { company_id: user.company_id };
+    }
+
     const [totalEmployees, todayAttendances] = await Promise.all([
-      this.prisma.user.count({ where: { active: true } }),
+      this.prisma.user.count({ where: userWhere }),
       this.prisma.attendance.findMany({
-        where: { date: targetDate },
+        where: attendanceWhere,
       }),
     ]);
 
@@ -360,7 +372,7 @@ export class AttendanceService {
   // Obtenir les horaires de travail configurés (public)
   async getWorkScheduleSettings() {
     const schedule = await this.getWorkSchedule();
-    
+
     // Formater les heures pour l'affichage
     const formatTime = (hour: number, minute: number) => {
       return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
@@ -399,7 +411,7 @@ export class AttendanceService {
     for (const setting of settingsToUpdate) {
       await this.prisma.app_settings.upsert({
         where: { key: setting.key },
-        update: { 
+        update: {
           value: String(setting.value),
           updated_at: new Date(),
           updated_by: userId,
