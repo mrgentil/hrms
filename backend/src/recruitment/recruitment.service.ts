@@ -240,10 +240,17 @@ export class RecruitmentService {
                 select: { name: true },
             });
             const deptNames = companyDepartments.map(d => d.name);
+            console.log(`[Recruitment] User ${user.id} Company ${user.company_id} filtering by departments:`, deptNames);
+
+            // Check if departments list is empty
+            if (deptNames.length === 0) {
+                console.warn(`[Recruitment] User ${user.id} has no company departments! Filtering will return nothing.`);
+            }
+
             where.job_offer = { department: { in: deptNames } };
         }
 
-        return this.prisma.candidate_application.findMany({
+        const apps = await this.prisma.candidate_application.findMany({
             where,
             include: {
                 candidate: true,
@@ -252,6 +259,9 @@ export class RecruitmentService {
             },
             orderBy: { created_at: 'desc' },
         });
+
+        console.log(`[Recruitment] Found ${apps.length} applications with filter:`, JSON.stringify(where));
+        return apps;
     }
 
     async findApplicationsByStage() {

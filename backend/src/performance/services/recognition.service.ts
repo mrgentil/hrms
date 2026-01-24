@@ -13,7 +13,7 @@ export class RecognitionService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
-  ) {}
+  ) { }
 
   async create(dto: CreateRecognitionDto, fromUserId: number) {
     // Vérifier que le destinataire existe et est actif
@@ -75,7 +75,7 @@ export class RecognitionService {
     return recognition;
   }
 
-  async findAll(query: RecognitionQueryDto) {
+  async findAll(query: RecognitionQueryDto, user?: any) {
     const { from_user_id, to_user_id, type, is_public, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
@@ -84,6 +84,10 @@ export class RecognitionService {
     if (to_user_id) where.to_user_id = to_user_id;
     if (type) where.type = type;
     if (is_public !== undefined) where.is_public = is_public;
+
+    if (user && user.company_id) {
+      where.to_user = { company_id: user.company_id };
+    }
 
     const [recognitions, total] = await Promise.all([
       this.prisma.recognition.findMany({
@@ -126,12 +130,17 @@ export class RecognitionService {
     };
   }
 
-  async findPublicFeed(page: number = 1, limit: number = 20) {
+  async findPublicFeed(page: number = 1, limit: number = 20, user?: any) {
     const skip = (page - 1) * limit;
+
+    const where: any = { is_public: true };
+    if (user && user.company_id) {
+      where.to_user = { company_id: user.company_id };
+    }
 
     const [recognitions, total] = await Promise.all([
       this.prisma.recognition.findMany({
-        where: { is_public: true },
+        where,
         skip,
         take: limit,
         orderBy: { created_at: 'desc' },
@@ -154,7 +163,7 @@ export class RecognitionService {
           },
         },
       }),
-      this.prisma.recognition.count({ where: { is_public: true } }),
+      this.prisma.recognition.count({ where }),
     ]);
 
     return {
@@ -267,7 +276,7 @@ export class RecognitionService {
     return { success: true, message: 'Reconnaissance supprimée' };
   }
 
-  async getLeaderboard(period: 'week' | 'month' | 'year' = 'month', limit: number = 10) {
+  async getLeaderboard(period: 'week' | 'month' | 'year' = 'month', limit: number = 10, user?: any) {
     const now = new Date();
     let startDate: Date;
 
@@ -283,12 +292,15 @@ export class RecognitionService {
         break;
     }
 
+    const where: any = { created_at: { gte: startDate } };
+    if (user && user.company_id) {
+      where.to_user = { company_id: user.company_id };
+    }
+
     // Compter les reconnaissances reçues par utilisateur
     const recognitions = await this.prisma.recognition.groupBy({
       by: ['to_user_id'],
-      where: {
-        created_at: { gte: startDate },
-      },
+      where,
       _count: {
         id: true,
       },

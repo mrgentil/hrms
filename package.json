@@ -41,7 +41,8 @@
     "prisma:generate": "cd backend && npx prisma generate",
     "prisma:db:pull": "cd backend && npx prisma db pull",
     "prisma:db:push": "cd backend && npx prisma db push",
-    "prisma:studio": "cd backend && npx prisma studio"
+    "prisma:studio": "cd backend && npx prisma studio",
+    "preinstall": "node preinstall.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

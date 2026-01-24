@@ -27,8 +27,8 @@ export class RecognitionController {
   }
 
   @Get()
-  async findAll(@Query() query: RecognitionQueryDto) {
-    const result = await this.recognitionService.findAll(query);
+  async findAll(@Query() query: RecognitionQueryDto, @Request() req: any) {
+    const result = await this.recognitionService.findAll(query, req.user);
     return {
       success: true,
       ...result,
@@ -39,10 +39,12 @@ export class RecognitionController {
   async getPublicFeed(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Request() req?: any,
   ) {
     const result = await this.recognitionService.findPublicFeed(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 20,
+      req?.user,
     );
     return {
       success: true,
@@ -63,10 +65,12 @@ export class RecognitionController {
   async getLeaderboard(
     @Query('period') period?: 'week' | 'month' | 'year',
     @Query('limit') limit?: string,
+    @Request() req?: any,
   ) {
     const result = await this.recognitionService.getLeaderboard(
       period || 'month',
       limit ? parseInt(limit, 10) : 10,
+      req?.user
     );
     return {
       success: true,
