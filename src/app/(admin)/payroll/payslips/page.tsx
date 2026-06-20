@@ -11,6 +11,7 @@ import type { Employee } from "@/services/employees.service";
 import { Command } from "cmdk";
 import { CheckIcon, ChevronsUpDownIcon, SearchIcon, Download, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ExportButtons } from "@/components/common/ExportButtons";
 
 const MONTHS = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -221,6 +222,20 @@ export default function PayslipsPage() {
                         <option key={i} value={i + 1}>{m}</option>
                     ))}
                 </select>
+                
+                <div className="ml-auto">
+                    <ExportButtons 
+                        data={payslips} 
+                        columns={[
+                            { header: 'Employé', key: (row) => row.user?.full_name || 'Inconnu' },
+                            { header: 'Période', key: (row) => `${row.month}/${row.year}` },
+                            { header: 'Brut', key: (row) => `${row.gross_salary} €` },
+                            { header: 'Net', key: (row) => `${row.net_salary} €` },
+                            { header: 'Statut', key: 'status' }
+                        ]} 
+                        filename={`Bulletins_Paie_${filters.month || 'Tous'}_${filters.year}`} 
+                    />
+                </div>
             </div>
 
             {/* Table */}

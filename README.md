@@ -1,60 +1,55 @@
 # 🏢 Human Resource Management System (HRMS)
 
-Une solution HRMS moderne et complète construite avec **Next.js, Node.js, Express et MySQL**. Ce système offre une gestion complète des ressources humaines avec un système de contrôle d'accès basé sur les rôles (RBAC) avancé.
+Une solution HRMS moderne et complète construite avec **Next.js 15, NestJS, Prisma et MySQL**. Ce système offre une gestion complète des ressources humaines avec un système de paie automatisé, des notifications en temps réel, et un contrôle d'accès basé sur les rôles (RBAC) avancé.
 
 ![HRMS Dashboard Preview](./banner.png)
 
 ## 📋 Description
 
-Ce système HRMS fournit une solution complète pour la gestion des ressources humaines incluant la gestion des utilisateurs, des départements, des postes, et un système de permissions granulaires. Construit avec les dernières technologies web pour une performance et une sécurité optimales.
+Ce système HRMS fournit une solution complète pour la gestion des ressources humaines incluant la gestion des employés, la paie, les présences, la messagerie interne, et un système de permissions granulaires sécurisé par 2FA. Construit avec les dernières technologies web pour une performance et une sécurité optimales.
 
 ## 🚀 Technologies Utilisées
 
 ### Frontend
-- **Next.js 15** - Framework React avec SSR/SSG
+- **Next.js 15** - Framework React avec App Router
 - **React 19** - Bibliothèque UI moderne
 - **TypeScript** - Typage statique pour JavaScript
-- **Tailwind CSS V4** - Framework CSS utilitaire
-- **Prisma** - ORM moderne pour TypeScript
+- **Tailwind CSS v4** - Framework CSS utilitaire
+- **Socket.io-client** - Connexions en temps réel
 
 ### Backend
-- **Node.js** - Runtime JavaScript côté serveur
-- **Express.js** - Framework web minimaliste
+- **NestJS** - Framework Node.js robuste et modulaire
+- **Prisma ORM** - Gestion de la base de données
 - **MySQL** - Base de données relationnelle
-- **JWT** - Authentification par tokens
-- **bcrypt** - Hachage sécurisé des mots de passe
+- **Socket.io** - WebSockets pour Chat & Notifications
+- **JWT & 2FA (Authenticator)** - Sécurité et Authentification
+- **PDFKit** - Génération de bulletins de paie professionnels
 
 ## ✨ Fonctionnalités Principales
 
-### 👥 Gestion des Utilisateurs
-- **Système RBAC complet** avec 8 rôles prédéfinis et 47 permissions granulaires
-- **Authentification sécurisée** avec JWT et bcrypt
-- **Profils utilisateurs** avec photos et informations personnelles
-- **Gestion des sessions** et protection des routes
+### 👥 Gestion des Employés & Rôles
+- **Système RBAC complet** avec rôles dynamiques et permissions granulaires
+- **Sécurité 2FA** (Google Authenticator)
+- **Profils complets** avec informations financières, personnelles et professionnelles
+- **Suivi des contrats** et évaluations de performance
 
-### 🏢 Gestion Organisationnelle
-- **Gestion des départements** avec hiérarchie organisationnelle
-- **Gestion des postes** et des responsabilités
-- **Attribution des rôles** et permissions dynamiques
-- **Organigramme** et structure d'entreprise
+### 💰 Gestion de la Paie (Payroll Engine)
+- **Moteur de calcul automatique** (Salaire de base, Primes, Déductions)
+- **Génération en masse** de bulletins de paie
+- **Intégration automatique** des absences et présences dans la paie
+- **Exports professionnels** en PDF et Excel
+- **Demandes d'avances sur salaire** et de fonds avec workflow de validation
 
-### 💰 Gestion Financière
-- **Suivi des salaires** et des primes
-- **Gestion des budgets** par département
-- **Rapports financiers** et analyses
-- **Historique des transactions**
+### 🏢 Temps & Présences
+- **Suivi des pointages** (Check-in / Check-out)
+- **Gestion des congés** (Demandes, Approbations, Historique)
+- **Tableau de bord RH** de l'assiduité
 
-### 📋 Gestion des Demandes
-- **Demandes de congés** avec workflow d'approbation
-- **Demandes de formation** et développement
-- **Système de tickets** pour le support IT
-- **Notifications** en temps réel
-
-### 📊 Tableaux de Bord
-- **Dashboard administrateur** avec métriques clés
-- **Tableaux de bord** par rôle et département
-- **Graphiques interactifs** et statistiques
-- **Rapports exportables** en PDF/Excel
+### 💬 Communication & Notifications
+- **Messagerie interne en temps réel** (Chat entreprise)
+- **Annonces globales** pour toute l'entreprise
+- **Notifications push** intégrées à l'interface
+- **Toasts de succès/erreur** instantanés
 
 ## 🚀 Installation et Configuration
 

@@ -56,3 +56,52 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
+
+# Debug/test/fix scripts
+check-*.ts
+check-*.js
+check_*.ts
+check_*.js
+debug-*.ts
+debug-*.js
+debug_*.ts
+debug_*.js
+fix-*.ts
+fix-*.js
+fix_*.ts
+fix_*.js
+test-*.ts
+test-*.js
+test_*.ts
+test_*.js
+
+# Debug output files
+build_errors*.txt
+prisma_error*.txt
+migrate_*.txt
+push_*.txt
+*.log
+BACKEND_UPDATE_NEEDED.txt
+settings-dump.txt
+jemima-perms.txt
+perms.txt
+users.txt
+
+# Standalone SQL scripts
+*.sql
+
+# One-off utility scripts
+seed-*.ts
+setup-*.ts
+update-*.ts
+send-test-*.js
+read-settings.*
+reset_*.ts
+find-*.ts
+list-*.ts
+query_*.ts
+verify-*.js
+verify_*.ts
+
+# Uploads
+/uploads/

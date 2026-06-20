@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiClient } from '@/services/api.client';
+import { apiClient } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import {
     BoxCubeIcon,

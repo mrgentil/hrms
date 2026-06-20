@@ -4,6 +4,7 @@ import {
   Body,
   Get,
   Put,
+  Delete,
   UseGuards,
   ValidationPipe,
   UseInterceptors,
@@ -22,6 +23,7 @@ import { UpdatePersonalProfileDto, ChangePasswordDto } from './dto/update-profil
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
+import { TwoFactorService } from './two-factor.service';
 
 // Configuration pour l'upload d'avatars
 const avatarStorage = diskStorage({
@@ -35,7 +37,10 @@ const avatarStorage = diskStorage({
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(
+    private authService: AuthService,
+    private twoFactorService: TwoFactorService,
+  ) { }
 
   @Public()
   @Post('login')
@@ -144,4 +149,66 @@ export class AuthController {
     return this.authService.setupPassword(setupPasswordDto);
   }
 
+  // ─── 2FA ENDPOINTS ─────────────────────────────────────────
+
+  /** Step 2 of 2FA login — validate TOTP code and get full JWT */
+  @Public()
+  @Post('2fa/login')
+  async login2FA(
+    @Body('temp_token') tempToken: string,
+    @Body('totp_code') totpCode: string,
+  ) {
+    return this.authService.login2FA(tempToken, totpCode);
+  }
+
+  /** Get 2FA status for current user */
+  @UseGuards(JwtAuthGuard)
+  @Get('2fa/status')
+  async get2FAStatus(@CurrentUser() user: any) {
+    return this.twoFactorService.getStatus(user.id);
+  }
+
+  /** Initiate 2FA setup — get QR code */
+  @UseGuards(JwtAuthGuard)
+  @Post('2fa/setup')
+  async setup2FA(@CurrentUser() user: any) {
+    const result = await this.twoFactorService.generateSetup(user.id);
+    return {
+      success: true,
+      data: {
+        qrCodeDataUrl: result.qrCodeDataUrl,
+        manualKey: result.manualKey,
+      },
+    };
+  }
+
+  /** Verify TOTP code and activate 2FA */
+  @UseGuards(JwtAuthGuard)
+  @Post('2fa/verify-setup')
+  async verify2FASetup(
+    @CurrentUser() user: any,
+    @Body('totp_code') totpCode: string,
+  ) {
+    const result = await this.twoFactorService.verifyAndEnable(user.id, totpCode);
+    return {
+      success: true,
+      message: 'Double authentification activée avec succès',
+      data: result,
+    };
+  }
+
+  /** Disable 2FA (requires current TOTP code) */
+  @UseGuards(JwtAuthGuard)
+  @Delete('2fa/disable')
+  async disable2FA(
+    @CurrentUser() user: any,
+    @Body('totp_code') totpCode: string,
+  ) {
+    const result = await this.twoFactorService.disable(user.id, totpCode);
+    return {
+      success: true,
+      message: 'Double authentification désactivée',
+      data: result,
+    };
+  }
 }

@@ -638,6 +638,9 @@ model User {
   updated_at                                            DateTime                   @db.DateTime(0)
   password_setup_expires                                DateTime?                  @db.DateTime(0)
   password_setup_token                                  String?                    @db.VarChar(255)
+  two_factor_secret                                     String?                    @db.VarChar(255)
+  two_factor_enabled                                    Boolean                    @default(false)
+  two_factor_backup_codes                               Json?
   company_id                                            Int?
   announcements                                         announcement[]
   announcement_reads                                    announcement_read[]

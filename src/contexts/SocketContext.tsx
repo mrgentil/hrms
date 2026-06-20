@@ -6,6 +6,7 @@ import { useAuth } from './AuthContext';
 import { authService } from '@/lib/auth';
 
 import { audioService } from '@/utils/audio';
+import { useToast } from '@/hooks/useToast';
 
 interface SocketContextType {
     socket: Socket | null;
@@ -30,6 +31,7 @@ export const useSocket = () => useContext(SocketContext);
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user } = useAuth();
     const token = authService.getAccessToken();
+    const toast = useToast();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -146,10 +148,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 if (isRecipient) {
                     setUnreadCount(prev => prev + 1);
                     audioService.playNotification();
-                    showPushNotification(
-                        `Nouveau message de ${message.sender?.full_name || 'un collègue'}`,
-                        message.content.substring(0, 100) + (message.content.length > 100 ? '...' : '')
-                    );
+                    const title = `Nouveau message de ${message.sender?.full_name || 'un collègue'}`;
+                    const body = message.content.substring(0, 100) + (message.content.length > 100 ? '...' : '');
+                    toast.info(`${title}: ${body}`);
+                    showPushNotification(title, body);
                 }
             });
 
@@ -157,10 +159,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 console.log('[SocketContext] Received newNotification event:', notification);
                 setUnreadNotificationsCount(prev => prev + 1);
                 audioService.playNotification();
-                showPushNotification(
-                    notification.title || 'Nouvelle notification',
-                    notification.message || ''
-                );
+                const title = notification.title || 'Nouvelle notification';
+                const body = notification.message || '';
+                toast.info(`${title}: ${body}`);
+                showPushNotification(title, body);
             });
 
             setSocket(socketInstance);
@@ -175,7 +177,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 setIsConnected(false);
             }
         }
-    }, [user]);
+    }, [user, token]);
 
     return (
         <SocketContext.Provider value={{

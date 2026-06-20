@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { employeesService, Employee } from '@/services/employees.service';
-import { departmentsService, Department } from '@/services/departments.service';
+import { departmentService } from '@/services/departmentService';
+import { Department } from '@/types/api';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { useUserRole, hasPermission } from '@/hooks/useUserRole';
+import { TableSkeleton } from '@/components/common/Skeleton';
+import { ExportButtons } from '@/components/common/ExportButtons';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -33,8 +36,8 @@ export default function EmployeesPage() {
 
   const fetchDepartments = async () => {
     try {
-      const depts = await departmentsService.getDepartments();
-      setDepartments(depts);
+      const response = await departmentService.getDepartments();
+      setDepartments(response.data);
     } catch (error) {
       console.error('Erreur lors du chargement des départements:', error);
     }
@@ -108,10 +111,29 @@ export default function EmployeesPage() {
     );
   };
 
-  if (loading) {
+  const exportColumns = [
+    { header: 'ID', key: 'id' },
+    { header: 'Nom', key: 'full_name' },
+    { header: 'Email', key: (row: any) => row.work_email || row.username },
+    { header: 'Rôle', key: 'role' },
+    { header: 'Département', key: (row: any) => row.department?.name || '-' },
+    { header: 'Poste', key: (row: any) => row.position?.title || '-' },
+    { header: 'Statut', key: (row: any) => row.active ? 'Actif' : 'Inactif' },
+    { header: 'Embauche', key: (row: any) => row.hire_date ? new Date(row.hire_date).toLocaleDateString('fr-FR') : '-' }
+  ];
+
+  if (loading && employees.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="h-8 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
+            <div className="h-4 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+          <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+        </div>
+        <div className="h-24 w-full bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+        <TableSkeleton cols={7} rows={10} />
       </div>
     );
   }
@@ -175,13 +197,14 @@ export default function EmployeesPage() {
               ))}
             </select>
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end justify-between w-full md:w-auto gap-4">
             <button
               onClick={fetchEmployees}
               className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               Actualiser
             </button>
+            <ExportButtons data={employees} columns={exportColumns} filename="Liste_Employes" />
           </div>
         </div>
       </div>

@@ -1,8 +1,8 @@
 import { Outfit } from 'next/font/google';
 import './globals.css';
 
-import { SidebarProvider } from '@/context/SidebarContext';
-import { ThemeProvider } from '@/context/ThemeContext';
+import { SidebarProvider } from '@/contexts/SidebarContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
 import { AppSettingsProvider } from '@/contexts/AppSettingsContext';
@@ -11,7 +11,6 @@ import DynamicHead from '@/components/common/DynamicHead';
 import QueryProvider from '@/providers/QueryProvider';
 import { SocketProvider } from '@/contexts/SocketContext';
 import ChatWidget from '@/components/Chat/ChatWidget';
-import CommandSearchWrapper from '@/components/ui/CommandSearchWrapper';
 
 const outfit = Outfit({ subsets: ['latin'] });
 
@@ -39,7 +38,6 @@ export default function RootLayout({
                     </SidebarProvider>
                     <ChatWidget />
                     <Toaster />
-                    <CommandSearchWrapper />
                   </ThemeProvider>
                 </PermissionsProvider>
               </SocketProvider>

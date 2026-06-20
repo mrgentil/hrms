@@ -191,9 +191,10 @@ export default function EditDepartmentPage({
                   <option value="">
                     {optionsLoading ? "Chargement..." : "Aucun (racine)"}
                   </option>
-                  <option key={parent.id} value={parent.id}>
-                    {parent.name || `Sans nom (ID: ${parent.id})`}
-                  </option>
+                  {parentDepartments.map((parent) => (
+                    <option key={parent.id} value={parent.id}>
+                      {parent.name || `Sans nom (ID: ${parent.id})`}
+                    </option>
                   ))}
                 </select>
               </div>

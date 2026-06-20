@@ -12,6 +12,7 @@ import {
   useDeleteDepartment,
   useDepartments,
 } from '@/hooks/useDepartments';
+import { TableSkeleton } from '@/components/common/Skeleton';
 
 export default function DepartmentsPage() {
   const toast = useToast();
@@ -167,9 +168,7 @@ export default function DepartmentsPage() {
 
         <ComponentCard title="Liste des departements">
           {isLoading ? (
-            <p className="text-sm text-gray-500 dark:text-gray-300">
-              Chargement des departements...
-            </p>
+            <TableSkeleton cols={5} rows={5} />
           ) : departments.length === 0 ? (
             <p className="text-sm text-gray-500 dark:text-gray-300">
               Aucun departement trouve. Ajoutez un departement pour commencer.

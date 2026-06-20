@@ -3,7 +3,7 @@
 import GridShape from "@/components/common/GridShape";
 import ThemeTogglerTwo from "@/components/common/ThemeTogglerTwo";
 import DynamicHead from "@/components/common/DynamicHead";
-import { ThemeProvider } from "@/context/ThemeContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppSettingsProvider, useAppSettings } from "@/contexts/AppSettingsContext";
 import Image from "next/image";
 import Link from "next/link";

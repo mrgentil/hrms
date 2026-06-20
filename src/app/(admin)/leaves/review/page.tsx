@@ -14,6 +14,8 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { LeaveDiscussion } from '@/components/leaves/LeaveDiscussion';
+import { Skeleton } from '@/components/common/Skeleton';
+import { ExportButtons } from '@/components/common/ExportButtons';
 
 const STATUS_LABELS: Record<LeaveStatus, string> = {
   Approved: 'Approuvee',
@@ -317,16 +319,13 @@ export default function LeaveReviewPage() {
 
   if (roleLoading || loading) {
     return (
-      <div>
+      <div className="space-y-6">
         <PageBreadcrumb pageTitle="Validation des conges" />
-        <ComponentCard>
-          <div className="flex min-h-[200px] items-center justify-center">
-            <div className="text-center">
-              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
-              <p className="text-gray-600 dark:text-gray-400">
-                Chargement des demandes de conges...
-              </p>
-            </div>
+        <ComponentCard title="Demandes en attente pour vous">
+          <div className="space-y-4">
+            <Skeleton height={150} />
+            <Skeleton height={150} />
+            <Skeleton height={150} />
           </div>
         </ComponentCard>
       </div>
@@ -346,9 +345,26 @@ export default function LeaveReviewPage() {
     );
   }
 
+  const exportColumns = [
+    { header: 'ID', key: 'id' },
+    { header: 'Employé', key: (row: any) => row.user?.full_name || '-' },
+    { header: 'Type', key: (row: any) => row.leave_type?.name || row.type },
+    { header: 'Début', key: (row: any) => new Date(row.start_date).toLocaleDateString('fr-FR') },
+    { header: 'Fin', key: (row: any) => new Date(row.end_date).toLocaleDateString('fr-FR') },
+    { header: 'Statut', key: (row: any) => STATUS_LABELS[row.status as LeaveStatus] || row.status },
+    { header: 'Raison', key: 'reason' }
+  ];
+
+  const allRequests = [...assignedRequests, ...assignedHistoryRequests, ...requests];
+
   return (
     <div className="space-y-6">
-      <PageBreadcrumb pageTitle="Validation des conges" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <PageBreadcrumb pageTitle="Validation des conges" />
+        {allRequests.length > 0 && (
+          <ExportButtons data={allRequests} columns={exportColumns} filename="Demandes_Conges" />
+        )}
+      </div>
 
       <ComponentCard title="Demandes en attente pour vous">
         {assignedRequests.length === 0 ? (

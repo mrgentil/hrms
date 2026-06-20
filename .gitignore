@@ -36,3 +36,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Database files
+dev.db
+*.db
+
+# Uploads
+/uploads/
+
+# Debug/test files
+test-api.html
+menus_list.txt
+env.local
+
+# PDF documents
+*.pdf

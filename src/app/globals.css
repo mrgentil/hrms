@@ -796,96 +796,15 @@ span.flatpickr-weekday,
    CORRECTIONS DE CONTRASTE
    ============================================ */
 
-/* Mode Dark - Amélioration des contrastes */
+/* Mode Dark - Variables pour meilleur contraste de la couleur primaire */
 .dark {
   --color-primary: #748ffc;
   --color-primary-500: #748ffc;
   --color-primary-600: #5c7cfa;
 }
 
-/* Boutons avec meilleur contraste */
-.dark .bg-primary {
-  background-color: #4c6ef5 !important;
-}
-
-.dark .text-primary {
-  color: #91a7ff !important;
-}
-
-/* Textes sur fond sombre */
-.dark .text-gray-600 {
-  color: #98a2b3 !important;
-}
-
-.dark .text-gray-500 {
-  color: #9ca3af !important;
-}
-
-/* Bordures plus visibles en dark mode */
-.dark .border-gray-200 {
-  border-color: #374151 !important;
-}
-
-/* Inputs en dark mode */
-.dark input,
-.dark textarea,
-.dark select {
-  color: #f3f4f6;
-  background-color: #1f2937;
-  border-color: #374151;
-}
-
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #9ca3af;
-}
-
-/* Cartes et modales */
-.dark .bg-white {
-  background-color: #1f2937;
-}
-
-/* Labels et titres */
-.dark label {
-  color: #d1d5db;
-}
-
-/* Tables */
-.dark th {
-  color: #e5e7eb;
-  background-color: #374151;
-}
-
-.dark td {
-  color: #d1d5db;
-  border-color: #374151;
-}
-
-/* Badges */
-.dark .badge {
-  font-weight: 500;
-}
-
-/* Améliorer la lisibilité des liens */
-.dark a:not(.bg-primary):not([class*="text-white"]) {
-  color: #93c5fd;
-}
-
-.dark a:not(.bg-primary):not([class*="text-white"]):hover {
-  color: #bfdbfe;
-}
-
 /* Focus visible pour accessibilité */
 *:focus-visible {
   outline: 2px solid var(--color-primary-500);
   outline-offset: 2px;
-}
-
-/* Améliorer le contraste des hover states */
-.dark .hover\:bg-gray-100:hover {
-  background-color: #374151 !important;
-}
-
-.dark .hover\:bg-gray-50:hover {
-  background-color: #1f2937 !important;
 }

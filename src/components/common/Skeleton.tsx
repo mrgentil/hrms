@@ -80,13 +80,37 @@ export const ActivitySkeleton: React.FC = () => (
 
 // Skeleton pour les tables
 export const TableRowSkeleton: React.FC<{ cols?: number }> = ({ cols = 5 }) => (
-  <tr>
+  <tr className="border-b border-gray-100 dark:border-gray-800">
     {Array.from({ length: cols }).map((_, i) => (
-      <td key={i} className="px-6 py-4">
-        <Skeleton height={20} />
+      <td key={i} className="px-6 py-4 whitespace-nowrap">
+        <Skeleton height={20} className={i === 0 ? "w-3/4" : "w-full"} />
       </td>
     ))}
   </tr>
+);
+
+// Skeleton complet pour une table entière
+export const TableSkeleton: React.FC<{ rows?: number; cols?: number }> = ({ rows = 5, cols = 5 }) => (
+  <div className="w-full bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-400">
+          <tr>
+            {Array.from({ length: cols }).map((_, i) => (
+              <th key={i} scope="col" className="px-6 py-3">
+                <Skeleton height={16} width="80%" />
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: rows }).map((_, i) => (
+            <TableRowSkeleton key={i} cols={cols} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
 );
 
 export default Skeleton;

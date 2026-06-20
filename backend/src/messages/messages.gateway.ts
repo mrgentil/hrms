@@ -10,12 +10,14 @@ import {
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { MessagesService } from './messages.service';
-import { UseGuards } from '@nestjs/common';
+import { PresenceService } from '../common/gateways/presence.service';
 
 @WebSocketGateway({
     cors: {
-        origin: '*',
+        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        credentials: true,
     },
+    namespace: '/',
 })
 export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
@@ -24,6 +26,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     constructor(
         private readonly jwtService: JwtService,
         private readonly messagesService: MessagesService,
+        private readonly presenceService: PresenceService,
     ) { }
 
     async handleConnection(client: Socket) {
@@ -34,31 +37,55 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
                 return;
             }
 
-            const payload = this.jwtService.verify(token);
+            const payload = this.jwtService.verify(token, {
+                secret: process.env.JWT_SECRET || 'fallback_secret_change_me',
+            });
             client.data.user = payload;
+            const userId = payload.sub;
 
-            // Rejoindre une room personnelle pour les notifications directes
-            client.join(`user_${payload.sub}`);
-            console.log(`Client connected: ${client.id} (User: ${payload.sub})`);
+            // Join personal room for direct messages & notifications
+            client.join(`user_${userId}`);
+
+            console.log(`[Messages] Client connected: ${client.id} (User: ${userId})`);
         } catch (e) {
+            console.warn(`[Messages] Rejected connection: ${e.message}`);
             client.disconnect();
         }
     }
 
     handleDisconnect(client: Socket) {
-        console.log(`Client disconnected: ${client.id}`);
+        const userId = client.data?.user?.sub;
+        console.log(`[Messages] Client disconnected: ${client.id} (User: ${userId ?? 'unknown'})`);
     }
 
     @SubscribeMessage('joinRoom')
     handleJoinRoom(@ConnectedSocket() client: Socket, @MessageBody() room: string) {
         client.join(room);
-        console.log(`Client ${client.id} joined room ${room}`);
+        console.log(`[Messages] Client ${client.id} joined room ${room}`);
     }
 
     @SubscribeMessage('leaveRoom')
     handleLeaveRoom(@ConnectedSocket() client: Socket, @MessageBody() room: string) {
         client.leave(room);
-        console.log(`Client ${client.id} left room ${room}`);
+        console.log(`[Messages] Client ${client.id} left room ${room}`);
+    }
+
+    @SubscribeMessage('joinConversation')
+    handleJoinConversation(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() conversationId: number,
+    ) {
+        const room = `conversation_${conversationId}`;
+        client.join(room);
+        console.log(`[Messages] Client ${client.id} joined ${room}`);
+    }
+
+    @SubscribeMessage('leaveConversation')
+    handleLeaveConversation(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() conversationId: number,
+    ) {
+        client.leave(`conversation_${conversationId}`);
     }
 
     @SubscribeMessage('sendMessage')
@@ -68,23 +95,39 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     ) {
         const userId = client.data.user.sub;
 
-        // Sauvegarder le message
-        // Sauvegarder le message et récupérer les participants
+        // Save the message and get participants back
         const message: any = await this.messagesService.sendMessage(userId, {
             conversation_id: payload.conversationId,
             content: payload.content,
         });
 
-        // Emettre à la room de la conversation (pour ceux qui l'ont ouverte)
-        this.server.to(`conversation_${payload.conversationId}`).emit('newMessage', message);
+        // Emit to the conversation room (those who have it open)
+        this.server
+            .to(`conversation_${payload.conversationId}`)
+            .emit('newMessage', message);
 
-        // Notifier CHAQUE participant via sa room personnelle (pour les notifications globales / non-lus)
+        // Notify EACH participant via their personal room (for badge count / push-like)
         if (message.conversationParticipants) {
             message.conversationParticipants.forEach((pId: number) => {
-                console.log(`[MessagesGateway] Emitting newMessage to user_${pId}`);
-                this.server.to(`user_${pId}`).emit('newMessage', message);
+                if (pId !== userId) {
+                    this.server.to(`user_${pId}`).emit('newMessage', message);
+                }
             });
         }
+    }
+
+    @SubscribeMessage('markRead')
+    async handleMarkRead(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() payload: { conversationId: number },
+    ) {
+        const userId = client.data.user.sub;
+        // Emit read receipt to the conversation room
+        this.server.to(`conversation_${payload.conversationId}`).emit('messagesRead', {
+            userId,
+            conversationId: payload.conversationId,
+            readAt: new Date().toISOString(),
+        });
     }
 
     @SubscribeMessage('typing')
@@ -92,15 +135,35 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         @ConnectedSocket() client: Socket,
         @MessageBody() payload: { conversationId: number; isTyping: boolean },
     ) {
+        const userId = client.data.user.sub;
+        // Broadcast typing status to others in the conversation
         client.to(`conversation_${payload.conversationId}`).emit('userTyping', {
-            userId: client.data.user.sub,
+            userId,
             conversationId: payload.conversationId,
             isTyping: payload.isTyping,
         });
     }
 
+    @SubscribeMessage('checkOnline')
+    handleCheckOnline(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() userIds: number[],
+    ) {
+        const onlineStatus = userIds.reduce((acc, uid) => {
+            acc[uid] = this.presenceService.isOnline(uid);
+            return acc;
+        }, {} as Record<number, boolean>);
+
+        client.emit('onlineStatus', onlineStatus);
+    }
+
     private extractToken(client: Socket): string | undefined {
-        const [type, token] = client.handshake.headers.authorization?.split(' ') ?? [];
-        return type === 'Bearer' ? token : undefined;
+        const authHeader = client.handshake.headers.authorization;
+        if (authHeader) {
+            const [type, token] = authHeader.split(' ');
+            if (type === 'Bearer' && token) return token;
+        }
+        const queryToken = client.handshake.query?.token as string;
+        return queryToken || undefined;
     }
 }

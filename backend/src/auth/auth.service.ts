@@ -9,8 +9,8 @@ import * as bcrypt from 'bcryptjs';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { UserRole } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
-
 import { RolesService } from '../roles/roles.service';
+import { TwoFactorService } from './two-factor.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +19,7 @@ export class AuthService {
     private jwtService: JwtService,
     private auditService: AuditService,
     private rolesService: RolesService,
+    private twoFactorService: TwoFactorService,
   ) { }
 
   async validateUser(username: string, password: string): Promise<any> {
@@ -39,7 +40,71 @@ export class AuthService {
       throw new UnauthorizedException('Nom d\'utilisateur ou mot de passe incorrect');
     }
 
-    // Récupérer les permissions de l'utilisateur
+    // Check if 2FA is enabled for this user
+    const userWith2FA = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { two_factor_enabled: true },
+    });
+
+    if (userWith2FA?.two_factor_enabled) {
+      // Return a short-lived temp token instead of the full JWT
+      const tempToken = this.jwtService.sign(
+        { sub: user.id, twofa_pending: true },
+        { expiresIn: '5m' }, // Only valid for 5 minutes
+      );
+
+      return {
+        requires_2fa: true,
+        temp_token: tempToken,
+        user: {
+          id: user.id,
+          full_name: user.full_name,
+        },
+      };
+    }
+
+    // No 2FA — proceed with full login
+    return this._issueFullTokens(user);
+  }
+
+  /**
+   * Step 2 of 2FA login — verify TOTP code and issue full tokens
+   */
+  async login2FA(tempToken: string, totpCode: string): Promise<any> {
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(tempToken, {
+        secret: process.env.JWT_SECRET || 'fallback_secret_change_me',
+      });
+    } catch {
+      throw new UnauthorizedException('Token temporaire invalide ou expiré');
+    }
+
+    if (!payload.twofa_pending) {
+      throw new UnauthorizedException('Token invalide');
+    }
+
+    const userId = payload.sub;
+    const isValid = await this.twoFactorService.verifyToken(userId, totpCode);
+
+    if (!isValid) {
+      throw new UnauthorizedException('Code 2FA invalide');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.active) {
+      throw new UnauthorizedException('Utilisateur non trouvé ou inactif');
+    }
+
+    const { password: _, ...userWithoutPassword } = user;
+    await this.auditService.logLogin(userId);
+    return this._issueFullTokens(userWithoutPassword);
+  }
+
+  /**
+   * Internal helper to issue access + refresh tokens
+   */
+  private async _issueFullTokens(user: any) {
     const permissions = await this.rolesService.getUserPermissions(user.id);
 
     const payload = {
@@ -48,18 +113,16 @@ export class AuthService {
       role: user.role,
       role_id: user.role_id,
       company_id: user.company_id,
-      permissions: permissions,
+      permissions,
     };
+
     const access_token = this.jwtService.sign(payload);
     const refresh_token = this.jwtService.sign(payload, {
       secret: process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret_change_me',
       expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
     });
 
-    // Récupérer le profil complet avec les nouvelles informations
     const fullProfile = await this.getProfile(user.id);
-
-    // Log de connexion
     await this.auditService.logLogin(user.id);
 
     return {
@@ -77,7 +140,7 @@ export class AuthService {
         active: fullProfile.active,
         profile_photo_url: fullProfile.profile_photo_url,
         department: fullProfile.department,
-        permissions: permissions,
+        permissions,
       },
     };
   }

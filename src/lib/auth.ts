@@ -117,7 +117,7 @@ class AuthService {
     return token !== null && !this.isTokenExpired(token);
   }
 
-  async login(username: string, password: string): Promise<AuthResponse> {
+  async login(username: string, password: string): Promise<any> {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
@@ -132,7 +132,13 @@ class AuthService {
         throw new Error(error.message || 'Erreur de connexion');
       }
 
-      const authResponse: AuthResponse = await response.json();
+      const authResponse = await response.json();
+      
+      // If 2FA is required, just return the response without setting tokens
+      if (authResponse.requires_2fa) {
+        return authResponse;
+      }
+
       const normalizedUser = this.normalizeUser(authResponse.user);
       const normalizedResponse: AuthResponse = {
         ...authResponse,
@@ -150,6 +156,23 @@ class AuthService {
       console.error("Erreur de connexion à l'API:", error);
       throw error;
     }
+  }
+
+  // Set tokens after 2FA validation
+  public setFullAuthData(authResponse: AuthResponse): AuthResponse {
+    const normalizedUser = this.normalizeUser(authResponse.user);
+    const normalizedResponse: AuthResponse = {
+      ...authResponse,
+      user: normalizedUser,
+    };
+
+    this.setTokens({
+      access_token: normalizedResponse.access_token,
+      refresh_token: normalizedResponse.refresh_token,
+    });
+    this.setUser(normalizedUser);
+
+    return normalizedResponse;
   }
 
   async register(userData: {

@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { PresenceService } from '../common/gateways/presence.service';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { extname } from 'path';
     }),
   ],
   controllers: [MessagesController],
-  providers: [MessagesService, MessagesGateway],
+  providers: [MessagesService, MessagesGateway, PresenceService],
   exports: [MessagesService],
 })
 export class MessagesModule { }

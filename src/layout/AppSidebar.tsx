@@ -10,7 +10,7 @@ import React, {
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useSidebar } from "../context/SidebarContext";
+import { useSidebar } from "@/contexts/SidebarContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import EmployeeNavigation from "@/components/Sidebar/EmployeeNavigation";
@@ -90,7 +90,7 @@ const moiNavItems: NavItem[] = [
     name: "Ma Paie",
     requiredPermission: "payroll.view_own",
     subItems: [
-      { name: "Mes Bulletins", path: "/payroll/my-payslips" },
+      { name: "Mes Bulletins", path: "/payroll/payslips" },
       { name: "Demander une Avance", path: "/payroll/advances" },
       { name: "Demandes de Fonds", path: "/payroll/fund-requests" },
       { name: "Simulateur de Salaire", path: "/payroll/simulator" },
@@ -109,6 +109,11 @@ const moiNavItems: NavItem[] = [
     name: "Mes Formations",
     path: "/training/my-trainings",
     requiredPermission: "training.view_own",
+  },
+  {
+    icon: <PlugInIcon />,
+    name: "Sécurité (2FA)",
+    path: "/settings/security",
   },
 ];
 

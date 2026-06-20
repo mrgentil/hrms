@@ -6,7 +6,8 @@ import { authService, User } from '@/lib/auth';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<any>;
+  completeLogin2FA: (authResponse: any) => Promise<void>;
   register: (userData: {
     username: string;
     password: string;
@@ -71,12 +72,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const authResponse = await authService.login(username, password);
+      
+      if (authResponse.requires_2fa) {
+        // Just return it so the UI can show the 2FA step
+        return authResponse;
+      }
+
       setUser(authResponse.user);
+      return authResponse;
     } catch (error) {
       throw error;
     } finally {
       setLoading(false);
     }
+  };
+
+  const completeLogin2FA = async (authResponse: any) => {
+    const fullAuth = authService.setFullAuthData(authResponse);
+    setUser(fullAuth.user);
   };
 
   const register = async (userData: {
@@ -115,6 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     loading,
     login,
+    completeLogin2FA,
     register,
     logout,
     refreshUser,

@@ -16,6 +16,7 @@ import type { Response } from 'express';
 import { PayslipsService } from './payslips.service';
 import { CreatePayslipDto } from './dto/create-payslip.dto';
 import { UpdatePayslipDto } from './dto/update-payslip.dto';
+import { BulkGeneratePayslipDto } from './dto/bulk-generate-payslip.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -26,9 +27,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class PayslipsController {
     constructor(private readonly payslipsService: PayslipsService) { }
 
-    /**
-     * Get all payslips (HR/Admin only)
-     */
+    /** Get all payslips (HR/Admin only) */
     @Get()
     @RequirePermissions('payroll.view')
     async findAll(
@@ -39,86 +38,85 @@ export class PayslipsController {
         @Query('page') page?: string,
         @Query('limit') limit?: string,
     ) {
-        const filters = {
+        return this.payslipsService.findAll({
             user_id: userId ? parseInt(userId) : undefined,
             month: month ? parseInt(month) : undefined,
             year: year ? parseInt(year) : undefined,
             status,
             page: page ? parseInt(page) : undefined,
             limit: limit ? parseInt(limit) : undefined,
-        };
-
-        return await this.payslipsService.findAll(filters);
+        });
     }
 
-    /**
-     * Get current user's payslips
-     */
+    /** Get current user's payslips */
     @Get('my')
     async findMy(
         @CurrentUser() currentUser: any,
         @Query('year') year?: string,
     ) {
-        const filters = {
-            year: year ? parseInt(year) : undefined,
-        };
-
-        return await this.payslipsService.findMyPayslips(currentUser.id, filters);
+        return this.payslipsService.findMyPayslips(
+            currentUser.id,
+            { year: year ? parseInt(year) : undefined },
+        );
     }
 
-    /**
-     * Create a new payslip (HR/Admin only)
-     */
+    /** Simulate salary calculation */
+    @Post('simulate')
+    async simulate(@Body('gross_salary') grossSalary: number) {
+        return this.payslipsService.simulateSalary(grossSalary);
+    }
+
+    /** Bulk generate payslips for all active employees */
+    @Post('bulk-generate')
+    @RequirePermissions('payroll.manage')
+    async bulkGenerate(
+        @CurrentUser() currentUser: any,
+        @Body(ValidationPipe) dto: BulkGeneratePayslipDto,
+    ) {
+        return this.payslipsService.bulkGenerate(currentUser.id, dto);
+    }
+
+    /** Create a new payslip (HR/Admin only) */
     @Post()
     @RequirePermissions('payroll.manage')
     async create(
         @CurrentUser() currentUser: any,
         @Body(ValidationPipe) dto: CreatePayslipDto,
     ) {
-        return await this.payslipsService.create(currentUser.id, dto);
+        return this.payslipsService.create(currentUser.id, dto);
     }
 
-    /**
-     * Get a single payslip
-     */
+    /** Get a single payslip */
     @Get(':id')
     async findOne(@Param('id', ParseIntPipe) id: number) {
-        return await this.payslipsService.findOne(id);
+        return this.payslipsService.findOne(id);
     }
 
-    /**
-     * Update a payslip (DRAFT only)
-     */
+    /** Update a payslip (DRAFT only) */
     @Patch(':id')
     @RequirePermissions('payroll.manage')
     async update(
         @Param('id', ParseIntPipe) id: number,
         @Body(ValidationPipe) dto: UpdatePayslipDto,
     ) {
-        return await this.payslipsService.update(id, dto);
+        return this.payslipsService.update(id, dto);
     }
 
-    /**
-     * Delete a payslip (DRAFT only)
-     */
+    /** Delete a payslip (DRAFT only) */
     @Delete(':id')
     @RequirePermissions('payroll.manage')
     async delete(@Param('id', ParseIntPipe) id: number) {
-        return await this.payslipsService.delete(id);
+        return this.payslipsService.delete(id);
     }
 
-    /**
-     * Publish a payslip
-     */
+    /** Publish a payslip */
     @Post(':id/publish')
     @RequirePermissions('payroll.manage')
     async publish(@Param('id', ParseIntPipe) id: number) {
-        return await this.payslipsService.publish(id);
+        return this.payslipsService.publish(id);
     }
 
-    /**
-     * Download payslip as PDF
-     */
+    /** Download payslip as professional PDF */
     @Get(':id/pdf')
     async downloadPDF(
         @Param('id', ParseIntPipe) id: number,
@@ -128,17 +126,10 @@ export class PayslipsController {
 
         res.set({
             'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename=bulletin_${id}.pdf`,
+            'Content-Disposition': `attachment; filename="bulletin_paie_${id}.pdf"`,
+            'Content-Length': pdfBuffer.length,
         });
 
         res.send(pdfBuffer);
-    }
-
-    /**
-     * Simulate salary (Public/Auth)
-     */
-    @Post('simulate')
-    async simulate(@Body('gross_salary') grossSalary: number) {
-        return await this.payslipsService.simulateSalary(grossSalary);
     }
 }

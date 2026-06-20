@@ -42,7 +42,15 @@ export default function DynamicHead() {
         favicon.rel = 'icon';
         document.head.appendChild(favicon);
       }
-      favicon.href = getImageUrl(settings.favicon);
+      
+      // Ajout d'un paramètre de version pour forcer le navigateur à contourner le cache (très agressif sur les favicons)
+      const baseUrl = getImageUrl(settings.favicon);
+      // Si l'URL contient déjà un point d'interrogation, on ajoute avec &, sinon avec ?
+      const separator = baseUrl.includes('?') ? '&' : '?';
+      // On utilise un timestamp de la date de dernière mise à jour des paramètres ou la date actuelle
+      const cacheBuster = `v=${new Date().getTime()}`;
+      
+      favicon.href = `${baseUrl}${separator}${cacheBuster}`;
     }
 
     // Mettre à jour Open Graph

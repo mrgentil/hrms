@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { companiesService, Company, CreateCompanyDto } from '@/services/companies.service';
 import { toast } from 'react-hot-toast';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
     PlusIcon,
     PencilIcon,
@@ -12,7 +13,6 @@ import {
     CheckCircleIcon,
     CloseLineIcon,
     BoxCubeIcon,
-    GroupIcon,
 } from '@/icons';
 
 export default function CompaniesPage() {
@@ -24,6 +24,9 @@ export default function CompaniesPage() {
     const [editingCompany, setEditingCompany] = useState<Company | null>(null);
     const [saving, setSaving] = useState(false);
     const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     // Form state
     const [formData, setFormData] = useState<CreateCompanyDto>({
@@ -156,10 +159,14 @@ export default function CompaniesPage() {
     };
 
     const filteredCompanies = companies.filter(c => {
-        if (filter === 'active') return c.is_active;
-        if (filter === 'inactive') return !c.is_active;
-        return true;
+        const matchesStatus = filter === 'active' ? c.is_active : filter === 'inactive' ? !c.is_active : true;
+        const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                              (c.email && c.email.toLowerCase().includes(searchQuery.toLowerCase()));
+        return matchesStatus && matchesSearch;
     });
+
+    const totalPages = Math.ceil(filteredCompanies.length / itemsPerPage);
+    const paginatedCompanies = filteredCompanies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     if (!isSuperAdmin) {
         return null;
@@ -187,160 +194,150 @@ export default function CompaniesPage() {
                 </button>
             </div>
 
-            {/* Filters */}
-            <div className="mb-6 flex gap-2">
-                {(['all', 'active', 'inactive'] as const).map(f => (
-                    <button
-                        key={f}
-                        onClick={() => setFilter(f)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === f
-                            ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'
-                            }`}
-                    >
-                        {f === 'all' ? 'Toutes' : f === 'active' ? 'Actives' : 'Inactives'}
-                        <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-white dark:bg-gray-700">
-                            {f === 'all'
-                                ? companies.length
-                                : f === 'active'
-                                    ? companies.filter(c => c.is_active).length
-                                    : companies.filter(c => !c.is_active).length}
-                        </span>
-                    </button>
-                ))}
+                      {/* Filters */}
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex gap-2">
+                    {(['all', 'active', 'inactive'] as const).map(f => (
+                        <button
+                            key={f}
+                            onClick={() => { setFilter(f); setCurrentPage(1); }}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === f
+                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'
+                                }`}
+                        >
+                            {f === 'all' ? 'Toutes' : f === 'active' ? 'Actives' : 'Inactives'}
+                            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-white dark:bg-gray-700">
+                                {f === 'all'
+                                    ? companies.length
+                                    : f === 'active'
+                                        ? companies.filter(c => c.is_active).length
+                                        : companies.filter(c => !c.is_active).length}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+                
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Rechercher une entreprise..."
+                        value={searchQuery}
+                        onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                        className="pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
+                    />
+                </div>
             </div>
 
-            {/* Companies Grid */}
+            {/* Companies Table */}
             {loading ? (
                 <div className="flex justify-center py-12">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                 </div>
             ) : filteredCompanies.length === 0 ? (
-                <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow">
+                <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-100 dark:border-gray-700">
                     <BoxCubeIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500 dark:text-gray-400">Aucune entreprise trouvée</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredCompanies.map(company => (
-                        <div
-                            key={company.id}
-                            className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border-l-4 ${company.is_active
-                                ? 'border-green-500'
-                                : 'border-red-400 opacity-75'
-                                }`}
-                        >
-                            {/* Company Header */}
-                            <div className="p-6">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-4">
-                                        {company.logo_url ? (
-                                            <img
-                                                src={company.logo_url}
-                                                alt={company.name}
-                                                className="h-14 w-14 rounded-lg object-contain bg-gray-50"
-                                            />
-                                        ) : (
-                                            <div className="h-14 w-14 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
-                                                {company.name.charAt(0).toUpperCase()}
+                <div className="bg-white dark:bg-gray-800 shadow rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead className="bg-gray-50 dark:bg-gray-900/50">
+                                <tr>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Entreprise</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Statistiques</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Devise / Langue</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Statut</th>
+                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                {paginatedCompanies.map(company => (
+                                    <tr key={company.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-4">
+                                                {company.logo_url ? (
+                                                    <img src={company.logo_url} alt={company.name} className="h-10 w-10 rounded-lg object-contain bg-gray-50 border border-gray-100 dark:border-gray-600" />
+                                                ) : (
+                                                    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-inner">
+                                                        {company.name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <div className="font-semibold text-gray-900 dark:text-white">{company.name}</div>
+                                                    <div className="text-sm text-gray-500 dark:text-gray-400">{company.email || 'Pas d\'email'}</div>
+                                                </div>
                                             </div>
-                                        )}
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-                                                {company.name}
-                                            </h3>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                {company.email || 'Pas d\'email'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <span className={`px-2 py-1 text-xs rounded-full flex items-center gap-1 ${company.is_active
-                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                        }`}>
-                                        {company.is_active ? (
-                                            <>
-                                                <CheckCircleIcon />
-                                                Active
-                                            </>
-                                        ) : (
-                                            <>
-                                                <CloseLineIcon />
-                                                Inactive
-                                            </>
-                                        )}
-                                    </span>
-                                </div>
-
-                                {/* Stats */}
-                                <div className="mt-6 grid grid-cols-3 gap-4 text-center">
-                                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg py-3">
-                                        <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                                            {company._count?.users || 0}
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Utilisateurs</p>
-                                    </div>
-                                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg py-3">
-                                        <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                                            {company._count?.departments || 0}
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Départements</p>
-                                    </div>
-                                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg py-3">
-                                        <p className="text-2xl font-bold text-teal-600 dark:text-teal-400">
-                                            {company._count?.positions || 0}
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Postes</p>
-                                    </div>
-                                </div>
-
-                                {/* Info */}
-                                <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
-                                        💰 {company.currency}
-                                    </span>
-                                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
-                                        🌍 {company.timezone}
-                                    </span>
-                                    {company.country && (
-                                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
-                                            📍 {company.country}
-                                        </span>
-                                    )}
-                                </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex gap-4 text-sm">
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold text-gray-900 dark:text-white">{company._count?.users || 0}</span>
+                                                    <span className="text-xs text-gray-500">Utilisateurs</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold text-gray-900 dark:text-white">{company._count?.departments || 0}</span>
+                                                    <span className="text-xs text-gray-500">Départements</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-300">
+                                                <span className="flex items-center gap-1">💰 {company.currency}</span>
+                                                <span className="flex items-center gap-1">🌐 {company.language.toUpperCase()}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2.5 py-1 text-xs rounded-full inline-flex items-center gap-1.5 font-medium ${company.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800'}`}>
+                                                {company.is_active ? (
+                                                    <><div className="w-1.5 h-1.5 rounded-full bg-green-500" /> Active</>
+                                                ) : (
+                                                    <><div className="w-1.5 h-1.5 rounded-full bg-red-500" /> Inactive</>
+                                                )}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button onClick={() => openEditModal(company)} className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors" title="Modifier">
+                                                    <PencilIcon className="h-4 w-4" />
+                                                </button>
+                                                <button onClick={() => handleToggleStatus(company)} className={`p-2 rounded-lg transition-colors ${company.is_active ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30' : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30'}`} title={company.is_active ? 'Désactiver' : 'Réactiver'}>
+                                                    {company.is_active ? <CloseLineIcon className="h-4 w-4" /> : <CheckCircleIcon className="h-4 w-4" />}
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-6 py-4 flex items-center justify-between">
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                Affichage de <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> à <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredCompanies.length)}</span> sur <span className="font-medium">{filteredCompanies.length}</span> entreprises
                             </div>
-
-                            {/* Actions */}
-                            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 flex justify-end gap-2">
+                            <div className="flex gap-2">
                                 <button
-                                    onClick={() => openEditModal(company)}
-                                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/50 rounded-lg transition-colors"
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    <PencilIcon className="h-4 w-4" />
-                                    Modifier
+                                    <ChevronLeft className="h-4 w-4" />
                                 </button>
                                 <button
-                                    onClick={() => handleToggleStatus(company)}
-                                    className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${company.is_active
-                                        ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/50'
-                                        : 'text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/50'
-                                        }`}
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {company.is_active ? (
-                                        <>
-                                            <CloseLineIcon />
-                                            Désactiver
-                                        </>
-                                    ) : (
-                                        <>
-                                            <GroupIcon />
-                                            Réactiver
-                                        </>
-                                    )}
+                                    <ChevronRight className="h-4 w-4" />
                                 </button>
                             </div>
                         </div>
-                    ))}
+                    )}
                 </div>
             )}
 
