@@ -6,9 +6,10 @@ import { ScoringService } from './scoring.service';
 import { AiService } from './ai.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { MailModule } from '../mail/mail.module';
+import { RolesModule } from '../roles/roles.module';
 
 @Module({
-    imports: [PrismaModule, MailModule, ConfigModule],
+    imports: [PrismaModule, MailModule, ConfigModule, RolesModule],
     controllers: [RecruitmentController],
     providers: [RecruitmentService, ScoringService, AiService],
     exports: [RecruitmentService, ScoringService, AiService],
