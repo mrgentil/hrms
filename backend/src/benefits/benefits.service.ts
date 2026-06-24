@@ -1,89 +1,116 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class BenefitsService {
     private readonly logger = new Logger(BenefitsService.name);
 
+    constructor(private readonly prisma: PrismaService) {}
+
     async getBenefits(filters: any) {
-        this.logger.warn('Using MOCK benefits service - implement real service later');
+        try {
+            const benefits = await this.prisma.benefit_catalog.findMany({
+                where: filters.is_active !== undefined ? { is_active: filters.is_active } : undefined,
+            });
 
-        // Mock benefits catalog
-        const mockBenefits = [
-            {
-                id: 1,
-                name: 'Assurance Santé Premium',
-                description: 'Couverture santé complète pour vous et votre famille',
-                benefit_type: 'HEALTH_INSURANCE',
-                value_type: 'FIXED',
-                value_amount: 150,
-                employer_contribution: 100,
-                employee_contribution: 50,
-                is_active: true,
-                requires_enrollment: true,
-            },
-            {
-                id: 2,
-                name: 'Tickets Restaurant',
-                description: 'Carte tickets restaurant 10€/jour',
-                benefit_type: 'MEAL_VOUCHERS',
-                value_type: 'FIXED',
-                value_amount: 200,
-                employer_contribution: 120,
-                employee_contribution: 80,
-                is_active: true,
-                requires_enrollment: true,
-            },
-        ];
-
-        return {
-            success: true,
-            data: mockBenefits,
-        };
+            return {
+                success: true,
+                data: benefits,
+            };
+        } catch (error) {
+            this.logger.error('Error fetching benefits:', error);
+            return {
+                success: false,
+                message: 'Erreur lors de la récupération des avantages',
+            };
+        }
     }
 
-    async getMyBenefits() {
-        const mockEnrollments = [
-            {
-                id: 1,
-                benefit_id: 1,
-                user_id: 1,
-                start_date: new Date('2024-01-01'),
-                status: 'ACTIVE',
-                usage_count: 5,
-                last_used_at: new Date('2024-12-01'),
-                benefit: {
-                    name: 'Assurance Santé Premium',
-                    benefit_type: 'HEALTH_INSURANCE',
-                },
-            },
-        ];
+    async getMyBenefits(userId: number) {
+        try {
+            const enrollments = await this.prisma.employee_benefit.findMany({
+                where: { user_id: userId },
+                include: { benefit: true },
+            });
 
-        return {
-            success: true,
-            data: mockEnrollments,
-        };
+            return {
+                success: true,
+                data: enrollments,
+            };
+        } catch (error) {
+            this.logger.error('Error fetching user benefits:', error);
+            return {
+                success: false,
+                message: 'Erreur lors de la récupération de vos avantages',
+            };
+        }
     }
 
     async createBenefit(dto: any) {
-        return {
-            success: true,
-            data: { id: Date.now(), ...dto },
-            message: 'Avantage créé (MOCK)',
-        };
+        try {
+            const benefit = await this.prisma.benefit_catalog.create({
+                data: dto,
+            });
+
+            return {
+                success: true,
+                data: benefit,
+                message: 'Avantage créé avec succès',
+            };
+        } catch (error) {
+            this.logger.error('Error creating benefit:', error);
+            return {
+                success: false,
+                message: 'Erreur lors de la création de l\'avantage',
+            };
+        }
     }
 
-    async enrollBenefit(dto: any) {
-        return {
-            success: true,
-            data: { id: Date.now(), ...dto, status: 'ACTIVE' },
-            message: 'Inscription réussie (MOCK)',
-        };
+    async enrollBenefit(userId: number, dto: any) {
+        try {
+            const enrollment = await this.prisma.employee_benefit.create({
+                data: {
+                    ...dto,
+                    user_id: userId,
+                    start_date: dto.start_date || new Date(),
+                    status: 'ACTIVE',
+                },
+            });
+
+            return {
+                success: true,
+                data: enrollment,
+                message: 'Inscription réussie',
+            };
+        } catch (error) {
+            this.logger.error('Error enrolling in benefit:', error);
+            return {
+                success: false,
+                message: 'Erreur lors de l\'inscription',
+            };
+        }
     }
 
     async terminateEnrollment(id: number) {
-        return {
-            success: true,
-            message: 'Avantage résilié (MOCK)',
-        };
+        try {
+            await this.prisma.employee_benefit.update({
+                where: { id },
+                data: {
+                    status: 'TERMINATED',
+                    end_date: new Date(),
+                },
+            });
+
+            return {
+                success: true,
+                message: 'Avantage résilié avec succès',
+            };
+        } catch (error) {
+            this.logger.error('Error terminating benefit:', error);
+            return {
+                success: false,
+                message: 'Erreur lors de la résiliation',
+            };
+        }
     }
 }

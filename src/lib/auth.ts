@@ -59,6 +59,8 @@ class AuthService {
     if (typeof window !== 'undefined') {
       localStorage.setItem(this.ACCESS_TOKEN_KEY, tokens.access_token);
       localStorage.setItem(this.REFRESH_TOKEN_KEY, tokens.refresh_token);
+      // Set cookie for middleware
+      document.cookie = `token=${tokens.access_token}; path=/; max-age=604800; SameSite=Strict`;
     }
   }
 
@@ -246,6 +248,8 @@ class AuthService {
       localStorage.removeItem(this.ACCESS_TOKEN_KEY);
       localStorage.removeItem(this.REFRESH_TOKEN_KEY);
       localStorage.removeItem(this.USER_KEY);
+      // Clear cookie
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
       window.location.href = '/signin';
     }
   }

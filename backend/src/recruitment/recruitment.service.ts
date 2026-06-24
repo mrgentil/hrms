@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import OpenAI from 'openai';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { Prisma } from '@prisma/client';
@@ -346,7 +347,9 @@ export class RecruitmentService {
             }
 
             // 2. Créer le compte Utilisateur
-            const hashedPassword = await bcrypt.hash('Welcome123!', 10);
+            const tempPassword = crypto.randomBytes(8).toString('hex').slice(0, 12);
+            this.logger.log(`Generated temporary password for ${candidate.email}: ${tempPassword}`);
+            const hashedPassword = await bcrypt.hash(tempPassword, 10);
             const newUser = await this.prisma.user.create({
                 data: {
                     username: candidate.email,

@@ -119,58 +119,11 @@ function AdminDashboard({ userRole }: { userRole: any }) {
     }).format(value);
   };
 
-  // Données de démo pour les graphiques
-  const demoAttendanceTrend: AttendanceTrend[] = [
-    { date: "2024-12-01", day: "Lun", count: 45 },
-    { date: "2024-12-02", day: "Mar", count: 52 },
-    { date: "2024-12-03", day: "Mer", count: 48 },
-    { date: "2024-12-04", day: "Jeu", count: 55 },
-    { date: "2024-12-05", day: "Ven", count: 42 },
-    { date: "2024-12-06", day: "Sam", count: 12 },
-    { date: "2024-12-07", day: "Dim", count: 5 },
-  ];
-
-  const demoExpensesTrend: ExpenseTrend[] = [
-    { month: "Jul", amount: 12500 },
-    { month: "Août", amount: 8900 },
-    { month: "Sep", amount: 15200 },
-    { month: "Oct", amount: 11800 },
-    { month: "Nov", amount: 18500 },
-    { month: "Déc", amount: 9200 },
-  ];
-
-  const demoDepartments: DepartmentStat[] = [
-    { id: 1, name: "Développement", count: 25 },
-    { id: 2, name: "Marketing", count: 12 },
-    { id: 3, name: "RH", count: 8 },
-    { id: 4, name: "Finance", count: 10 },
-    { id: 5, name: "Commercial", count: 15 },
-    { id: 6, name: "Support", count: 7 },
-  ];
-
-  const demoActivities: Activity[] = [
-    { type: "leave", message: "Jean Dupont a demandé un congé annuel", date: new Date().toISOString(), status: "PENDING" },
-    { type: "expense", message: "Marie Martin - Note de frais: Déplacement client", date: new Date(Date.now() - 3600000).toISOString(), status: "APPROVED" },
-    { type: "hire", message: "Pierre Bernard a rejoint l'équipe", date: new Date(Date.now() - 86400000).toISOString(), status: "NEW" },
-    { type: "leave", message: "Sophie Leroy - Congé maladie approuvé", date: new Date(Date.now() - 172800000).toISOString(), status: "APPROVED" },
-    { type: "expense", message: "Lucas Moreau - Équipement bureau", date: new Date(Date.now() - 259200000).toISOString(), status: "PAID" },
-    { type: "leave", message: "Emma Petit - Demande de RTT rejetée", date: new Date(Date.now() - 345600000).toISOString(), status: "REJECTED" },
-  ];
-
-  const demoOverview: DashboardOverview = {
-    employees: { total: 85, active: 77, inactive: 8, newThisMonth: 3 },
-    departments: 6,
-    attendance: { presentToday: 52, absentToday: 25, attendanceRate: 68 },
-    pending: { leaves: 7, expenses: 4 },
-    expenses: { totalMonth: 28500 },
-  };
-
-  // Utiliser les données de démo si pas de données réelles
-  const displayAttendance = attendanceTrend.length > 0 ? attendanceTrend : demoAttendanceTrend;
-  const displayExpenses = expensesTrend.length > 0 ? expensesTrend : demoExpensesTrend;
-  const displayDepartments = departments.length > 0 ? departments : demoDepartments;
-  const displayActivities = activities.length > 0 ? activities : demoActivities;
-  const displayOverview = overview || demoOverview;
+  const displayAttendance = attendanceTrend || [];
+  const displayExpenses = expensesTrend || [];
+  const displayDepartments = departments || [];
+  const displayActivities = activities || [];
+  const displayOverview = overview;
 
   const getActivityIcon = (type: string) => {
     switch (type) {

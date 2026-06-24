@@ -222,6 +222,15 @@ Le système RBAC inclut 47 permissions granulaires organisées en catégories :
 - **Finances** : Gestion budgétaire et salariale
 - **Rapports** : Génération et consultation des rapports
 
+## 🛡️ Sécurité & Améliorations (Suite à l'Audit Récent)
+
+L'application a récemment bénéficié d'une passe d'audit de sécurité et de nettoyage de code :
+- **Protection des Routes Front-End** : Le middleware intercepte et redirige correctement les sessions non authentifiées tout en protégeant les routes via cookies sécurisés (JWT).
+- **Politiques de Sécurité (CSP)** : Ajout de Content-Security-Policy (CSP) et blocage de fichiers sensibles (`.env`, `.sql`, `.log`, `.git`).
+- **Permissions Strictes (Backend)** : Application stricte des gardes de permission (RBAC) sur les modules `Benefits`, `Bonuses` et `Recrutement`.
+- **Intégration Prisma Complète** : Remplacement de toutes les données mockées par de vrais appels en base de données.
+- **Tableau de Bord Réel** : Remplacement des données de démonstration du Dashboard par des informations en direct tirées des bases de données de l'application.
+
 ## 🤝 Contribution
 
 Les contributions sont les bienvenues ! Pour contribuer :
