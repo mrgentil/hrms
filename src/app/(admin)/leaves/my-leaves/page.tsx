@@ -1037,7 +1037,7 @@ const openCreateForm = useCallback(() => {
 
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
 
-                    Précisez la sous-catégorie exacte de votre congé (optionnel).
+                    PrÃ©cisez la sous-catÃ©gorie exacte de votre congÃ© (optionnel).
 
                   </p>
 
@@ -1599,7 +1599,6 @@ const openCreateForm = useCallback(() => {
   );
 
 }
-
 
 
 
