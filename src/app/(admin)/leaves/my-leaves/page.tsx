@@ -38,29 +38,29 @@ import { useSearchParams } from 'next/navigation';
 
 
 const APPLICATION_TYPE_LABELS: Record<LeaveTypeCode, string> = {
-  CongePaye: 'Congé Payé',
+  CongePaye: 'CongÃ© PayÃ©',
   Maladie: 'Maladie',
-  TeleTravail: 'TéléTravail',
+  TeleTravail: 'TÃ©lÃ©Travail',
   Marriage: 'Marriage',
   Permission: 'Permission',
   Abscence: 'Abscence',
-  Demenagement: 'Déménagement',
-  Deces: 'Décès',
+  Demenagement: 'DÃ©mÃ©nagement',
+  Deces: 'DÃ©cÃ¨s',
 };
 
 const APPLICATION_TYPE_ALIASES: Record<string, LeaveTypeCode> = {
   CongePaye: 'CongePaye',
-  'Congé Payé': 'CongePaye',
+  'CongÃ© PayÃ©': 'CongePaye',
   Maladie: 'Maladie',
   TeleTravail: 'TeleTravail',
-  'TéléTravail': 'TeleTravail',
+  'TÃ©lÃ©Travail': 'TeleTravail',
   Marriage: 'Marriage',
   Permission: 'Permission',
   Abscence: 'Abscence',
   Demenagement: 'Demenagement',
-  'Déménagement': 'Demenagement',
+  'DÃ©mÃ©nagement': 'Demenagement',
   Deces: 'Deces',
-  'Décès': 'Deces',
+  'DÃ©cÃ¨s': 'Deces',
 };
 
 const DEFAULT_APPLICATION_TYPES: LeaveTypeCode[] = [
@@ -1037,7 +1037,7 @@ const openCreateForm = useCallback(() => {
 
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
 
-                    Précisez la sous-catégorie exacte de votre congé (optionnel).
+                    PrÃ©cisez la sous-catÃ©gorie exacte de votre congÃ© (optionnel).
 
                   </p>
 
@@ -1046,43 +1046,16 @@ const openCreateForm = useCallback(() => {
                 <div>
 
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-
-                    Destinataire (manager / RH)
-
+                    Validation par
                   </label>
-
-                  <select
-
-                    name="approver_user_id"
-
-                    value={formData.approver_user_id}
-
-                    onChange={handleInputChange}
-
-                    className="w-full rounded border border-stroke px-4 py-2 text-sm outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-
-                  >
-
-                    {approvers.length === 0 ? (
-
-                      <option value="">Aucun responsable disponible</option>
-
-                    ) : null}
-
-                    {approvers.map((approver) => (
-
-                      <option key={approver.id} value={approver.id}>
-
-                        {approver.full_name}
-
-                        {approver.work_email ? ` - ${approver.work_email}` : ''}
-
-                      </option>
-
-                    ))}
-
-                  </select>
-
+                  <div className="w-full rounded border border-stroke px-4 py-2 text-sm bg-gray-50 text-gray-500 dark:border-form-strokedark dark:bg-meta-4 dark:text-gray-400">
+                    {approvers.length > 0
+                      ? approvers.find(a => a.id === Number(formData.approver_user_id))?.full_name || approvers[0].full_name
+                      : "Manager / RH automatique"}
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Votre demande sera notifiée automatiquement.
+                  </p>
                 </div>
 
                 <div>
@@ -1137,7 +1110,7 @@ const openCreateForm = useCallback(() => {
 
                   <p className="mt-1 text-xs text-gray-500">
 
-                    Veuillez fournir un lien vers votre certificat médical ou justificatif si nécessaire.
+                    Veuillez fournir un lien vers votre certificat mÃ©dical ou justificatif si nÃ©cessaire.
 
                   </p>
 
@@ -1177,7 +1150,7 @@ const openCreateForm = useCallback(() => {
 
                 <div className="text-sm font-medium text-primary mt-2">
 
-                  Durée estimée : {calculateDays(formData.start_date, formData.end_date)} jour(s)
+                  DurÃ©e estimÃ©e : {calculateDays(formData.start_date, formData.end_date)} jour(s)
 
                 </div>
 
@@ -1366,7 +1339,7 @@ const openCreateForm = useCallback(() => {
                             </span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Consommés ce mois</span>
+                            <span>ConsommÃ©s ce mois</span>
                             <span className="font-semibold text-danger">
                               {(balance.monthly_used ?? 0).toFixed(1)} j
                             </span>
@@ -1599,6 +1572,7 @@ const openCreateForm = useCallback(() => {
   );
 
 }
+
 
 
 
