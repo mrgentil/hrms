@@ -5,6 +5,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { benefitService } from "@/services/payroll.service";
 import { useToast } from "@/hooks/useToast";
 import { useUserRole, hasPermission } from "@/hooks/useUserRole";
+import SmartSelect from "@/components/form/SmartSelect";
 import type { BenefitCatalog, EmployeeBenefit, BenefitType, CreateBenefitCatalogDto } from "@/types/payroll.types";
 
 const BENEFIT_TYPE_LABELS: Record<BenefitType, string> = {
@@ -370,11 +371,13 @@ export default function BenefitsPage() {
 
             {/* Create Modal */}
             {showCreateModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                            Ajouter un avantage
-                        </h3>
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setShowCreateModal(false)}></div>
+                    <div className="flex min-h-full items-start justify-center p-4 pt-10 pb-10 text-center sm:p-0 sm:pt-16 sm:pb-16">
+                        <div className="relative transform rounded-xl bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:w-full sm:max-w-md p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                                Ajouter un avantage
+                            </h3>
                         <form onSubmit={handleCreateSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -390,18 +393,17 @@ export default function BenefitsPage() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Type *
+                                    Type d'avantage *
                                 </label>
-                                <select
+                                <SmartSelect
+                                    options={Object.entries(BENEFIT_TYPE_LABELS).map(([value, label]) => ({
+                                        value,
+                                        label
+                                    }))}
                                     value={formData.benefit_type}
-                                    onChange={(e) => setFormData({ ...formData, benefit_type: e.target.value as BenefitType })}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white"
-                                    required
-                                >
-                                    {Object.entries(BENEFIT_TYPE_LABELS).map(([value, label]) => (
-                                        <option key={value} value={value}>{label}</option>
-                                    ))}
-                                </select>
+                                    onChange={(value) => setFormData({ ...formData, benefit_type: value as BenefitType })}
+                                    placeholder="Sélectionner le type"
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -484,6 +486,7 @@ export default function BenefitsPage() {
                             </div>
                         </form>
                     </div>
+                </div>
                 </div>
             )}
 

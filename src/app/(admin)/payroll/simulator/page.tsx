@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { payslipService } from "@/services/payroll.service";
 import { useToast } from "@/hooks/useToast";
+import { useUserRole, hasPermission } from "@/hooks/useUserRole";
 import { Calculator, ArrowRight, DollarSign, Building, User, PieChart } from "lucide-react";
 import {
     Chart as ChartJS,
@@ -17,6 +18,7 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function SalarySimulatorPage() {
     const toast = useToast();
+    const { role: userRole } = useUserRole();
     const [grossSalary, setGrossSalary] = useState<number>(3000); // Default value
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<any>(null);
@@ -47,21 +49,23 @@ export default function SalarySimulatorPage() {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
     };
 
+    const canViewEmployerCost = !!userRole && (hasPermission(userRole, 'payroll.manage') || userRole.role === 'ROLE_ADMIN' || userRole.role === 'ROLE_SUPER_ADMIN');
+
     const chartData = result ? {
-        labels: ['Salaire Net', 'Déductions (IPR/CNSS)', 'Charges Patronales'],
+        labels: canViewEmployerCost 
+            ? ['Salaire Net', 'Déductions (IPR/CNSS)', 'Charges Patronales']
+            : ['Salaire Net', 'Déductions (IPR/CNSS)'],
         datasets: [
             {
-                data: [result.net_salary, result.employee_deductions, result.employer_charges],
-                backgroundColor: [
-                    'rgba(16, 185, 129, 0.8)', // Green (Net)
-                    'rgba(245, 158, 11, 0.8)', // Amber (Deductions)
-                    'rgba(59, 130, 246, 0.8)', // Blue (Employer)
-                ],
-                borderColor: [
-                    'rgba(16, 185, 129, 1)',
-                    'rgba(245, 158, 11, 1)',
-                    'rgba(59, 130, 246, 1)',
-                ],
+                data: canViewEmployerCost
+                    ? [result.net_salary, result.employee_deductions, result.employer_charges]
+                    : [result.net_salary, result.employee_deductions],
+                backgroundColor: canViewEmployerCost
+                    ? ['rgba(16, 185, 129, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(59, 130, 246, 0.8)']
+                    : ['rgba(16, 185, 129, 0.8)', 'rgba(245, 158, 11, 0.8)'],
+                borderColor: canViewEmployerCost
+                    ? ['rgba(16, 185, 129, 1)', 'rgba(245, 158, 11, 1)', 'rgba(59, 130, 246, 1)']
+                    : ['rgba(16, 185, 129, 1)', 'rgba(245, 158, 11, 1)'],
                 borderWidth: 1,
             },
         ],
@@ -129,7 +133,7 @@ export default function SalarySimulatorPage() {
                 {result ? (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                         {/* Highlights Cards */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className={`grid gap-4 ${canViewEmployerCost ? 'grid-cols-2' : 'grid-cols-1'}`}>
                             <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-2xl border border-green-100 dark:border-green-800">
                                 <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-1">Net à Payer (Avant IR)</p>
                                 <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -139,6 +143,7 @@ export default function SalarySimulatorPage() {
                                     <User className="w-3 h-3" /> Pour l'employé
                                 </p>
                             </div>
+                            {canViewEmployerCost && (
                             <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-2xl border border-blue-100 dark:border-blue-800">
                                 <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Coût Total Employeur</p>
                                 <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -148,6 +153,7 @@ export default function SalarySimulatorPage() {
                                     <Building className="w-3 h-3" /> Pour l'entreprise
                                 </p>
                             </div>
+                            )}
                         </div>
 
                         {/* Detailed Breakdown */}
@@ -175,11 +181,12 @@ export default function SalarySimulatorPage() {
                                     <div className="flex justify-between items-center p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10">
                                         <div className="flex items-center gap-2">
                                             <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                                            <span className="text-sm text-gray-600 dark:text-gray-300">Charges Salariales (-22%)</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-300">Charges Salariales (-20%)</span>
                                         </div>
                                         <span className="font-semibold text-red-600 dark:text-red-400">-{formatCurrency(result.employee_deductions)}</span>
                                     </div>
 
+                                    {canViewEmployerCost && (
                                     <div className="flex justify-between items-center p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/10">
                                         <div className="flex items-center gap-2">
                                             <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
@@ -187,6 +194,7 @@ export default function SalarySimulatorPage() {
                                         </div>
                                         <span className="font-semibold text-gray-900 dark:text-white">+{formatCurrency(result.employer_charges)}</span>
                                     </div>
+                                    )}
 
                                     <div className="border-t border-gray-200 dark:border-gray-600 pt-3 flex justify-between items-center">
                                         <span className="font-bold text-gray-900 dark:text-white">Net Mensuel</span>

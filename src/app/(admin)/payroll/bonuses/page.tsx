@@ -6,6 +6,7 @@ import { bonusService } from "@/services/payroll.service";
 import { employeesService } from "@/services/employees.service";
 import { useToast } from "@/hooks/useToast";
 import { useUserRole, hasPermission } from "@/hooks/useUserRole";
+import SmartSelect from "@/components/form/SmartSelect";
 import type { Bonus, BonusType, BonusStatus, CreateBonusDto } from "@/types/payroll.types";
 import type { Employee } from "@/services/employees.service";
 
@@ -45,11 +46,13 @@ export default function BonusesPage() {
     const canApprove = !!userRole && (hasPermission(userRole, 'payroll.manage') || userRole.role === 'ROLE_ADMIN');
 
     useEffect(() => {
+        if (!userRole) return;
+        
         loadBonuses();
         if (canCreate) {
             loadEmployees();
         }
-    }, []);
+    }, [userRole]);
 
     const loadBonuses = async () => {
         try {
@@ -70,9 +73,7 @@ export default function BonusesPage() {
     const loadEmployees = async () => {
         try {
             const response = await employeesService.getEmployees({ page: 1, limit: 1000 });
-            if (response.success) {
-                setEmployees(response.data);
-            }
+            setEmployees(response.data || []);
         } catch (error) {
             console.error('Erreur chargement employés:', error);
         }
@@ -340,44 +341,45 @@ export default function BonusesPage() {
 
             {/* Create Modal */}
             {showCreateModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                            Attribuer une prime
-                        </h3>
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    {/* Overlay */}
+                    <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setShowCreateModal(false)}></div>
+                    
+                    {/* Modal Positioning */}
+                    <div className="flex min-h-full items-start justify-center p-4 pt-10 pb-10 text-center sm:p-0 sm:pt-16 sm:pb-16">
+                        {/* Modal Panel */}
+                        <div className="relative transform rounded-xl bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:w-full sm:max-w-md p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                                Attribuer une prime
+                            </h3>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Employé *
                                 </label>
-                                <select
-                                    value={formData.user_id}
-                                    onChange={(e) => setFormData({ ...formData, user_id: parseInt(e.target.value) })}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white"
-                                    required
-                                >
-                                    <option value={0}>Sélectionner un employé</option>
-                                    {employees.map((emp) => (
-                                        <option key={emp.id} value={emp.id}>
-                                            {emp.full_name}
-                                        </option>
-                                    ))}
-                                </select>
+                                <SmartSelect
+                                    options={employees.map(emp => ({
+                                        value: emp.id,
+                                        label: emp.full_name
+                                    }))}
+                                    value={formData.user_id || null}
+                                    onChange={(value) => setFormData({ ...formData, user_id: value as number })}
+                                    placeholder="Rechercher un employé..."
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Type de prime *
                                 </label>
-                                <select
+                                <SmartSelect
+                                    options={Object.entries(BONUS_TYPE_LABELS).map(([value, label]) => ({
+                                        value,
+                                        label
+                                    }))}
                                     value={formData.bonus_type}
-                                    onChange={(e) => setFormData({ ...formData, bonus_type: e.target.value as BonusType })}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white"
-                                    required
-                                >
-                                    {Object.entries(BONUS_TYPE_LABELS).map(([value, label]) => (
-                                        <option key={value} value={value}>{label}</option>
-                                    ))}
-                                </select>
+                                    onChange={(value) => setFormData({ ...formData, bonus_type: value as BonusType })}
+                                    placeholder="Sélectionner le type"
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -450,6 +452,7 @@ export default function BonusesPage() {
                             </div>
                         </form>
                     </div>
+                </div>
                 </div>
             )}
 

@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { employeesService, Employee } from "@/services/employees.service";
-import { departmentsService, Department } from "@/services/departments.service";
+import { departmentService } from "@/services/departmentService";
+import { Department } from "@/types/api";
 import { useToast } from "@/hooks/useToast";
 import { useUserRole, hasPermission } from "@/hooks/useUserRole";
 import Link from "next/link";
@@ -32,8 +33,8 @@ export default function SalariesPage() {
 
     const loadDepartments = async () => {
         try {
-            const depts = await departmentsService.getDepartments();
-            setDepartments(depts);
+            const depts = await departmentService.getDepartments();
+            setDepartments(depts.data || []);
         } catch (error) {
             console.error('Erreur chargement départements:', error);
         }
