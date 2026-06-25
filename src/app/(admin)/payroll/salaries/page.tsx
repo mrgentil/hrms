@@ -8,6 +8,7 @@ import { Department } from "@/types/api";
 import { useToast } from "@/hooks/useToast";
 import { useUserRole, hasPermission } from "@/hooks/useUserRole";
 import Link from "next/link";
+import RouteGuard from '@/components/auth/RouteGuard';
 
 export default function SalariesPage() {
     const toast = useToast();
@@ -178,6 +179,7 @@ export default function SalariesPage() {
 
     if (!canViewSalary) {
         return (
+            <RouteGuard allowedRoles={['ROLE_RH', 'ROLE_ADMIN', 'ROLE_SUPER_ADMIN']}>
             <div>
                 <PageBreadcrumb pageTitle="Gestion des Salaires" />
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
@@ -187,10 +189,12 @@ export default function SalariesPage() {
                     </p>
                 </div>
             </div>
+            </RouteGuard>
         );
     }
 
     return (
+        <RouteGuard allowedRoles={['ROLE_RH', 'ROLE_ADMIN', 'ROLE_SUPER_ADMIN']}>
         <div className="space-y-6">
             <PageBreadcrumb pageTitle="Gestion des Salaires" />
 
@@ -434,5 +438,6 @@ export default function SalariesPage() {
                 )}
             </div>
         </div>
+        </RouteGuard>
     );
 }

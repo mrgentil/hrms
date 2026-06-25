@@ -8,6 +8,7 @@ import Pagination from '@/components/common/Pagination';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import { useToast } from '@/hooks/useToast';
 import { useUserRole, hasPermission } from '@/hooks/useUserRole';
+import RouteGuard from '@/components/auth/RouteGuard';
 import {
   useDeleteDepartment,
   useDepartments,
@@ -93,6 +94,7 @@ export default function DepartmentsPage() {
   };
 
   return (
+    <RouteGuard allowedRoles={['ROLE_RH', 'ROLE_ADMIN', 'ROLE_SUPER_ADMIN']}>
     <div>
       <PageBreadcrumb pageTitle="Gestion des departements" />
 
@@ -281,5 +283,6 @@ export default function DepartmentsPage() {
         </ComponentCard>
       </div>
     </div>
+    </RouteGuard>
   );
 }

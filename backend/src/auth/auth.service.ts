@@ -140,6 +140,7 @@ export class AuthService {
         active: fullProfile.active,
         profile_photo_url: fullProfile.profile_photo_url,
         department: fullProfile.department,
+        company: fullProfile.company,
         permissions,
       },
     };
@@ -262,6 +263,13 @@ export class AuthService {
             name: true,
           },
         },
+        company: {
+          select: {
+            id: true,
+            name: true,
+            logo_url: true,
+          },
+        },
         position: {
           select: {
             id: true,
@@ -296,6 +304,7 @@ export class AuthService {
     return {
       ...user,
       department: user.department,
+      company: user.company,
       role_info: user.role_relation, // Nouveau système de rôles
       current_role: user.role_relation?.name || user.role, // Fallback vers l'ancien système
       permissions: await this.rolesService.getUserPermissions(userId),

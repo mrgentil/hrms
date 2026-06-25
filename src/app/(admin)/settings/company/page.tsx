@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import RouteGuard from '@/components/auth/RouteGuard';
 import {
     BoxCubeIcon,
     CalenderIcon,
@@ -146,6 +147,7 @@ export default function CompanySettingsPage() {
     }
 
     return (
+        <RouteGuard allowedRoles={['ROLE_ADMIN', 'ROLE_SUPER_ADMIN']}>
         <div className="container mx-auto px-4 py-8 max-w-5xl">
             <div className="mb-8 flex items-center justify-between">
                 <div>
@@ -491,5 +493,6 @@ export default function CompanySettingsPage() {
                 </div>
             </div>
         </div>
+        </RouteGuard>
     );
 }

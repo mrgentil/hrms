@@ -9,6 +9,7 @@ import { useUserRole, hasPermission } from "@/hooks/useUserRole";
 import SmartSelect from "@/components/form/SmartSelect";
 import type { Bonus, BonusType, BonusStatus, CreateBonusDto } from "@/types/payroll.types";
 import type { Employee } from "@/services/employees.service";
+import RouteGuard from '@/components/auth/RouteGuard';
 
 const BONUS_TYPE_LABELS: Record<BonusType, string> = {
     PERFORMANCE: 'Performance',
@@ -172,6 +173,7 @@ export default function BonusesPage() {
     };
 
     return (
+        <RouteGuard allowedRoles={['ROLE_RH', 'ROLE_ADMIN', 'ROLE_SUPER_ADMIN']}>
         <div className="space-y-6">
             <PageBreadcrumb pageTitle="Primes & Bonus" />
 
@@ -468,6 +470,7 @@ export default function BonusesPage() {
                 />
             )}
         </div>
+        </RouteGuard>
     );
 }
 

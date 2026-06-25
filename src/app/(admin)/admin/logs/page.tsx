@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/useToast";
 import { auditService, AuditLog, AuditStats } from "@/services/audit.service";
 import { employeesService } from "@/services/employees.service";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import RouteGuard from '@/components/auth/RouteGuard';
 
 const ACTION_LABELS: Record<string, { label: string; color: string; icon: string }> = {
   LOGIN: { label: "Connexion", color: "bg-green-100 text-green-800", icon: "🔓" },
@@ -122,6 +123,7 @@ export default function AuditLogsPage() {
   const totalPages = Math.ceil(total / limit);
 
   return (
+    <RouteGuard allowedRoles={['ROLE_ADMIN', 'ROLE_SUPER_ADMIN']}>
     <div className="space-y-6">
       <PageBreadcrumb pageTitle="Logs & Audit" />
 
@@ -383,5 +385,6 @@ export default function AuditLogsPage() {
         </div>
       )}
     </div>
+    </RouteGuard>
   );
 }

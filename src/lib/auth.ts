@@ -28,6 +28,7 @@ export interface User {
   company?: {
     id: number;
     name: string;
+    logo_url?: string | null;
   };
 }
 

@@ -7,6 +7,7 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Avatar } from "../ui/Avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatUserRole } from "@/lib/roleLabels";
+import { resolveImageUrl } from "@/lib/images";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -92,6 +93,25 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
               {roleName}
             </span>
           </div>
+
+          {user?.company && (
+            <div className="mt-3 flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700/50">
+              {user.company.logo_url ? (
+                <img 
+                  src={resolveImageUrl(user.company.logo_url)} 
+                  alt={user.company.name} 
+                  className="w-8 h-8 object-contain rounded bg-white dark:bg-gray-800" 
+                />
+              ) : (
+                <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400">
+                  {user.company.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+                {user.company.name}
+              </span>
+            </div>
+          )}
         </div>
 
         <ul className="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">

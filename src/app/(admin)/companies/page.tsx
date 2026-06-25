@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { companiesService, Company, CreateCompanyDto } from '@/services/companies.service';
 import { toast } from 'react-hot-toast';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import RouteGuard from '@/components/auth/RouteGuard';
 import {
     PlusIcon,
     PencilIcon,
@@ -173,6 +174,7 @@ export default function CompaniesPage() {
     }
 
     return (
+        <RouteGuard allowedRoles={['ROLE_SUPER_ADMIN']}>
         <div className="container mx-auto px-4 py-8">
             {/* Header */}
             <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -523,5 +525,6 @@ export default function CompaniesPage() {
                 </div>
             )}
         </div>
+        </RouteGuard>
     );
 }

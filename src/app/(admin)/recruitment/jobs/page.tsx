@@ -5,6 +5,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { recruitmentService, JobOffer } from "@/services/recruitment.service";
 import Link from "next/link";
 import Pagination from "@/components/common/Pagination";
+import RouteGuard from '@/components/auth/RouteGuard';
 
 export default function JobOffersPage() {
     const [jobs, setJobs] = useState<JobOffer[]>([]);
@@ -130,13 +131,16 @@ export default function JobOffersPage() {
 
     if (loading) {
         return (
+            <RouteGuard allowedRoles={['ROLE_RH', 'ROLE_ADMIN', 'ROLE_SUPER_ADMIN']}>
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
+            </RouteGuard>
         );
     }
 
     return (
+        <RouteGuard allowedRoles={['ROLE_RH', 'ROLE_ADMIN', 'ROLE_SUPER_ADMIN']}>
         <div>
             <PageBreadcrumb pageTitle="Offres d'Emploi" />
 
@@ -461,5 +465,6 @@ export default function JobOffersPage() {
                 </div>
             )}
         </div>
+        </RouteGuard>
     );
 }

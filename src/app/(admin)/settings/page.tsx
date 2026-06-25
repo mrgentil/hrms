@@ -11,6 +11,7 @@ import {
   CATEGORY_ICONS,
   CATEGORY_LABELS,
 } from "@/services/settings.service";
+import RouteGuard from "@/components/auth/RouteGuard";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -360,6 +361,7 @@ export default function SettingsPage() {
   };
 
   return (
+    <RouteGuard allowedRoles={['ROLE_SUPER_ADMIN']}>
     <div className="space-y-6">
       <PageBreadcrumb pageTitle="Paramètres de l'application" />
 
@@ -479,5 +481,6 @@ export default function SettingsPage() {
         </div>
       )}
     </div>
+    </RouteGuard>
   );
 }

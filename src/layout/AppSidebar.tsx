@@ -144,6 +144,7 @@ const performanceNavItems: NavItem[] = [
   {
     icon: <BoxIconLine />,
     name: "Performance",
+    allowedRoles: ["ROLE_MANAGER", "ROLE_RH", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
     subItems: [
       { name: "Évaluations", path: "/performance/reviews" },
       { name: "Objectifs (OKR)", path: "/performance/objectives" },
