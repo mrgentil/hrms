@@ -160,7 +160,7 @@ export class LeavesController {
     const approvers = await this.leavesService.getApprovers(currentUser.id);
     return {
       success: true,
-      data: approvers,
+      data: Array.from(approvers.values()),
     };
   }
 
