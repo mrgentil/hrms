@@ -49,6 +49,7 @@ export interface LeaveRequest {
   type: LeaveTypeCode;
   approver_user_id?: number | null;
   approver_comment?: string | null;
+  document_url?: string | null;
   approved_at?: string | null;
   workflow_step?: string | null;
   leave_type_id?: number | null;
@@ -103,6 +104,7 @@ export interface CreateLeaveRequestPayload {
   start_date: string;
   end_date: string;
   reason: string;
+  document_url?: string;
   leave_type_id?: number;
   approver_user_id?: number;
 }
@@ -112,6 +114,7 @@ export interface UpdateLeaveRequestPayload {
   start_date?: string;
   end_date?: string;
   reason?: string;
+  document_url?: string;
   leave_type_id?: number;
   approver_user_id?: number;
 }

@@ -615,7 +615,7 @@ export class LeavesService {
 
   async create(userId: number, dto: CreateLeaveDto) {
 
-    const { type, start_date, end_date, reason, approver_user_id } = dto;
+    const { type, start_date, end_date, reason, approver_user_id, document_url } = dto;
 
 
 
@@ -712,6 +712,8 @@ export class LeavesService {
         approver_user_id: approverId,
 
         leave_type_id: dto.leave_type_id ?? null,
+
+        document_url: document_url ?? null,
 
         created_at: new Date(),
 
@@ -1182,7 +1184,7 @@ export class LeavesService {
     return balances.map((balance) => ({
       ...balance,
       days_remaining: (balance.days_accrued || 0) - (balance.days_used || 0),
-      days_pending: 0, // � calculer si n�cessaire
+      days_pending: 0, //  calculer si ncessaire
     }));
   }
 
@@ -1710,6 +1712,8 @@ export class LeavesService {
         reason: trimmedReason ?? existing.reason,
 
         leave_type_id: dto.leave_type_id !== undefined ? dto.leave_type_id : existing.leave_type_id,
+
+        document_url: dto.document_url !== undefined ? dto.document_url : existing.document_url,
 
         approver_user_id: approverId ?? existing.approver_user_id,
 

@@ -36,4 +36,9 @@ export class CreateLeaveDto {
   @IsString({ message: 'Le motif doit être une chaîne de caractères.' })
   @MaxLength(500, { message: 'Le motif ne doit pas dépasser 500 caractères.' })
   reason: string;
+
+  @IsOptional()
+  @IsString({ message: 'Le lien du document doit être une chaîne de caractères.' })
+  @MaxLength(500, { message: 'Le lien du document ne doit pas dépasser 500 caractères.' })
+  document_url?: string;
 }

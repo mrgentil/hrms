@@ -40,4 +40,9 @@ export class UpdateOwnLeaveDto {
   @IsInt({ message: 'Le responsable choisi est invalide.' })
   @IsPositive({ message: 'Le responsable choisi est invalide.' })
   approver_user_id?: number;
+
+  @IsOptional()
+  @IsString({ message: 'Le lien du document doit être une chaîne de caractères.' })
+  @MaxLength(500, { message: 'Le lien du document ne doit pas dépasser 500 caractères.' })
+  document_url?: string;
 }

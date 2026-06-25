@@ -92,6 +92,7 @@ interface LeaveFormState {
   end_date: string;
 
   reason: string;
+  document_url: string;
 
   approver_user_id: string;
 
@@ -110,6 +111,7 @@ const INITIAL_FORM: LeaveFormState = {
   end_date: '',
 
   reason: '',
+  document_url: '',
 
   approver_user_id: '',
 
@@ -319,6 +321,7 @@ const openCreateForm = useCallback(() => {
       end_date: request.end_date ? request.end_date.slice(0, 10) : '',
 
       reason: request.reason ?? '',
+      document_url: request.document_url ?? '',
 
       approver_user_id: request.approver_user_id ? String(request.approver_user_id) : '',
 
@@ -551,6 +554,7 @@ const openCreateForm = useCallback(() => {
         end_date: formData.end_date,
 
         reason: trimmedReason,
+          document_url: formData.document_url || undefined,
 
       };
 
@@ -1099,11 +1103,43 @@ const openCreateForm = useCallback(() => {
 
                     onChange={handleInputChange}
 
-                    className="w-full rounded border border-stroke px-4 py-2 text-sm outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                    className="w-full rounded border border-stroke px-4 py-3 text-sm outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
 
                     required
 
                   />
+
+                </div>
+
+                <div>
+
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+
+                    Justificatif (Optionnel)
+
+                  </label>
+
+                  <input
+
+                    type="url"
+
+                    name="document_url"
+
+                    value={formData.document_url || ''}
+
+                    onChange={handleInputChange}
+
+                    placeholder="https://lien-vers-certificat-medical.com (si maladie)"
+
+                    className="w-full rounded border border-stroke px-4 py-2 text-sm outline-none transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+
+                  />
+
+                  <p className="mt-1 text-xs text-gray-500">
+
+                    Veuillez fournir un lien vers votre certificat médical ou justificatif si nécessaire.
+
+                  </p>
 
                 </div>
 
@@ -1134,6 +1170,18 @@ const openCreateForm = useCallback(() => {
                 </div>
 
               </div>
+
+
+
+              {formData.start_date && formData.end_date && (
+
+                <div className="text-sm font-medium text-primary mt-2">
+
+                  Durée estimée : {calculateDays(formData.start_date, formData.end_date)} jour(s)
+
+                </div>
+
+              )}
 
 
 
@@ -1551,4 +1599,7 @@ const openCreateForm = useCallback(() => {
   );
 
 }
+
+
+
 
