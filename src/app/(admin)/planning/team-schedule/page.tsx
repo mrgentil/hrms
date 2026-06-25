@@ -5,7 +5,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { planningService, TeamMemberSchedule, ScheduleEvent } from "@/services/planning.service";
 import { useAuth } from "@/contexts/AuthContext";
 import Avatar from "@/components/ui/avatar/Avatar";
-import { ChevronLeftIcon, ChevronRightIcon } from "@/icons";
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Helper for dates
 const getStartOfWeek = (date: Date) => {
@@ -84,7 +84,7 @@ export default function TeamSchedulePage() {
                             onClick={handlePrevWeek}
                             className="p-2 hover:bg-white dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-300 shadow-sm transition"
                         >
-                            <ChevronLeftIcon className="w-5 h-5" />
+                            <ChevronLeft className="w-5 h-5" />
                         </button>
                         <button
                             onClick={handleToday}
@@ -96,7 +96,7 @@ export default function TeamSchedulePage() {
                             onClick={handleNextWeek}
                             className="p-2 hover:bg-white dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-300 shadow-sm transition"
                         >
-                            <ChevronRightIcon className="w-5 h-5" />
+                            <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
                 </div>
