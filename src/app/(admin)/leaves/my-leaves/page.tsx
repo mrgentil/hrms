@@ -1037,7 +1037,7 @@ const openCreateForm = useCallback(() => {
 
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
 
-                    Lie la demande a une categorie RH definie dans la table leave_type. Laisser vide si non applicable.
+                    Précisez la sous-catégorie exacte de votre congé (optionnel).
 
                   </p>
 
@@ -1599,6 +1599,7 @@ const openCreateForm = useCallback(() => {
   );
 
 }
+
 
 
 
