@@ -42,6 +42,7 @@ import { TrainingModule } from './training/training.module';
 import { OrgchartModule } from './orgchart/orgchart.module';
 import { PerformanceModule } from './performance/performance.module';
 import { CompanyModule } from './company/company.module';
+import { PlanningModule } from './planning/planning.module';
 
 @Module({
   imports: [
@@ -97,6 +98,7 @@ import { CompanyModule } from './company/company.module';
     OrgchartModule,
     PerformanceModule,
     CompanyModule,
+    PlanningModule,
   ],
   controllers: [AppController],
   providers: [
