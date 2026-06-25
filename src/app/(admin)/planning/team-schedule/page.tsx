@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { planningService, TeamMemberSchedule, ScheduleEvent } from "@/services/planning.service";
 import { useAuth } from "@/contexts/AuthContext";
-import { Avatar } from "@/components/ui/Avatar";
+import Avatar from "@/components/ui/avatar/Avatar";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/icons";
 
 // Helper for dates
