@@ -1191,7 +1191,7 @@ export class LeavesService {
   async getApprovers(userId: number) {
     const requester = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { manager_user_id: true },
+      select: { manager_user_id: true, company_id: true },
     });
 
     if (!requester) {
@@ -1218,7 +1218,13 @@ export class LeavesService {
     const additionalManagers = await this.prisma.user.findMany({
       where: {
         active: true,
-        OR: [{ role: 'ROLE_MANAGER' }, { role: 'ROLE_RH' }],
+        OR: [
+          { role: 'ROLE_SUPER_ADMIN' },
+          {
+            company_id: requester.company_id,
+            role: { in: ['ROLE_MANAGER', 'ROLE_RH', 'ROLE_ADMIN'] },
+          },
+        ],
       },
       select: { id: true, full_name: true, work_email: true },
       orderBy: { full_name: 'asc' },
